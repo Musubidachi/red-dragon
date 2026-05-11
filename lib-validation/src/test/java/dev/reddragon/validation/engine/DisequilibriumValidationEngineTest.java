@@ -16,19 +16,24 @@ class DisequilibriumValidationEngineTest {
 
     @Test
     void validatesRealEarlyAsymmetricDisequilibriumAsPassWithConcentratedDeployment() {
-        CandidateValidationInput input = baseInput()
-                .candidateId("cand-001")
-                .symbol("ASTS")
-                .structuralRealityScore(0.94)
-                .materialSignificanceScore(0.88)
-                .earlynessScore(0.91)
-                .equilibriumQualityScore(0.82)
-                .reflexivityPotentialScore(0.84)
-                .asymmetryScore(0.90)
-                .regimeCompatibilityScore(0.76)
-                .deploymentConfidenceScore(0.87)
-                .notes("Government or contract-style catalyst with early propagation.")
-                .build();
+        CandidateValidationInput input = input(
+                "cand-001",
+                "ASTS",
+                0.94,
+                0.88,
+                0.91,
+                0.82,
+                0.84,
+                0.90,
+                0.76,
+                0.87,
+                true,
+                true,
+                false,
+                false,
+                false,
+                "Government or contract-style catalyst with early propagation."
+        );
 
         ValidationResult result = engine.validate(input);
 
@@ -42,20 +47,24 @@ class DisequilibriumValidationEngineTest {
 
     @Test
     void rejectsCandidateWhenCatalystIsNotCredibleEvenIfOtherScoresLookGood() {
-        CandidateValidationInput input = baseInput()
-                .candidateId("cand-002")
-                .symbol("HYPE")
-                .structuralRealityScore(0.82)
-                .materialSignificanceScore(0.80)
-                .earlynessScore(0.85)
-                .equilibriumQualityScore(0.78)
-                .reflexivityPotentialScore(0.80)
-                .asymmetryScore(0.81)
-                .regimeCompatibilityScore(0.70)
-                .deploymentConfidenceScore(0.75)
-                .credibleCatalyst(false)
-                .notes("High social excitement without credible structural evidence.")
-                .build();
+        CandidateValidationInput input = input(
+                "cand-002",
+                "HYPE",
+                0.82,
+                0.80,
+                0.85,
+                0.78,
+                0.80,
+                0.81,
+                0.70,
+                0.75,
+                false,
+                true,
+                false,
+                false,
+                false,
+                "High social excitement without credible structural evidence."
+        );
 
         ValidationResult result = engine.validate(input);
 
@@ -67,20 +76,24 @@ class DisequilibriumValidationEngineTest {
 
     @Test
     void rejectsCandidateWhenNarrativeIsEuphoricOrSaturated() {
-        CandidateValidationInput input = baseInput()
-                .candidateId("cand-003")
-                .symbol("LATE")
-                .structuralRealityScore(0.90)
-                .materialSignificanceScore(0.86)
-                .earlynessScore(0.72)
-                .equilibriumQualityScore(0.76)
-                .reflexivityPotentialScore(0.85)
-                .asymmetryScore(0.79)
-                .regimeCompatibilityScore(0.69)
-                .deploymentConfidenceScore(0.72)
-                .euphoricOrSaturated(true)
-                .notes("Real catalyst, but market/social propagation appears fully saturated.")
-                .build();
+        CandidateValidationInput input = input(
+                "cand-003",
+                "LATE",
+                0.90,
+                0.86,
+                0.72,
+                0.76,
+                0.85,
+                0.79,
+                0.69,
+                0.72,
+                true,
+                true,
+                true,
+                false,
+                false,
+                "Real catalyst, but market/social propagation appears fully saturated."
+        );
 
         ValidationResult result = engine.validate(input);
 
@@ -92,19 +105,24 @@ class DisequilibriumValidationEngineTest {
 
     @Test
     void classifiesPlausibleButIncompleteDisequilibriumAsWatchProbe() {
-        CandidateValidationInput input = baseInput()
-                .candidateId("cand-004")
-                .symbol("WATCH")
-                .structuralRealityScore(0.72)
-                .materialSignificanceScore(0.61)
-                .earlynessScore(0.66)
-                .equilibriumQualityScore(0.55)
-                .reflexivityPotentialScore(0.52)
-                .asymmetryScore(0.60)
-                .regimeCompatibilityScore(0.50)
-                .deploymentConfidenceScore(0.54)
-                .notes("Real and somewhat early, but reflexivity and deployment confidence are not strong yet.")
-                .build();
+        CandidateValidationInput input = input(
+                "cand-004",
+                "WATCH",
+                0.72,
+                0.61,
+                0.66,
+                0.55,
+                0.52,
+                0.60,
+                0.50,
+                0.54,
+                true,
+                true,
+                false,
+                false,
+                false,
+                "Real and somewhat early, but reflexivity and deployment confidence are not strong yet."
+        );
 
         ValidationResult result = engine.validate(input);
 
@@ -114,22 +132,41 @@ class DisequilibriumValidationEngineTest {
         assertTrue(result.reasonCodes().contains(ReasonCode.DEPLOYMENT_PROBE_ONLY));
     }
 
-    private CandidateValidationInput.CandidateValidationInputBuilder baseInput() {
-        return CandidateValidationInput.builder()
-                .candidateId("candidate")
-                .symbol("TICKER")
-                .structuralRealityScore(0.70)
-                .materialSignificanceScore(0.60)
-                .earlynessScore(0.60)
-                .equilibriumQualityScore(0.60)
-                .reflexivityPotentialScore(0.50)
-                .asymmetryScore(0.60)
-                .regimeCompatibilityScore(0.50)
-                .deploymentConfidenceScore(0.50)
-                .credibleCatalyst(true)
-                .requiredDataPresent(true)
-                .euphoricOrSaturated(false)
-                .hostileMarketStructure(false)
-                .equilibriumAlreadyRepriced(false);
+    private CandidateValidationInput input(
+            String candidateId,
+            String symbol,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double asymmetryScore,
+            double regimeCompatibilityScore,
+            double deploymentConfidenceScore,
+            boolean credibleCatalyst,
+            boolean requiredDataPresent,
+            boolean euphoricOrSaturated,
+            boolean hostileMarketStructure,
+            boolean equilibriumAlreadyRepriced,
+            String notes
+    ) {
+        return new CandidateValidationInput(
+                candidateId,
+                symbol,
+                structuralRealityScore,
+                materialSignificanceScore,
+                earlynessScore,
+                equilibriumQualityScore,
+                reflexivityPotentialScore,
+                asymmetryScore,
+                regimeCompatibilityScore,
+                deploymentConfidenceScore,
+                credibleCatalyst,
+                requiredDataPresent,
+                euphoricOrSaturated,
+                hostileMarketStructure,
+                equilibriumAlreadyRepriced,
+                notes
+        );
     }
 }
