@@ -1,6 +1,5 @@
 package dev.reddragon.marketdata.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -17,7 +16,6 @@ public class MarketBar {
     double close;
     long volume;
 
-    @Builder
     public MarketBar(
             String symbol,
             LocalDate date,
