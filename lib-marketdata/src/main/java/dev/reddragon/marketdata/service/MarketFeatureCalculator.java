@@ -3,6 +3,7 @@ package dev.reddragon.marketdata.service;
 import dev.reddragon.marketdata.model.MarketBar;
 import dev.reddragon.marketdata.model.MarketDataQuality;
 import dev.reddragon.marketdata.model.MarketDataSnapshot;
+import dev.reddragon.marketdata.util.MarketMathUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class MarketFeatureCalculator {
 
         double latestClose = latest.close();
         double previousClose = previous.close();
-        double gapPercent = previousClose == 0 ? 0 : (latest.open() - previousClose) / previousClose;
+        double gapPercent = MarketMathUtils.safePercentChange(latest.open(), previousClose);
         double atr = averageTrueRange(sorted);
         double rangePosition = latest.range() == 0 ? 0.5 : (latest.close() - latest.low()) / latest.range();
         double avgVolume = sorted.stream().mapToLong(MarketBar::volume).average().orElse(0.0);
