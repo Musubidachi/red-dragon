@@ -8,14 +8,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Simple deterministic ingestion adapter for manually supplied theses.
- *
- * This gives the rest of the pipeline something real to consume before external
- * adapters such as SEC EDGAR, scanners, or RSS feeds are implemented.
+ * Builds a trade candidate from a manually supplied thesis.
  */
 public class ManualCandidateIngestionService {
 
-    public TradeCandidate ingest(
+    /**
+     * Main processing flow.
+     */
+    public TradeCandidate process(
             String symbol,
             String companyName,
             CandidateCatalystType catalystType,
@@ -26,15 +26,62 @@ public class ManualCandidateIngestionService {
             double earlynessScore,
             double reflexivityPotentialScore
     ) {
-        return new TradeCandidate(
-                UUID.randomUUID().toString(),
+        CandidateCatalystType normalizedCatalystType = catalystType(catalystType);
+        String candidateId = candidateId();
+        Instant observedAt = observedAt();
+
+        return buildCandidate(
+                candidateId,
                 symbol,
                 companyName,
-                catalystType == null ? CandidateCatalystType.MANUAL_THESIS : catalystType,
+                normalizedCatalystType,
+                headline,
+                summary,
+                observedAt,
+                structuralRealityScore,
+                materialSignificanceScore,
+                earlynessScore,
+                reflexivityPotentialScore
+        );
+    }
+
+    private CandidateCatalystType catalystType(CandidateCatalystType catalystType) {
+        if (catalystType == null) {
+            return CandidateCatalystType.MANUAL_THESIS;
+        }
+        return catalystType;
+    }
+
+    private String candidateId() {
+        return UUID.randomUUID().toString();
+    }
+
+    private Instant observedAt() {
+        return Instant.now();
+    }
+
+    private TradeCandidate buildCandidate(
+            String candidateId,
+            String symbol,
+            String companyName,
+            CandidateCatalystType catalystType,
+            String headline,
+            String summary,
+            Instant observedAt,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double reflexivityPotentialScore
+    ) {
+        return new TradeCandidate(
+                candidateId,
+                symbol,
+                companyName,
+                catalystType,
                 SourceType.MANUAL,
                 "manual",
                 "",
-                Instant.now(),
+                observedAt,
                 headline,
                 summary,
                 structuralRealityScore,
