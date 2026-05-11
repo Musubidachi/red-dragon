@@ -1,5 +1,6 @@
 package dev.reddragon.analytics.model;
 
+import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -42,17 +43,11 @@ public class AnalyticsSnapshot {
         this.symbol = symbol.trim().toUpperCase();
         this.observedAt = observedAt == null ? Instant.now() : observedAt;
         this.regimeLabel = regimeLabel == null ? RegimeLabel.MIXED : regimeLabel;
-        this.regimeCompatibilityScore = clamp(regimeCompatibilityScore);
-        this.asymmetryScore = clamp(asymmetryScore);
-        this.equilibriumQualityScore = clamp(equilibriumQualityScore);
-        this.reflexivityPotentialScore = clamp(reflexivityPotentialScore);
-        this.deploymentConfidenceScore = clamp(deploymentConfidenceScore);
+        this.regimeCompatibilityScore = AnalyticsScoreUtils.clamp(regimeCompatibilityScore);
+        this.asymmetryScore = AnalyticsScoreUtils.clamp(asymmetryScore);
+        this.equilibriumQualityScore = AnalyticsScoreUtils.clamp(equilibriumQualityScore);
+        this.reflexivityPotentialScore = AnalyticsScoreUtils.clamp(reflexivityPotentialScore);
+        this.deploymentConfidenceScore = AnalyticsScoreUtils.clamp(deploymentConfidenceScore);
         this.reasonNotes = List.copyOf(reasonNotes == null ? List.of() : reasonNotes);
-    }
-
-    private static double clamp(double value) {
-        if (value < 0.0) return 0.0;
-        if (value > 1.0) return 1.0;
-        return value;
     }
 }
