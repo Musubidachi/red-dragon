@@ -39,9 +39,9 @@ public class ValidationThresholds {
         return new ValidationThresholds(
                 0.78,
                 0.58,
-                0.88,
+                0.87,
                 0.78,
-                0.62,
+                0.58,
 
                 0.65,
                 0.55,
