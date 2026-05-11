@@ -6,7 +6,7 @@ import dev.reddragon.validation.model.DeploymentTier;
 import dev.reddragon.validation.model.ReasonCode;
 import dev.reddragon.validation.model.ValidationFactor;
 import dev.reddragon.validation.model.ValidationResult;
-import dev.reddragon.validation.model.Verdict;
+import dev.reddragon.validation.model.VerdictDecision;
 import dev.reddragon.validation.util.ValidationScoreUtils;
 
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ public class DisequilibriumValidationEngine {
     private final ValidationThresholds thresholds;
     private final ValidationFactorFactory validationFactorFactory;
     private final HardGateEvaluator hardGateEvaluator;
+    private final VerdictResolver verdictResolver;
     private final DeploymentResolver deploymentResolver;
 
     public DisequilibriumValidationEngine() {
@@ -33,6 +34,7 @@ public class DisequilibriumValidationEngine {
         this.thresholds = Objects.requireNonNull(thresholds, "thresholds is required");
         this.validationFactorFactory = new ValidationFactorFactory(thresholds);
         this.hardGateEvaluator = new HardGateEvaluator(thresholds);
+        this.verdictResolver = new VerdictResolver(thresholds);
         this.deploymentResolver = new DeploymentResolver(thresholds);
     }
 
@@ -49,17 +51,23 @@ public class DisequilibriumValidationEngine {
         List<String> explanations = explanations(factors);
 
         List<ReasonCode> hardGateFailures = hardGateEvaluator.process(input);
-        reasons.addAll(hardGateFailures);
+        VerdictDecision verdictDecision = verdictResolver.process(score, hardGateFailures);
 
-        Verdict verdict = verdict(score, hardGateFailures, reasons, explanations);
-        DeploymentTier deploymentTier = deploymentResolver.process(verdict, score, input);
+        reasons.addAll(verdictDecision.reasonCodes());
+        explanations.addAll(verdictDecision.explanations());
+
+        DeploymentTier deploymentTier = deploymentResolver.process(
+                verdictDecision.verdict(),
+                score,
+                input
+        );
 
         reasons.add(reasonForDeployment(deploymentTier));
 
         return new ValidationResult(
                 input.candidateId(),
                 input.symbol(),
-                verdict,
+                verdictDecision.verdict(),
                 deploymentTier,
                 score,
                 factors,
@@ -100,32 +108,6 @@ public class DisequilibriumValidationEngine {
         }
 
         return explanations;
-    }
-
-    private Verdict verdict(
-            double score,
-            List<ReasonCode> hardGateFailures,
-            List<ReasonCode> reasons,
-            List<String> explanations
-    ) {
-        if (!hardGateFailures.isEmpty()) {
-            explanations.add("Rejected because one or more hard gates failed before scoring could justify review.");
-            return Verdict.REJECT;
-        }
-
-        if (score >= thresholds.passThreshold()) {
-            explanations.add("Passed: evidence supports a real, meaningful, early disequilibrium with favorable remaining asymmetry.");
-            return Verdict.PASS;
-        }
-
-        if (score >= thresholds.watchThreshold()) {
-            explanations.add("Watch: candidate has a plausible disequilibrium, but confirmation or asymmetry is not strong enough for a pass.");
-            return Verdict.WATCH;
-        }
-
-        reasons.add(ReasonCode.SCORE_BELOW_THRESHOLD);
-        explanations.add("Rejected because the aggregate validation score is below the watch threshold.");
-        return Verdict.REJECT;
     }
 
     private ReasonCode reasonForDeployment(DeploymentTier deploymentTier) {
