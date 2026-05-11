@@ -1,0 +1,35 @@
+# Build
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / runtime
+*.log
+logs/
+hs_err_pid*
+
+# Local env / secrets
+.env
+.env.*
+application-local.yml
+application-local.properties
+
+# Data — keep test fixtures committed but not personal statements
+/data/
+/uploads/
+*.PDF
+*.pdf
+!**/src/test/resources/**/*.pdf

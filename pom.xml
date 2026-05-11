@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>dev.reddragon</groupId>
+    <artifactId>red-dragon-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>red-dragon</name>
+    <description>
+        Probabilistic market-state intelligence platform.
+        Single deployable Spring Boot service composed of internal library modules.
+    </description>
+
+    <!--
+      Layout (opportunity pipeline: candidates -> enrichment -> validation -> review):
+        app             - the only deployable artifact (Spring Boot main, web layer, wiring)
+        lib-ingestion   - pull candidate inputs: SEC filings, news/RSS, market scanners, macro feeds
+        lib-marketdata  - EOD price/volume retrieval, VWAP/ATR/range-position feature derivation
+        lib-analytics   - market-state (regime) classifier + asymmetry scorer; pure functions
+        lib-validation  - hard rules engine + orchestrates analytics into a single verdict
+        lib-persistence - JPA entities, repositories, Flyway migrations
+      The libraries are plain jars with no Spring Boot main; only `app` boots.
+      No portfolio state is tracked here; that arrives only if/when an execution layer is added.
+    -->
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- internal versions kept in lockstep with parent project version -->
+        <red-dragon.version>${project.version}</red-dragon.version>
+
+        <!-- third party -->
+        <jackson.version>2.17.2</jackson.version>
+    </properties>
+
+    <modules>
+        <module>lib-ingestion</module>
+        <module>lib-marketdata</module>
+        <module>lib-analytics</module>
+        <module>lib-validation</module>
+        <module>lib-persistence</module>
+        <module>app</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- internal libs -->
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-ingestion</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-persistence</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-analytics</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-marketdata</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-validation</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
