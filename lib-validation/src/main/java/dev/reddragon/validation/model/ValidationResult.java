@@ -1,6 +1,5 @@
 package dev.reddragon.validation.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -22,7 +21,6 @@ public class ValidationResult {
     List<ReasonCode> reasonCodes;
     List<String> explanations;
 
-    @Builder
     public ValidationResult(
             String candidateId,
             String symbol,
