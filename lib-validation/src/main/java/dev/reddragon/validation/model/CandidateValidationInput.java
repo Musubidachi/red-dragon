@@ -1,5 +1,9 @@
 package dev.reddragon.validation.model;
 
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.Accessors;
+
 import java.util.Objects;
 
 /**
@@ -9,66 +13,88 @@ import java.util.Objects;
  * evidence scores rather than raw market/provider objects. Upstream modules
  * can evolve independently as long as they can produce these scores.
  */
-public record CandidateValidationInput(
-        String candidateId,
-        String symbol,
+@Value
+@Accessors(fluent = true)
+public class CandidateValidationInput {
+    String candidateId;
+    String symbol;
 
-        /** Credibility/objectivity of the catalyst or structural change. */
-        double structuralRealityScore,
+    /** Credibility/objectivity of the catalyst or structural change. */
+    double structuralRealityScore;
 
-        /** Materiality of the catalyst relative to the company, sector, and capital-flow impact. */
-        double materialSignificanceScore,
+    /** Materiality of the catalyst relative to the company, sector, and capital-flow impact. */
+    double materialSignificanceScore;
 
-        /** How early the narrative/equilibrium shift appears to be. Higher means earlier and less saturated. */
-        double earlynessScore,
+    /** How early the narrative/equilibrium shift appears to be. Higher means earlier and less saturated. */
+    double earlynessScore;
 
-        /** Quality of rotational/restoration structure, liquidity stability, and volatility behavior. */
-        double equilibriumQualityScore,
+    /** Quality of rotational/restoration structure, liquidity stability, and volatility behavior. */
+    double equilibriumQualityScore;
 
-        /** Probability that real structural change becomes socially/market amplified. */
-        double reflexivityPotentialScore,
+    /** Probability that real structural change becomes socially/market amplified. */
+    double reflexivityPotentialScore;
 
-        /** Favorability of payoff distribution after current price movement. */
-        double asymmetryScore,
+    /** Favorability of payoff distribution after current price movement. */
+    double asymmetryScore;
 
-        /** Compatibility of the broader regime with this framework. */
-        double regimeCompatibilityScore,
+    /** Compatibility of the broader regime with this framework. */
+    double regimeCompatibilityScore;
 
-        /** Whether the candidate deserves aggressive capital review after all prior validation. */
-        double deploymentConfidenceScore,
+    /** Whether the candidate deserves aggressive capital review after all prior validation. */
+    double deploymentConfidenceScore;
 
-        /** True when the catalyst is based on credible objective information rather than hype alone. */
-        boolean credibleCatalyst,
+    /** True when the catalyst is based on credible objective information rather than hype alone. */
+    boolean credibleCatalyst;
 
-        /** True when required source, market-data, and analytics inputs are present. */
-        boolean requiredDataPresent,
+    /** True when required source, market-data, and analytics inputs are present. */
+    boolean requiredDataPresent;
 
-        /** True when narrative/social propagation is euphoric or fully saturated. */
-        boolean euphoricOrSaturated,
+    /** True when narrative/social propagation is euphoric or fully saturated. */
+    boolean euphoricOrSaturated;
 
-        /** True when liquidity, spread, or volatility conditions are hostile enough to block review. */
-        boolean hostileMarketStructure,
+    /** True when liquidity, spread, or volatility conditions are hostile enough to block review. */
+    boolean hostileMarketStructure;
 
-        /** True when the move appears already fully repriced and asymmetry is gone. */
-        boolean equilibriumAlreadyRepriced,
+    /** True when the move appears already fully repriced and asymmetry is gone. */
+    boolean equilibriumAlreadyRepriced;
 
-        String notes
-) {
-    public CandidateValidationInput {
-        candidateId = normalize(candidateId);
-        symbol = normalize(symbol);
-        notes = notes == null ? "" : notes.trim();
-        Objects.requireNonNull(candidateId, "candidateId is required");
-        Objects.requireNonNull(symbol, "symbol is required");
+    String notes;
 
-        structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
-        materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        earlynessScore = requireNormalized("earlynessScore", earlynessScore);
-        equilibriumQualityScore = requireNormalized("equilibriumQualityScore", equilibriumQualityScore);
-        reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
-        asymmetryScore = requireNormalized("asymmetryScore", asymmetryScore);
-        regimeCompatibilityScore = requireNormalized("regimeCompatibilityScore", regimeCompatibilityScore);
-        deploymentConfidenceScore = requireNormalized("deploymentConfidenceScore", deploymentConfidenceScore);
+    @Builder
+    public CandidateValidationInput(
+            String candidateId,
+            String symbol,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double asymmetryScore,
+            double regimeCompatibilityScore,
+            double deploymentConfidenceScore,
+            boolean credibleCatalyst,
+            boolean requiredDataPresent,
+            boolean euphoricOrSaturated,
+            boolean hostileMarketStructure,
+            boolean equilibriumAlreadyRepriced,
+            String notes
+    ) {
+        this.candidateId = Objects.requireNonNull(normalize(candidateId), "candidateId is required");
+        this.symbol = Objects.requireNonNull(normalize(symbol), "symbol is required");
+        this.notes = notes == null ? "" : notes.trim();
+        this.structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = requireNormalized("earlynessScore", earlynessScore);
+        this.equilibriumQualityScore = requireNormalized("equilibriumQualityScore", equilibriumQualityScore);
+        this.reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
+        this.asymmetryScore = requireNormalized("asymmetryScore", asymmetryScore);
+        this.regimeCompatibilityScore = requireNormalized("regimeCompatibilityScore", regimeCompatibilityScore);
+        this.deploymentConfidenceScore = requireNormalized("deploymentConfidenceScore", deploymentConfidenceScore);
+        this.credibleCatalyst = credibleCatalyst;
+        this.requiredDataPresent = requiredDataPresent;
+        this.euphoricOrSaturated = euphoricOrSaturated;
+        this.hostileMarketStructure = hostileMarketStructure;
+        this.equilibriumAlreadyRepriced = equilibriumAlreadyRepriced;
     }
 
     private static String normalize(String value) {
