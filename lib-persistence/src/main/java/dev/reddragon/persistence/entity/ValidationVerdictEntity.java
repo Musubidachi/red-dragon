@@ -6,11 +6,20 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "validation_verdict")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class ValidationVerdictEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,63 +49,4 @@ public class ValidationVerdictEntity {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-
-    protected ValidationVerdictEntity() {
-    }
-
-    public ValidationVerdictEntity(
-            String candidateId,
-            String symbol,
-            String verdict,
-            String deploymentTier,
-            double score,
-            String reasonCodes,
-            String explanations,
-            Instant createdAt
-    ) {
-        this.candidateId = candidateId;
-        this.symbol = symbol;
-        this.verdict = verdict;
-        this.deploymentTier = deploymentTier;
-        this.score = score;
-        this.reasonCodes = reasonCodes;
-        this.explanations = explanations;
-        this.createdAt = createdAt;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getCandidateId() {
-        return candidateId;
-    }
-
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public String getVerdict() {
-        return verdict;
-    }
-
-    public String getDeploymentTier() {
-        return deploymentTier;
-    }
-
-    public double getScore() {
-        return score;
-    }
-
-    public String getReasonCodes() {
-        return reasonCodes;
-    }
-
-    public String getExplanations() {
-        return explanations;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }
