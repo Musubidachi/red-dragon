@@ -10,6 +10,7 @@ import dev.reddragon.marketdata.service.MarketFeatureCalculator;
 import dev.reddragon.validation.engine.DisequilibriumValidationEngine;
 import dev.reddragon.validation.model.CandidateValidationInput;
 import dev.reddragon.validation.model.ValidationResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/review")
+@RequiredArgsConstructor
 public class ManualReviewController {
 
     private final ManualCandidateIngestionService ingestionService;
@@ -26,51 +28,44 @@ public class ManualReviewController {
     private final DeterministicAnalyticsService analyticsService;
     private final DisequilibriumValidationEngine validationEngine;
 
-    public ManualReviewController(
-            ManualCandidateIngestionService ingestionService,
-            MarketFeatureCalculator marketFeatureCalculator,
-            DeterministicAnalyticsService analyticsService,
-            DisequilibriumValidationEngine validationEngine
-    ) {
-        this.ingestionService = ingestionService;
-        this.marketFeatureCalculator = marketFeatureCalculator;
-        this.analyticsService = analyticsService;
-        this.validationEngine = validationEngine;
-    }
-
     @PostMapping("/manual")
     public ManualReviewResponse reviewManualCandidate(@RequestBody ManualReviewRequest request) {
         TradeCandidate candidate = ingestionService.ingest(
-                request.symbol(),
-                request.companyName(),
-                request.catalystType(),
-                request.headline(),
-                request.summary(),
-                request.structuralRealityScore(),
-                request.materialSignificanceScore(),
-                request.earlynessScore(),
-                request.reflexivityPotentialScore()
+                request.getSymbol(),
+                request.getCompanyName(),
+                request.getCatalystType(),
+                request.getHeadline(),
+                request.getSummary(),
+                request.getStructuralRealityScore(),
+                request.getMaterialSignificanceScore(),
+                request.getEarlynessScore(),
+                request.getReflexivityPotentialScore()
         );
 
-        List<MarketBar> bars = request.bars() == null
+        List<MarketBar> bars = request.getBars() == null
                 ? List.of()
-                : request.bars().stream()
-                .map(bar -> new MarketBar(
-                        candidate.symbol(),
-                        bar.date(),
-                        bar.open(),
-                        bar.high(),
-                        bar.low(),
-                        bar.close(),
-                        bar.volume()
-                ))
+                : request.getBars().stream()
+                .map(bar -> MarketBar.builder()
+                        .symbol(candidate.symbol())
+                        .date(bar.getDate())
+                        .open(bar.getOpen())
+                        .high(bar.getHigh())
+                        .low(bar.getLow())
+                        .close(bar.getClose())
+                        .volume(bar.getVolume())
+                        .build())
                 .toList();
 
         MarketDataSnapshot marketData = marketFeatureCalculator.calculate(candidate.symbol(), bars);
         AnalyticsSnapshot analytics = analyticsService.analyze(candidate, marketData);
         ValidationResult validation = validationEngine.validate(validationInput(candidate, marketData, analytics));
 
-        return new ManualReviewResponse(candidate, marketData, analytics, validation);
+        return ManualReviewResponse.builder()
+                .candidate(candidate)
+                .marketData(marketData)
+                .analytics(analytics)
+                .validation(validation)
+                .build();
     }
 
     private CandidateValidationInput validationInput(
