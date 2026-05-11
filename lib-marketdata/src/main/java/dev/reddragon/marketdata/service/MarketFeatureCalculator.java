@@ -11,48 +11,63 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Deterministic market-feature calculator using daily bars.
+ * Calculates deterministic market features from daily bars.
  */
 public class MarketFeatureCalculator {
 
-    public MarketDataSnapshot calculate(String symbol, List<MarketBar> bars) {
-        if (symbol == null || symbol.isBlank()) {
-            return empty("", MarketDataQuality.MISSING_SYMBOL, "Symbol is missing.");
-        }
-        if (bars == null || bars.isEmpty()) {
-            return empty(symbol, MarketDataQuality.EMPTY_BARS, "No market bars supplied.");
+    /**
+     * Main processing flow.
+     */
+    public MarketDataSnapshot process(String symbol, List<MarketBar> bars) {
+        if (missingSymbol(symbol)) {
+            return emptySnapshot("UNKNOWN", MarketDataQuality.MISSING_SYMBOL, "Symbol is missing.");
         }
 
-        List<MarketBar> sorted = bars.stream()
+        if (missingBars(bars)) {
+            return emptySnapshot(symbol, MarketDataQuality.EMPTY_BARS, "No market bars supplied.");
+        }
+
+        List<MarketBar> sortedBars = sortBars(bars);
+        if (insufficientHistory(sortedBars)) {
+            return emptySnapshot(symbol, MarketDataQuality.INSUFFICIENT_HISTORY, "At least two bars are required.");
+        }
+
+        return buildSnapshot(symbol, sortedBars);
+    }
+
+    private boolean missingSymbol(String symbol) {
+        return symbol == null || symbol.isBlank();
+    }
+
+    private boolean missingBars(List<MarketBar> bars) {
+        return bars == null || bars.isEmpty();
+    }
+
+    private List<MarketBar> sortBars(List<MarketBar> bars) {
+        return bars.stream()
                 .sorted(Comparator.comparing(MarketBar::date))
                 .toList();
+    }
 
-        if (sorted.size() < 2) {
-            return empty(symbol, MarketDataQuality.INSUFFICIENT_HISTORY, "At least two bars are required.");
-        }
+    private boolean insufficientHistory(List<MarketBar> bars) {
+        return bars.size() < 2;
+    }
 
-        MarketBar latest = sorted.get(sorted.size() - 1);
-        MarketBar previous = sorted.get(sorted.size() - 2);
-        List<String> notes = new ArrayList<>();
+    private MarketDataSnapshot buildSnapshot(String symbol, List<MarketBar> bars) {
+        MarketBar latestBar = latestBar(bars);
+        MarketBar previousBar = previousBar(bars);
 
-        double latestClose = latest.close();
-        double previousClose = previous.close();
-        double gapPercent = MarketMathUtils.safePercentChange(latest.open(), previousClose);
-        double atr = averageTrueRange(sorted);
-        double rangePosition = latest.range() == 0 ? 0.5 : (latest.close() - latest.low()) / latest.range();
-        double avgVolume = sorted.stream().mapToLong(MarketBar::volume).average().orElse(0.0);
-        double liquidityScore = liquidityScore(avgVolume);
-        double volatilityStabilityScore = volatilityStabilityScore(latestClose, atr);
+        double latestClose = latestBar.close();
+        double previousClose = previousBar.close();
+        double gapPercent = gapPercent(latestBar, previousClose);
+        double averageTrueRange = averageTrueRange(bars);
+        double rangePosition = rangePosition(latestBar);
+        double averageVolume = averageVolume(bars);
+        double liquidityScore = liquidityScore(averageVolume);
+        double volatilityStabilityScore = volatilityStabilityScore(latestClose, averageTrueRange);
 
-        MarketDataQuality quality = MarketDataQuality.COMPLETE;
-        if (sorted.size() < 14) {
-            quality = MarketDataQuality.INSUFFICIENT_HISTORY;
-            notes.add("Fewer than 14 bars supplied; ATR is usable but less stable.");
-        }
-        if (liquidityScore < 0.35) {
-            quality = MarketDataQuality.ILLIQUID;
-            notes.add("Average volume is low; liquidity risk is elevated.");
-        }
+        List<String> notes = notes(bars, liquidityScore);
+        MarketDataQuality quality = quality(bars, liquidityScore);
 
         return new MarketDataSnapshot(
                 symbol,
@@ -60,9 +75,9 @@ public class MarketFeatureCalculator {
                 latestClose,
                 previousClose,
                 gapPercent,
-                atr,
+                averageTrueRange,
                 rangePosition,
-                avgVolume,
+                averageVolume,
                 liquidityScore,
                 volatilityStabilityScore,
                 quality,
@@ -70,9 +85,66 @@ public class MarketFeatureCalculator {
         );
     }
 
-    private MarketDataSnapshot empty(String symbol, MarketDataQuality quality, String note) {
+    private MarketBar latestBar(List<MarketBar> bars) {
+        return bars.get(bars.size() - 1);
+    }
+
+    private MarketBar previousBar(List<MarketBar> bars) {
+        return bars.get(bars.size() - 2);
+    }
+
+    private double gapPercent(MarketBar latestBar, double previousClose) {
+        return MarketMathUtils.safePercentChange(latestBar.open(), previousClose);
+    }
+
+    private double rangePosition(MarketBar latestBar) {
+        if (latestBar.range() == 0) {
+            return 0.5;
+        }
+
+        return (latestBar.close() - latestBar.low()) / latestBar.range();
+    }
+
+    private double averageVolume(List<MarketBar> bars) {
+        return bars.stream()
+                .mapToLong(MarketBar::volume)
+                .average()
+                .orElse(0.0);
+    }
+
+    private List<String> notes(List<MarketBar> bars, double liquidityScore) {
+        List<String> notes = new ArrayList<>();
+
+        if (bars.size() < 14) {
+            notes.add("Fewer than 14 bars supplied; ATR is usable but less stable.");
+        }
+
+        if (liquidityScore < 0.35) {
+            notes.add("Average volume is low; liquidity risk is elevated.");
+        }
+
+        return notes;
+    }
+
+    private MarketDataQuality quality(List<MarketBar> bars, double liquidityScore) {
+        if (liquidityScore < 0.35) {
+            return MarketDataQuality.ILLIQUID;
+        }
+
+        if (bars.size() < 14) {
+            return MarketDataQuality.INSUFFICIENT_HISTORY;
+        }
+
+        return MarketDataQuality.COMPLETE;
+    }
+
+    private MarketDataSnapshot emptySnapshot(
+            String symbol,
+            MarketDataQuality quality,
+            String note
+    ) {
         return new MarketDataSnapshot(
-                symbol == null || symbol.isBlank() ? "UNKNOWN" : symbol,
+                symbol,
                 Instant.now(),
                 0,
                 0,
@@ -87,40 +159,64 @@ public class MarketFeatureCalculator {
         );
     }
 
-    private double averageTrueRange(List<MarketBar> sorted) {
+    private double averageTrueRange(List<MarketBar> bars) {
         double total = 0.0;
         int count = 0;
-        for (int i = 1; i < sorted.size(); i++) {
-            MarketBar current = sorted.get(i);
-            MarketBar previous = sorted.get(i - 1);
-            double trueRange = Math.max(
-                    current.high() - current.low(),
-                    Math.max(
-                            Math.abs(current.high() - previous.close()),
-                            Math.abs(current.low() - previous.close())
-                    )
-            );
-            total += trueRange;
+
+        for (int index = 1; index < bars.size(); index++) {
+            total += trueRange(bars.get(index), bars.get(index - 1));
             count++;
         }
+
         return count == 0 ? 0.0 : total / count;
     }
 
+    private double trueRange(MarketBar currentBar, MarketBar previousBar) {
+        return Math.max(
+                currentBar.high() - currentBar.low(),
+                Math.max(
+                        Math.abs(currentBar.high() - previousBar.close()),
+                        Math.abs(currentBar.low() - previousBar.close())
+                )
+        );
+    }
+
     private double liquidityScore(double averageVolume) {
-        if (averageVolume >= 5_000_000) return 1.0;
-        if (averageVolume >= 1_000_000) return 0.8;
-        if (averageVolume >= 500_000) return 0.6;
-        if (averageVolume >= 100_000) return 0.35;
+        if (averageVolume >= 5_000_000) {
+            return 1.0;
+        }
+        if (averageVolume >= 1_000_000) {
+            return 0.8;
+        }
+        if (averageVolume >= 500_000) {
+            return 0.6;
+        }
+        if (averageVolume >= 100_000) {
+            return 0.35;
+        }
         return 0.15;
     }
 
-    private double volatilityStabilityScore(double latestClose, double atr) {
-        if (latestClose <= 0 || atr <= 0) return 0.5;
-        double atrPercent = atr / latestClose;
-        if (atrPercent <= 0.03) return 0.9;
-        if (atrPercent <= 0.06) return 0.75;
-        if (atrPercent <= 0.10) return 0.55;
-        if (atrPercent <= 0.15) return 0.35;
+    private double volatilityStabilityScore(double latestClose, double averageTrueRange) {
+        if (latestClose <= 0 || averageTrueRange <= 0) {
+            return 0.5;
+        }
+
+        double atrPercent = averageTrueRange / latestClose;
+
+        if (atrPercent <= 0.03) {
+            return 0.9;
+        }
+        if (atrPercent <= 0.06) {
+            return 0.75;
+        }
+        if (atrPercent <= 0.10) {
+            return 0.55;
+        }
+        if (atrPercent <= 0.15) {
+            return 0.35;
+        }
+
         return 0.15;
     }
 }
