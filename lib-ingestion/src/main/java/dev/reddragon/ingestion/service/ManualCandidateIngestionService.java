@@ -26,21 +26,21 @@ public class ManualCandidateIngestionService {
             double earlynessScore,
             double reflexivityPotentialScore
     ) {
-        return new TradeCandidate(
-                UUID.randomUUID().toString(),
-                symbol,
-                companyName,
-                catalystType == null ? CandidateCatalystType.MANUAL_THESIS : catalystType,
-                SourceType.MANUAL,
-                "manual",
-                "",
-                Instant.now(),
-                headline,
-                summary,
-                structuralRealityScore,
-                materialSignificanceScore,
-                earlynessScore,
-                reflexivityPotentialScore
-        );
+        return TradeCandidate.builder()
+                .candidateId(UUID.randomUUID().toString())
+                .symbol(symbol)
+                .companyName(companyName)
+                .catalystType(catalystType == null ? CandidateCatalystType.MANUAL_THESIS : catalystType)
+                .sourceType(SourceType.MANUAL)
+                .sourceId("manual")
+                .sourceUrl("")
+                .observedAt(Instant.now())
+                .headline(headline)
+                .summary(summary)
+                .structuralRealityScore(structuralRealityScore)
+                .materialSignificanceScore(materialSignificanceScore)
+                .earlynessScore(earlynessScore)
+                .reflexivityPotentialScore(reflexivityPotentialScore)
+                .build();
     }
 }
