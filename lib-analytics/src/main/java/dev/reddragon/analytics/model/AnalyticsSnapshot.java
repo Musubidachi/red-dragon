@@ -1,6 +1,5 @@
 package dev.reddragon.analytics.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -21,7 +20,6 @@ public class AnalyticsSnapshot {
     double deploymentConfidenceScore;
     List<String> reasonNotes;
 
-    @Builder
     public AnalyticsSnapshot(
             String candidateId,
             String symbol,
