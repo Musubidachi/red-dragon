@@ -35,7 +35,7 @@ class DisequilibriumValidationEngineTest {
                 "Government or contract-style catalyst with early propagation."
         );
 
-        ValidationResult result = engine.validate(input);
+        ValidationResult result = engine.process(input);
 
         assertEquals(Verdict.PASS, result.verdict());
         assertEquals(DeploymentTier.CONCENTRATED, result.deploymentTier());
@@ -66,7 +66,7 @@ class DisequilibriumValidationEngineTest {
                 "High social excitement without credible structural evidence."
         );
 
-        ValidationResult result = engine.validate(input);
+        ValidationResult result = engine.process(input);
 
         assertEquals(Verdict.REJECT, result.verdict());
         assertEquals(DeploymentTier.NONE, result.deploymentTier());
@@ -95,7 +95,7 @@ class DisequilibriumValidationEngineTest {
                 "Real catalyst, but market/social propagation appears fully saturated."
         );
 
-        ValidationResult result = engine.validate(input);
+        ValidationResult result = engine.process(input);
 
         assertEquals(Verdict.REJECT, result.verdict());
         assertEquals(DeploymentTier.NONE, result.deploymentTier());
@@ -124,7 +124,7 @@ class DisequilibriumValidationEngineTest {
                 "Real and somewhat early, but reflexivity and deployment confidence are not strong yet."
         );
 
-        ValidationResult result = engine.validate(input);
+        ValidationResult result = engine.process(input);
 
         assertEquals(Verdict.WATCH, result.verdict());
         assertEquals(DeploymentTier.PROBE, result.deploymentTier());
