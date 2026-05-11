@@ -1,5 +1,6 @@
 package dev.reddragon.validation.model;
 
+import dev.reddragon.validation.util.ValidationScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -32,13 +33,8 @@ public class ValidationFactor {
         this.stage = Objects.requireNonNull(stage, "stage is required");
         this.reasonCode = Objects.requireNonNull(reasonCode, "reasonCode is required");
         this.explanation = explanation == null ? "" : explanation;
-        if (score < 0.0 || score > 1.0) {
-            throw new IllegalArgumentException("score must be between 0.0 and 1.0");
-        }
-        if (weight < 0.0) {
-            throw new IllegalArgumentException("weight must be non-negative");
-        }
-        this.score = score;
+        this.score = ValidationScoreUtils.requireNormalized("score", score);
+        ValidationScoreUtils.requireNonNegative("weight", weight);
         this.weight = weight;
     }
 
