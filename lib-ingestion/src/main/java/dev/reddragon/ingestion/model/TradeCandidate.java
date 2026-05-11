@@ -1,39 +1,61 @@
 package dev.reddragon.ingestion.model;
 
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.Accessors;
+
 import java.time.Instant;
 import java.util.Objects;
 
-public record TradeCandidate(
-        String candidateId,
-        String symbol,
-        String companyName,
-        CandidateCatalystType catalystType,
-        SourceType sourceType,
-        String sourceId,
-        String sourceUrl,
-        Instant observedAt,
-        String headline,
-        String summary,
-        double structuralRealityScore,
-        double materialSignificanceScore,
-        double earlynessScore,
-        double reflexivityPotentialScore
-) {
-    public TradeCandidate {
-        candidateId = requireText(candidateId, "candidateId");
-        symbol = requireText(symbol, "symbol").toUpperCase();
-        companyName = clean(companyName);
-        Objects.requireNonNull(catalystType, "catalystType is required");
-        Objects.requireNonNull(sourceType, "sourceType is required");
-        sourceId = clean(sourceId);
-        sourceUrl = clean(sourceUrl);
-        observedAt = observedAt == null ? Instant.now() : observedAt;
-        headline = clean(headline);
-        summary = clean(summary);
-        structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
-        materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        earlynessScore = requireNormalized("earlynessScore", earlynessScore);
-        reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
+@Value
+@Accessors(fluent = true)
+public class TradeCandidate {
+    String candidateId;
+    String symbol;
+    String companyName;
+    CandidateCatalystType catalystType;
+    SourceType sourceType;
+    String sourceId;
+    String sourceUrl;
+    Instant observedAt;
+    String headline;
+    String summary;
+    double structuralRealityScore;
+    double materialSignificanceScore;
+    double earlynessScore;
+    double reflexivityPotentialScore;
+
+    @Builder
+    public TradeCandidate(
+            String candidateId,
+            String symbol,
+            String companyName,
+            CandidateCatalystType catalystType,
+            SourceType sourceType,
+            String sourceId,
+            String sourceUrl,
+            Instant observedAt,
+            String headline,
+            String summary,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double reflexivityPotentialScore
+    ) {
+        this.candidateId = requireText(candidateId, "candidateId");
+        this.symbol = requireText(symbol, "symbol").toUpperCase();
+        this.companyName = clean(companyName);
+        this.catalystType = Objects.requireNonNull(catalystType, "catalystType is required");
+        this.sourceType = Objects.requireNonNull(sourceType, "sourceType is required");
+        this.sourceId = clean(sourceId);
+        this.sourceUrl = clean(sourceUrl);
+        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.headline = clean(headline);
+        this.summary = clean(summary);
+        this.structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = requireNormalized("earlynessScore", earlynessScore);
+        this.reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
     }
 
     public boolean hasCredibleStructuralCatalyst() {
