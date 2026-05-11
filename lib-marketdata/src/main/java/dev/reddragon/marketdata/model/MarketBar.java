@@ -1,21 +1,35 @@
 package dev.reddragon.marketdata.model;
 
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.Accessors;
+
 import java.time.LocalDate;
 
-public record MarketBar(
-        String symbol,
-        LocalDate date,
-        double open,
-        double high,
-        double low,
-        double close,
-        long volume
-) {
-    public MarketBar {
+@Value
+@Accessors(fluent = true)
+public class MarketBar {
+    String symbol;
+    LocalDate date;
+    double open;
+    double high;
+    double low;
+    double close;
+    long volume;
+
+    @Builder
+    public MarketBar(
+            String symbol,
+            LocalDate date,
+            double open,
+            double high,
+            double low,
+            double close,
+            long volume
+    ) {
         if (symbol == null || symbol.isBlank()) {
             throw new IllegalArgumentException("symbol is required");
         }
-        symbol = symbol.trim().toUpperCase();
         if (date == null) {
             throw new IllegalArgumentException("date is required");
         }
@@ -28,6 +42,14 @@ public record MarketBar(
         if (volume < 0) {
             throw new IllegalArgumentException("volume must be non-negative");
         }
+
+        this.symbol = symbol.trim().toUpperCase();
+        this.date = date;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.volume = volume;
     }
 
     public double range() {
