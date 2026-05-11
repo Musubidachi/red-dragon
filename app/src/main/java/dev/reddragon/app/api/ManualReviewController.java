@@ -45,27 +45,22 @@ public class ManualReviewController {
         List<MarketBar> bars = request.getBars() == null
                 ? List.of()
                 : request.getBars().stream()
-                .map(bar -> MarketBar.builder()
-                        .symbol(candidate.symbol())
-                        .date(bar.getDate())
-                        .open(bar.getOpen())
-                        .high(bar.getHigh())
-                        .low(bar.getLow())
-                        .close(bar.getClose())
-                        .volume(bar.getVolume())
-                        .build())
+                .map(bar -> new MarketBar(
+                        candidate.symbol(),
+                        bar.getDate(),
+                        bar.getOpen(),
+                        bar.getHigh(),
+                        bar.getLow(),
+                        bar.getClose(),
+                        bar.getVolume()
+                ))
                 .toList();
 
         MarketDataSnapshot marketData = marketFeatureCalculator.calculate(candidate.symbol(), bars);
         AnalyticsSnapshot analytics = analyticsService.analyze(candidate, marketData);
         ValidationResult validation = validationEngine.validate(validationInput(candidate, marketData, analytics));
 
-        return ManualReviewResponse.builder()
-                .candidate(candidate)
-                .marketData(marketData)
-                .analytics(analytics)
-                .validation(validation)
-                .build();
+        return new ManualReviewResponse(candidate, marketData, analytics, validation);
     }
 
     private CandidateValidationInput validationInput(
@@ -73,23 +68,23 @@ public class ManualReviewController {
             MarketDataSnapshot marketData,
             AnalyticsSnapshot analytics
     ) {
-        return CandidateValidationInput.builder()
-                .candidateId(candidate.candidateId())
-                .symbol(candidate.symbol())
-                .structuralRealityScore(candidate.structuralRealityScore())
-                .materialSignificanceScore(candidate.materialSignificanceScore())
-                .earlynessScore(candidate.earlynessScore())
-                .equilibriumQualityScore(analytics.equilibriumQualityScore())
-                .reflexivityPotentialScore(analytics.reflexivityPotentialScore())
-                .asymmetryScore(analytics.asymmetryScore())
-                .regimeCompatibilityScore(analytics.regimeCompatibilityScore())
-                .deploymentConfidenceScore(analytics.deploymentConfidenceScore())
-                .credibleCatalyst(candidate.hasCredibleStructuralCatalyst())
-                .requiredDataPresent(marketData.complete())
-                .euphoricOrSaturated(candidate.earlynessScore() < 0.45)
-                .hostileMarketStructure(marketData.liquidityScore() < 0.35 || marketData.volatilityStabilityScore() < 0.35)
-                .equilibriumAlreadyRepriced(marketData.rangePosition() > 0.90)
-                .notes(candidate.summary())
-                .build();
+        return new CandidateValidationInput(
+                candidate.candidateId(),
+                candidate.symbol(),
+                candidate.structuralRealityScore(),
+                candidate.materialSignificanceScore(),
+                candidate.earlynessScore(),
+                analytics.equilibriumQualityScore(),
+                analytics.reflexivityPotentialScore(),
+                analytics.asymmetryScore(),
+                analytics.regimeCompatibilityScore(),
+                analytics.deploymentConfidenceScore(),
+                candidate.hasCredibleStructuralCatalyst(),
+                marketData.complete(),
+                candidate.earlynessScore() < 0.45,
+                marketData.liquidityScore() < 0.35 || marketData.volatilityStabilityScore() < 0.35,
+                marketData.rangePosition() > 0.90,
+                candidate.summary()
+        );
     }
 }
