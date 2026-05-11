@@ -8,6 +8,7 @@ import dev.reddragon.validation.model.ValidationFactor;
 import dev.reddragon.validation.model.ValidationResult;
 import dev.reddragon.validation.model.ValidationStage;
 import dev.reddragon.validation.model.Verdict;
+import dev.reddragon.validation.util.ValidationScoreUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -207,7 +208,7 @@ public class DisequilibriumValidationEngine {
             weighted += factor.weightedScore();
             totalWeight += factor.weight();
         }
-        return totalWeight == 0.0 ? 0.0 : weighted / totalWeight;
+        return ValidationScoreUtils.weightedAverage(weighted, totalWeight);
     }
 
     private DeploymentTier deploymentTier(Verdict verdict, double score, CandidateValidationInput input) {
