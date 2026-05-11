@@ -1,5 +1,6 @@
 package dev.reddragon.validation.model;
 
+import dev.reddragon.validation.util.ValidationScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -80,14 +81,14 @@ public class CandidateValidationInput {
         this.candidateId = Objects.requireNonNull(normalize(candidateId), "candidateId is required");
         this.symbol = Objects.requireNonNull(normalize(symbol), "symbol is required");
         this.notes = notes == null ? "" : notes.trim();
-        this.structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
-        this.materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        this.earlynessScore = requireNormalized("earlynessScore", earlynessScore);
-        this.equilibriumQualityScore = requireNormalized("equilibriumQualityScore", equilibriumQualityScore);
-        this.reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
-        this.asymmetryScore = requireNormalized("asymmetryScore", asymmetryScore);
-        this.regimeCompatibilityScore = requireNormalized("regimeCompatibilityScore", regimeCompatibilityScore);
-        this.deploymentConfidenceScore = requireNormalized("deploymentConfidenceScore", deploymentConfidenceScore);
+        this.structuralRealityScore = ValidationScoreUtils.requireNormalized("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = ValidationScoreUtils.requireNormalized("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = ValidationScoreUtils.requireNormalized("earlynessScore", earlynessScore);
+        this.equilibriumQualityScore = ValidationScoreUtils.requireNormalized("equilibriumQualityScore", equilibriumQualityScore);
+        this.reflexivityPotentialScore = ValidationScoreUtils.requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
+        this.asymmetryScore = ValidationScoreUtils.requireNormalized("asymmetryScore", asymmetryScore);
+        this.regimeCompatibilityScore = ValidationScoreUtils.requireNormalized("regimeCompatibilityScore", regimeCompatibilityScore);
+        this.deploymentConfidenceScore = ValidationScoreUtils.requireNormalized("deploymentConfidenceScore", deploymentConfidenceScore);
         this.credibleCatalyst = credibleCatalyst;
         this.requiredDataPresent = requiredDataPresent;
         this.euphoricOrSaturated = euphoricOrSaturated;
@@ -100,12 +101,5 @@ public class CandidateValidationInput {
             return null;
         }
         return value.trim();
-    }
-
-    private static double requireNormalized(String fieldName, double value) {
-        if (value < 0.0 || value > 1.0) {
-            throw new IllegalArgumentException(fieldName + " must be between 0.0 and 1.0");
-        }
-        return value;
     }
 }
