@@ -74,70 +74,70 @@ public class DisequilibriumValidationEngine {
         DeploymentTier deploymentTier = deploymentTier(verdict, score, input);
         reasons.add(reasonForDeployment(deploymentTier));
 
-        return new ValidationResult(
-                input.candidateId(),
-                input.symbol(),
-                verdict,
-                deploymentTier,
-                score,
-                factors,
-                dedupe(reasons),
-                dedupeStrings(explanations)
-        );
+        return ValidationResult.builder()
+                .candidateId(input.candidateId())
+                .symbol(input.symbol())
+                .verdict(verdict)
+                .deploymentTier(deploymentTier)
+                .score(score)
+                .factors(factors)
+                .reasonCodes(dedupe(reasons))
+                .explanations(dedupeStrings(explanations))
+                .build();
     }
 
     private List<ValidationFactor> factors(CandidateValidationInput input) {
         return List.of(
-                new ValidationFactor(
+                factor(
                         ValidationStage.STRUCTURAL_REALITY,
                         input.structuralRealityScore(),
                         thresholds.structuralRealityWeight(),
                         structuralReason(input),
                         structuralExplanation(input)
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.MATERIAL_SIGNIFICANCE,
                         input.materialSignificanceScore(),
                         thresholds.materialSignificanceWeight(),
                         materialReason(input.materialSignificanceScore()),
                         materialExplanation(input.materialSignificanceScore())
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.EARLYNESS,
                         input.earlynessScore(),
                         thresholds.earlynessWeight(),
                         earlynessReason(input),
                         earlynessExplanation(input)
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.EQUILIBRIUM_QUALITY,
                         input.equilibriumQualityScore(),
                         thresholds.equilibriumQualityWeight(),
                         equilibriumReason(input),
                         equilibriumExplanation(input)
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.REFLEXIVITY_POTENTIAL,
                         input.reflexivityPotentialScore(),
                         thresholds.reflexivityPotentialWeight(),
                         reflexivityReason(input),
                         reflexivityExplanation(input)
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.ASYMMETRY_QUALITY,
                         input.asymmetryScore(),
                         thresholds.asymmetryWeight(),
                         asymmetryReason(input),
                         asymmetryExplanation(input)
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.REGIME_COMPATIBILITY,
                         input.regimeCompatibilityScore(),
                         thresholds.regimeCompatibilityWeight(),
                         regimeReason(input.regimeCompatibilityScore()),
                         regimeExplanation(input.regimeCompatibilityScore())
                 ),
-                new ValidationFactor(
+                factor(
                         ValidationStage.DEPLOYMENT_CONFIDENCE,
                         input.deploymentConfidenceScore(),
                         thresholds.deploymentConfidenceWeight(),
@@ -145,6 +145,22 @@ public class DisequilibriumValidationEngine {
                         deploymentConfidenceExplanation(input.deploymentConfidenceScore())
                 )
         );
+    }
+
+    private ValidationFactor factor(
+            ValidationStage stage,
+            double score,
+            double weight,
+            ReasonCode reasonCode,
+            String explanation
+    ) {
+        return ValidationFactor.builder()
+                .stage(stage)
+                .score(score)
+                .weight(weight)
+                .reasonCode(reasonCode)
+                .explanation(explanation)
+                .build();
     }
 
     private List<ReasonCode> hardGateFailures(CandidateValidationInput input) {
