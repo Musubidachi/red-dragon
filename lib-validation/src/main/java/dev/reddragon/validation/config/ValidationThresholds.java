@@ -1,6 +1,5 @@
 package dev.reddragon.validation.config;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -61,7 +60,6 @@ public class ValidationThresholds {
         );
     }
 
-    @Builder
     public ValidationThresholds(
             double passThreshold,
             double watchThreshold,
