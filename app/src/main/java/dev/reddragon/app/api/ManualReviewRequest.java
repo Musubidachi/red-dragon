@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Accessors(fluent = true)
 public class ManualReviewRequest {
     private String symbol;
     private String companyName;
@@ -31,7 +29,6 @@ public class ManualReviewRequest {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    @Accessors(fluent = true)
     public static class BarRequest {
         private LocalDate date;
         private double open;
