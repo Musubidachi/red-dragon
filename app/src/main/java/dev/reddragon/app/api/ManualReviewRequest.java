@@ -1,37 +1,43 @@
 package dev.reddragon.app.api;
 
 import dev.reddragon.ingestion.model.CandidateCatalystType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Value
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Accessors(fluent = true)
 public class ManualReviewRequest {
-    String symbol;
-    String companyName;
-    CandidateCatalystType catalystType;
-    String headline;
-    String summary;
-    double structuralRealityScore;
-    double materialSignificanceScore;
-    double earlynessScore;
-    double reflexivityPotentialScore;
-    List<BarRequest> bars;
+    private String symbol;
+    private String companyName;
+    private CandidateCatalystType catalystType;
+    private String headline;
+    private String summary;
+    private double structuralRealityScore;
+    private double materialSignificanceScore;
+    private double earlynessScore;
+    private double reflexivityPotentialScore;
+    private List<BarRequest> bars;
 
-    @Value
+    @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Accessors(fluent = true)
     public static class BarRequest {
-        LocalDate date;
-        double open;
-        double high;
-        double low;
-        double close;
-        long volume;
+        private LocalDate date;
+        private double open;
+        private double high;
+        private double low;
+        private double close;
+        private long volume;
     }
 }
