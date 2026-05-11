@@ -1,5 +1,6 @@
 package dev.reddragon.marketdata.model;
 
+import dev.reddragon.marketdata.util.MarketMathUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -45,21 +46,15 @@ public class MarketDataSnapshot {
         this.previousClose = previousClose;
         this.gapPercent = gapPercent;
         this.averageTrueRange = averageTrueRange;
-        this.rangePosition = clamp(rangePosition);
+        this.rangePosition = MarketMathUtils.clamp(rangePosition);
         this.averageVolume = averageVolume;
-        this.liquidityScore = clamp(liquidityScore);
-        this.volatilityStabilityScore = clamp(volatilityStabilityScore);
+        this.liquidityScore = MarketMathUtils.clamp(liquidityScore);
+        this.volatilityStabilityScore = MarketMathUtils.clamp(volatilityStabilityScore);
         this.quality = quality == null ? MarketDataQuality.COMPLETE : quality;
         this.notes = List.copyOf(notes == null ? List.of() : notes);
     }
 
     public boolean complete() {
         return quality == MarketDataQuality.COMPLETE;
-    }
-
-    private static double clamp(double value) {
-        if (value < 0.0) return 0.0;
-        if (value > 1.0) return 1.0;
-        return value;
     }
 }
