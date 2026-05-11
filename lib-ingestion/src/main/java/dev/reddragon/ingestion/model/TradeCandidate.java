@@ -1,6 +1,5 @@
 package dev.reddragon.ingestion.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -25,7 +24,6 @@ public class TradeCandidate {
     double earlynessScore;
     double reflexivityPotentialScore;
 
-    @Builder
     public TradeCandidate(
             String candidateId,
             String symbol,
