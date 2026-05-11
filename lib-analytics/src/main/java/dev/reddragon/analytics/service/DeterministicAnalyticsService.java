@@ -39,18 +39,18 @@ public class DeterministicAnalyticsService {
                         + regimeCompatibility * 0.10
         );
 
-        return AnalyticsSnapshot.builder()
-                .candidateId(candidate.candidateId())
-                .symbol(candidate.symbol())
-                .observedAt(Instant.now())
-                .regimeLabel(regime)
-                .regimeCompatibilityScore(regimeCompatibility)
-                .asymmetryScore(asymmetry)
-                .equilibriumQualityScore(equilibriumQuality)
-                .reflexivityPotentialScore(reflexivity)
-                .deploymentConfidenceScore(deploymentConfidence)
-                .reasonNotes(notes)
-                .build();
+        return new AnalyticsSnapshot(
+                candidate.candidateId(),
+                candidate.symbol(),
+                Instant.now(),
+                regime,
+                regimeCompatibility,
+                asymmetry,
+                equilibriumQuality,
+                reflexivity,
+                deploymentConfidence,
+                notes
+        );
     }
 
     private RegimeLabel regime(MarketDataSnapshot marketData, List<String> notes) {
