@@ -1,5 +1,6 @@
 package dev.reddragon.ingestion.model;
 
+import dev.reddragon.ingestion.util.IngestionTextUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -40,16 +41,16 @@ public class TradeCandidate {
             double earlynessScore,
             double reflexivityPotentialScore
     ) {
-        this.candidateId = requireText(candidateId, "candidateId");
-        this.symbol = requireText(symbol, "symbol").toUpperCase();
-        this.companyName = clean(companyName);
+        this.candidateId = IngestionTextUtils.requireText(candidateId, "candidateId");
+        this.symbol = IngestionTextUtils.normalizeSymbol(symbol);
+        this.companyName = IngestionTextUtils.clean(companyName);
         this.catalystType = Objects.requireNonNull(catalystType, "catalystType is required");
         this.sourceType = Objects.requireNonNull(sourceType, "sourceType is required");
-        this.sourceId = clean(sourceId);
-        this.sourceUrl = clean(sourceUrl);
+        this.sourceId = IngestionTextUtils.clean(sourceId);
+        this.sourceUrl = IngestionTextUtils.clean(sourceUrl);
         this.observedAt = observedAt == null ? Instant.now() : observedAt;
-        this.headline = clean(headline);
-        this.summary = clean(summary);
+        this.headline = IngestionTextUtils.clean(headline);
+        this.summary = IngestionTextUtils.clean(summary);
         this.structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
         this.materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
         this.earlynessScore = requireNormalized("earlynessScore", earlynessScore);
@@ -58,18 +59,6 @@ public class TradeCandidate {
 
     public boolean hasCredibleStructuralCatalyst() {
         return structuralRealityScore >= 0.65;
-    }
-
-    private static String requireText(String value, String fieldName) {
-        String cleaned = clean(value);
-        if (cleaned.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
-        }
-        return cleaned;
-    }
-
-    private static String clean(String value) {
-        return value == null ? "" : value.trim();
     }
 
     private static double requireNormalized(String fieldName, double value) {
