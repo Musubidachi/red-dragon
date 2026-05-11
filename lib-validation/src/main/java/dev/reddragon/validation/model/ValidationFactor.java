@@ -1,6 +1,5 @@
 package dev.reddragon.validation.model;
 
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -16,7 +15,6 @@ import java.util.Objects;
  * - 1.0 means highly supportive
  */
 @Value
-@Builder
 @Accessors(fluent = true)
 public class ValidationFactor {
     ValidationStage stage;
@@ -25,8 +23,8 @@ public class ValidationFactor {
     ReasonCode reasonCode;
     String explanation;
 
-    @Builder(access = AccessLevel.PRIVATE)
-    private ValidationFactor(
+    @Builder
+    public ValidationFactor(
             ValidationStage stage,
             double score,
             double weight,
@@ -44,16 +42,6 @@ public class ValidationFactor {
         }
         this.score = score;
         this.weight = weight;
-    }
-
-    public static ValidationFactor of(
-            ValidationStage stage,
-            double score,
-            double weight,
-            ReasonCode reasonCode,
-            String explanation
-    ) {
-        return new ValidationFactor(stage, score, weight, reasonCode, explanation);
     }
 
     public double weightedScore() {
