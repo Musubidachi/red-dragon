@@ -4,11 +4,20 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "candidate")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class CandidateEntity {
     @Id
     @Column(name = "candidate_id", nullable = false, length = 64)
@@ -40,71 +49,4 @@ public class CandidateEntity {
 
     @Column(name = "summary", length = 4000)
     private String summary;
-
-    protected CandidateEntity() {
-    }
-
-    public CandidateEntity(
-            String candidateId,
-            String symbol,
-            String companyName,
-            String catalystType,
-            String sourceType,
-            String sourceId,
-            String sourceUrl,
-            Instant observedAt,
-            String headline,
-            String summary
-    ) {
-        this.candidateId = candidateId;
-        this.symbol = symbol;
-        this.companyName = companyName;
-        this.catalystType = catalystType;
-        this.sourceType = sourceType;
-        this.sourceId = sourceId;
-        this.sourceUrl = sourceUrl;
-        this.observedAt = observedAt;
-        this.headline = headline;
-        this.summary = summary;
-    }
-
-    public String getCandidateId() {
-        return candidateId;
-    }
-
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public String getCompanyName() {
-        return companyName;
-    }
-
-    public String getCatalystType() {
-        return catalystType;
-    }
-
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public String getSourceUrl() {
-        return sourceUrl;
-    }
-
-    public Instant getObservedAt() {
-        return observedAt;
-    }
-
-    public String getHeadline() {
-        return headline;
-    }
-
-    public String getSummary() {
-        return summary;
-    }
 }
