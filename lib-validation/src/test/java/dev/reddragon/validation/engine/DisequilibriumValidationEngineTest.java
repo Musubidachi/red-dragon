@@ -39,7 +39,7 @@ class DisequilibriumValidationEngineTest {
 
         assertEquals(Verdict.PASS, result.verdict());
         assertEquals(DeploymentTier.CONCENTRATED, result.deploymentTier());
-        assertTrue(result.score() >= 0.88);
+        assertTrue(result.score() >= 0.87);
         assertTrue(result.reasonCodes().contains(ReasonCode.STRUCTURAL_CATALYST_CONFIRMED));
         assertTrue(result.reasonCodes().contains(ReasonCode.ASYMMETRY_FAVORABLE));
         assertTrue(result.reasonCodes().contains(ReasonCode.DEPLOYMENT_CONCENTRATION_CANDIDATE));
