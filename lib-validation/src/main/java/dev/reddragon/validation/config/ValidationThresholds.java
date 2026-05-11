@@ -1,34 +1,40 @@
 package dev.reddragon.validation.config;
 
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.Accessors;
+
 /**
  * Tunable thresholds and weights for the disequilibrium validation engine.
  *
  * Defaults are intentionally strict because this framework is designed for
  * selective participation and possible concentration, not broad scanning.
  */
-public record ValidationThresholds(
-        double passThreshold,
-        double watchThreshold,
-        double concentrationThreshold,
-        double standardDeploymentThreshold,
-        double probeDeploymentThreshold,
+@Value
+@Accessors(fluent = true)
+public class ValidationThresholds {
+    double passThreshold;
+    double watchThreshold;
+    double concentrationThreshold;
+    double standardDeploymentThreshold;
+    double probeDeploymentThreshold;
 
-        double minStructuralReality,
-        double minMaterialSignificance,
-        double minEarlyness,
-        double minEquilibriumQuality,
-        double minAsymmetry,
-        double minRegimeCompatibility,
+    double minStructuralReality;
+    double minMaterialSignificance;
+    double minEarlyness;
+    double minEquilibriumQuality;
+    double minAsymmetry;
+    double minRegimeCompatibility;
 
-        double structuralRealityWeight,
-        double materialSignificanceWeight,
-        double earlynessWeight,
-        double equilibriumQualityWeight,
-        double reflexivityPotentialWeight,
-        double asymmetryWeight,
-        double regimeCompatibilityWeight,
-        double deploymentConfidenceWeight
-) {
+    double structuralRealityWeight;
+    double materialSignificanceWeight;
+    double earlynessWeight;
+    double equilibriumQualityWeight;
+    double reflexivityPotentialWeight;
+    double asymmetryWeight;
+    double regimeCompatibilityWeight;
+    double deploymentConfidenceWeight;
+
     public static ValidationThresholds defaults() {
         return new ValidationThresholds(
                 0.78,
@@ -55,7 +61,28 @@ public record ValidationThresholds(
         );
     }
 
-    public ValidationThresholds {
+    @Builder
+    public ValidationThresholds(
+            double passThreshold,
+            double watchThreshold,
+            double concentrationThreshold,
+            double standardDeploymentThreshold,
+            double probeDeploymentThreshold,
+            double minStructuralReality,
+            double minMaterialSignificance,
+            double minEarlyness,
+            double minEquilibriumQuality,
+            double minAsymmetry,
+            double minRegimeCompatibility,
+            double structuralRealityWeight,
+            double materialSignificanceWeight,
+            double earlynessWeight,
+            double equilibriumQualityWeight,
+            double reflexivityPotentialWeight,
+            double asymmetryWeight,
+            double regimeCompatibilityWeight,
+            double deploymentConfidenceWeight
+    ) {
         requireNormalized("passThreshold", passThreshold);
         requireNormalized("watchThreshold", watchThreshold);
         requireNormalized("concentrationThreshold", concentrationThreshold);
@@ -90,6 +117,26 @@ public record ValidationThresholds(
         if (watchThreshold > passThreshold) {
             throw new IllegalArgumentException("watchThreshold cannot be greater than passThreshold");
         }
+
+        this.passThreshold = passThreshold;
+        this.watchThreshold = watchThreshold;
+        this.concentrationThreshold = concentrationThreshold;
+        this.standardDeploymentThreshold = standardDeploymentThreshold;
+        this.probeDeploymentThreshold = probeDeploymentThreshold;
+        this.minStructuralReality = minStructuralReality;
+        this.minMaterialSignificance = minMaterialSignificance;
+        this.minEarlyness = minEarlyness;
+        this.minEquilibriumQuality = minEquilibriumQuality;
+        this.minAsymmetry = minAsymmetry;
+        this.minRegimeCompatibility = minRegimeCompatibility;
+        this.structuralRealityWeight = structuralRealityWeight;
+        this.materialSignificanceWeight = materialSignificanceWeight;
+        this.earlynessWeight = earlynessWeight;
+        this.equilibriumQualityWeight = equilibriumQualityWeight;
+        this.reflexivityPotentialWeight = reflexivityPotentialWeight;
+        this.asymmetryWeight = asymmetryWeight;
+        this.regimeCompatibilityWeight = regimeCompatibilityWeight;
+        this.deploymentConfidenceWeight = deploymentConfidenceWeight;
     }
 
     public double totalWeight() {
