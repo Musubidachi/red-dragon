@@ -2,6 +2,7 @@ package dev.reddragon.analytics.service;
 
 import dev.reddragon.analytics.model.AnalyticsSnapshot;
 import dev.reddragon.analytics.model.RegimeLabel;
+import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import dev.reddragon.ingestion.model.TradeCandidate;
 import dev.reddragon.marketdata.model.MarketDataSnapshot;
 
@@ -28,10 +29,10 @@ public class DeterministicAnalyticsService {
         List<String> notes = new ArrayList<>();
         RegimeLabel regime = regime(marketData, notes);
         double regimeCompatibility = regimeCompatibility(regime);
-        double equilibriumQuality = average(marketData.liquidityScore(), marketData.volatilityStabilityScore());
+        double equilibriumQuality = AnalyticsScoreUtils.average(marketData.liquidityScore(), marketData.volatilityStabilityScore());
         double asymmetry = asymmetry(candidate, marketData, equilibriumQuality, notes);
-        double reflexivity = clamp(average(candidate.reflexivityPotentialScore(), candidate.earlynessScore()));
-        double deploymentConfidence = clamp(
+        double reflexivity = AnalyticsScoreUtils.clamp(AnalyticsScoreUtils.average(candidate.reflexivityPotentialScore(), candidate.earlynessScore()));
+        double deploymentConfidence = AnalyticsScoreUtils.clamp(
                 candidate.structuralRealityScore() * 0.25
                         + candidate.materialSignificanceScore() * 0.20
                         + candidate.earlynessScore() * 0.20
@@ -103,7 +104,7 @@ public class DeterministicAnalyticsService {
             notes.add("Large gap detected; entry asymmetry may be degraded.");
         }
 
-        return clamp(
+        return AnalyticsScoreUtils.clamp(
                 structuralReality * 0.25
                         + materiality * 0.25
                         + earlyness * 0.25
@@ -111,15 +112,5 @@ public class DeterministicAnalyticsService {
                         - rangePenalty
                         - gapPenalty
         );
-    }
-
-    private double average(double left, double right) {
-        return (left + right) / 2.0;
-    }
-
-    private double clamp(double value) {
-        if (value < 0.0) return 0.0;
-        if (value > 1.0) return 1.0;
-        return value;
     }
 }
