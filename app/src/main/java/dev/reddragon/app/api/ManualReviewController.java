@@ -56,7 +56,7 @@ public class ManualReviewController {
                 ))
                 .toList();
 
-        MarketDataSnapshot marketData = marketFeatureCalculator.calculate(candidate.symbol(), bars);
+        MarketDataSnapshot marketData = marketFeatureCalculator.process(candidate.symbol(), bars);
         AnalyticsSnapshot analytics = analyticsService.analyze(candidate, marketData);
         ValidationResult validation = validationEngine.validate(validationInput(candidate, marketData, analytics));
 
