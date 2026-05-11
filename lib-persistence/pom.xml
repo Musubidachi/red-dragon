@@ -17,6 +17,15 @@
     <description>JPA entities, repositories, Flyway migrations. Schema lives here.</description>
 
     <dependencies>
+        <dependency>
+            <groupId>dev.reddragon</groupId>
+            <artifactId>lib-ingestion</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.reddragon</groupId>
+            <artifactId>lib-validation</artifactId>
+        </dependency>
+
         <!-- entities + repositories live here, but the runtime starter / driver are
              contributed by `app` so this lib stays infra-agnostic. -->
         <dependency>
