@@ -1,6 +1,5 @@
 package dev.reddragon.validation.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -23,7 +22,6 @@ public class ValidationFactor {
     ReasonCode reasonCode;
     String explanation;
 
-    @Builder
     public ValidationFactor(
             ValidationStage stage,
             double score,
