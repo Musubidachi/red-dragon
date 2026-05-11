@@ -30,7 +30,7 @@ public class ManualReviewController {
 
     @PostMapping("/manual")
     public ManualReviewResponse reviewManualCandidate(@RequestBody ManualReviewRequest request) {
-        TradeCandidate candidate = ingestionService.ingest(
+        TradeCandidate candidate = ingestionService.process(
                 request.getSymbol(),
                 request.getCompanyName(),
                 request.getCatalystType(),
@@ -42,9 +42,24 @@ public class ManualReviewController {
                 request.getReflexivityPotentialScore()
         );
 
-        List<MarketBar> bars = request.getBars() == null
-                ? List.of()
-                : request.getBars().stream()
+        List<MarketBar> bars = marketBars(candidate, request);
+
+        MarketDataSnapshot marketData = marketFeatureCalculator.process(candidate.symbol(), bars);
+        AnalyticsSnapshot analytics = analyticsService.process(candidate, marketData);
+        ValidationResult validation = validationEngine.validate(validationInput(candidate, marketData, analytics));
+
+        return new ManualReviewResponse(candidate, marketData, analytics, validation);
+    }
+
+    private List<MarketBar> marketBars(
+            TradeCandidate candidate,
+            ManualReviewRequest request
+    ) {
+        if (request.getBars() == null) {
+            return List.of();
+        }
+
+        return request.getBars().stream()
                 .map(bar -> new MarketBar(
                         candidate.symbol(),
                         bar.getDate(),
@@ -55,12 +70,6 @@ public class ManualReviewController {
                         bar.getVolume()
                 ))
                 .toList();
-
-        MarketDataSnapshot marketData = marketFeatureCalculator.process(candidate.symbol(), bars);
-        AnalyticsSnapshot analytics = analyticsService.analyze(candidate, marketData);
-        ValidationResult validation = validationEngine.validate(validationInput(candidate, marketData, analytics));
-
-        return new ManualReviewResponse(candidate, marketData, analytics, validation);
     }
 
     private CandidateValidationInput validationInput(
