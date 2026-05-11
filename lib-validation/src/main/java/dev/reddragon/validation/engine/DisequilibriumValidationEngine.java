@@ -74,16 +74,16 @@ public class DisequilibriumValidationEngine {
         DeploymentTier deploymentTier = deploymentTier(verdict, score, input);
         reasons.add(reasonForDeployment(deploymentTier));
 
-        return ValidationResult.builder()
-                .candidateId(input.candidateId())
-                .symbol(input.symbol())
-                .verdict(verdict)
-                .deploymentTier(deploymentTier)
-                .score(score)
-                .factors(factors)
-                .reasonCodes(dedupe(reasons))
-                .explanations(dedupeStrings(explanations))
-                .build();
+        return new ValidationResult(
+                input.candidateId(),
+                input.symbol(),
+                verdict,
+                deploymentTier,
+                score,
+                factors,
+                dedupe(reasons),
+                dedupeStrings(explanations)
+        );
     }
 
     private List<ValidationFactor> factors(CandidateValidationInput input) {
@@ -154,13 +154,7 @@ public class DisequilibriumValidationEngine {
             ReasonCode reasonCode,
             String explanation
     ) {
-        return ValidationFactor.builder()
-                .stage(stage)
-                .score(score)
-                .weight(weight)
-                .reasonCode(reasonCode)
-                .explanation(explanation)
-                .build();
+        return new ValidationFactor(stage, score, weight, reasonCode, explanation);
     }
 
     private List<ReasonCode> hardGateFailures(CandidateValidationInput input) {
