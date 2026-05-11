@@ -1,5 +1,6 @@
 package dev.reddragon.validation.config;
 
+import dev.reddragon.validation.util.ValidationScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -81,25 +82,25 @@ public class ValidationThresholds {
             double regimeCompatibilityWeight,
             double deploymentConfidenceWeight
     ) {
-        requireNormalized("passThreshold", passThreshold);
-        requireNormalized("watchThreshold", watchThreshold);
-        requireNormalized("concentrationThreshold", concentrationThreshold);
-        requireNormalized("standardDeploymentThreshold", standardDeploymentThreshold);
-        requireNormalized("probeDeploymentThreshold", probeDeploymentThreshold);
-        requireNormalized("minStructuralReality", minStructuralReality);
-        requireNormalized("minMaterialSignificance", minMaterialSignificance);
-        requireNormalized("minEarlyness", minEarlyness);
-        requireNormalized("minEquilibriumQuality", minEquilibriumQuality);
-        requireNormalized("minAsymmetry", minAsymmetry);
-        requireNormalized("minRegimeCompatibility", minRegimeCompatibility);
-        requireNonNegative("structuralRealityWeight", structuralRealityWeight);
-        requireNonNegative("materialSignificanceWeight", materialSignificanceWeight);
-        requireNonNegative("earlynessWeight", earlynessWeight);
-        requireNonNegative("equilibriumQualityWeight", equilibriumQualityWeight);
-        requireNonNegative("reflexivityPotentialWeight", reflexivityPotentialWeight);
-        requireNonNegative("asymmetryWeight", asymmetryWeight);
-        requireNonNegative("regimeCompatibilityWeight", regimeCompatibilityWeight);
-        requireNonNegative("deploymentConfidenceWeight", deploymentConfidenceWeight);
+        ValidationScoreUtils.requireNormalized("passThreshold", passThreshold);
+        ValidationScoreUtils.requireNormalized("watchThreshold", watchThreshold);
+        ValidationScoreUtils.requireNormalized("concentrationThreshold", concentrationThreshold);
+        ValidationScoreUtils.requireNormalized("standardDeploymentThreshold", standardDeploymentThreshold);
+        ValidationScoreUtils.requireNormalized("probeDeploymentThreshold", probeDeploymentThreshold);
+        ValidationScoreUtils.requireNormalized("minStructuralReality", minStructuralReality);
+        ValidationScoreUtils.requireNormalized("minMaterialSignificance", minMaterialSignificance);
+        ValidationScoreUtils.requireNormalized("minEarlyness", minEarlyness);
+        ValidationScoreUtils.requireNormalized("minEquilibriumQuality", minEquilibriumQuality);
+        ValidationScoreUtils.requireNormalized("minAsymmetry", minAsymmetry);
+        ValidationScoreUtils.requireNormalized("minRegimeCompatibility", minRegimeCompatibility);
+        ValidationScoreUtils.requireNonNegative("structuralRealityWeight", structuralRealityWeight);
+        ValidationScoreUtils.requireNonNegative("materialSignificanceWeight", materialSignificanceWeight);
+        ValidationScoreUtils.requireNonNegative("earlynessWeight", earlynessWeight);
+        ValidationScoreUtils.requireNonNegative("equilibriumQualityWeight", equilibriumQualityWeight);
+        ValidationScoreUtils.requireNonNegative("reflexivityPotentialWeight", reflexivityPotentialWeight);
+        ValidationScoreUtils.requireNonNegative("asymmetryWeight", asymmetryWeight);
+        ValidationScoreUtils.requireNonNegative("regimeCompatibilityWeight", regimeCompatibilityWeight);
+        ValidationScoreUtils.requireNonNegative("deploymentConfidenceWeight", deploymentConfidenceWeight);
 
         double weightTotal = structuralRealityWeight
                 + materialSignificanceWeight
@@ -146,17 +147,5 @@ public class ValidationThresholds {
                 + asymmetryWeight
                 + regimeCompatibilityWeight
                 + deploymentConfidenceWeight;
-    }
-
-    private static void requireNormalized(String fieldName, double value) {
-        if (value < 0.0 || value > 1.0) {
-            throw new IllegalArgumentException(fieldName + " must be between 0.0 and 1.0");
-        }
-    }
-
-    private static void requireNonNegative(String fieldName, double value) {
-        if (value < 0.0) {
-            throw new IllegalArgumentException(fieldName + " must be non-negative");
-        }
     }
 }
