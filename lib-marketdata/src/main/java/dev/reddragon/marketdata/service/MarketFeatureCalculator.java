@@ -53,29 +53,37 @@ public class MarketFeatureCalculator {
             notes.add("Average volume is low; liquidity risk is elevated.");
         }
 
-        return MarketDataSnapshot.builder()
-                .symbol(symbol)
-                .observedAt(Instant.now())
-                .latestClose(latestClose)
-                .previousClose(previousClose)
-                .gapPercent(gapPercent)
-                .averageTrueRange(atr)
-                .rangePosition(rangePosition)
-                .averageVolume(avgVolume)
-                .liquidityScore(liquidityScore)
-                .volatilityStabilityScore(volatilityStabilityScore)
-                .quality(quality)
-                .notes(notes)
-                .build();
+        return new MarketDataSnapshot(
+                symbol,
+                Instant.now(),
+                latestClose,
+                previousClose,
+                gapPercent,
+                atr,
+                rangePosition,
+                avgVolume,
+                liquidityScore,
+                volatilityStabilityScore,
+                quality,
+                notes
+        );
     }
 
     private MarketDataSnapshot empty(String symbol, MarketDataQuality quality, String note) {
-        return MarketDataSnapshot.builder()
-                .symbol(symbol == null || symbol.isBlank() ? "UNKNOWN" : symbol)
-                .observedAt(Instant.now())
-                .quality(quality)
-                .notes(List.of(note))
-                .build();
+        return new MarketDataSnapshot(
+                symbol == null || symbol.isBlank() ? "UNKNOWN" : symbol,
+                Instant.now(),
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                quality,
+                List.of(note)
+        );
     }
 
     private double averageTrueRange(List<MarketBar> sorted) {
