@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -24,17 +23,4 @@ public class ManualReviewRequest {
     private double earlynessScore;
     private double reflexivityPotentialScore;
     private List<BarRequest> bars;
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class BarRequest {
-        private LocalDate date;
-        private double open;
-        private double high;
-        private double low;
-        private double close;
-        private long volume;
-    }
 }
