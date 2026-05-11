@@ -1,6 +1,5 @@
 package dev.reddragon.marketdata.model;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -23,7 +22,6 @@ public class MarketDataSnapshot {
     MarketDataQuality quality;
     List<String> notes;
 
-    @Builder
     public MarketDataSnapshot(
             String symbol,
             Instant observedAt,
