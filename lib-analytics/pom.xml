@@ -14,12 +14,16 @@
     <artifactId>lib-analytics</artifactId>
     <packaging>jar</packaging>
     <name>red-dragon-lib-analytics</name>
-    <description>Position lifecycle, realized P&amp;L, holding-period stats, rule-based regime tagging.</description>
+    <description>Rule-based regime classification and asymmetry scoring for candidate validation.</description>
 
     <dependencies>
         <dependency>
             <groupId>dev.reddragon</groupId>
-            <artifactId>lib-persistence</artifactId>
+            <artifactId>lib-ingestion</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.reddragon</groupId>
+            <artifactId>lib-marketdata</artifactId>
         </dependency>
 
         <dependency>
