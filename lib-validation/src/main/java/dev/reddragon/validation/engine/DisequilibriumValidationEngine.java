@@ -124,7 +124,7 @@ public class DisequilibriumValidationEngine {
                         reflexivityExplanation(input)
                 ),
                 new ValidationFactor(
-                        ValidationStage.ASYMmetry_QUALITY,
+                        ValidationStage.ASYMMETRY_QUALITY,
                         input.asymmetryScore(),
                         thresholds.asymmetryWeight(),
                         asymmetryReason(input),
@@ -175,10 +175,10 @@ public class DisequilibriumValidationEngine {
             failures.add(ReasonCode.EQUILIBRIUM_LIQUIDITY_DEGRADED);
         }
         if (input.asymmetryScore() < thresholds.minAsymmetry()) {
-            failures.add(ReasonCode.ASYMmetry_UNFAVORABLE);
+            failures.add(ReasonCode.ASYMMETRY_UNFAVORABLE);
         }
         if (input.equilibriumAlreadyRepriced()) {
-            failures.add(ReasonCode.ASYMmetry_COMPRESSED);
+            failures.add(ReasonCode.ASYMMETRY_COMPRESSED);
         }
         if (input.regimeCompatibilityScore() < thresholds.minRegimeCompatibility()) {
             failures.add(ReasonCode.REGIME_HOSTILE);
@@ -317,10 +317,10 @@ public class DisequilibriumValidationEngine {
     }
 
     private ReasonCode asymmetryReason(CandidateValidationInput input) {
-        if (input.equilibriumAlreadyRepriced()) return ReasonCode.ASYMmetry_COMPRESSED;
-        if (input.asymmetryScore() >= 0.70) return ReasonCode.ASYMmetry_FAVORABLE;
-        if (input.asymmetryScore() >= 0.45) return ReasonCode.ASYMmetry_COMPRESSED;
-        return ReasonCode.ASYMmetry_UNFAVORABLE;
+        if (input.equilibriumAlreadyRepriced()) return ReasonCode.ASYMMETRY_COMPRESSED;
+        if (input.asymmetryScore() >= 0.70) return ReasonCode.ASYMMETRY_FAVORABLE;
+        if (input.asymmetryScore() >= 0.45) return ReasonCode.ASYMMETRY_COMPRESSED;
+        return ReasonCode.ASYMMETRY_UNFAVORABLE;
     }
 
     private String asymmetryExplanation(CandidateValidationInput input) {
