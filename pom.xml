@@ -23,6 +23,7 @@
         lib-analytics   - market-state (regime) classifier + asymmetry scorer; pure functions
         lib-validation  - hard rules engine + orchestrates analytics into a single verdict
         lib-persistence - JPA entities, repositories, Flyway migrations
+        lib-backtest    - deterministic replay harness for historical candidates and bars
       The libraries are plain jars with no Spring Boot main; only `app` boots.
       No portfolio state is tracked here; that arrives only if/when an execution layer is added.
     -->
@@ -53,6 +54,7 @@
         <module>lib-analytics</module>
         <module>lib-validation</module>
         <module>lib-persistence</module>
+        <module>lib-backtest</module>
         <module>app</module>
     </modules>
 
@@ -82,6 +84,11 @@
             <dependency>
                 <groupId>dev.reddragon</groupId>
                 <artifactId>lib-validation</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-backtest</artifactId>
                 <version>${red-dragon.version}</version>
             </dependency>
         </dependencies>
