@@ -1,6 +1,7 @@
 package dev.reddragon.app.config;
 
 import dev.reddragon.analytics.service.DeterministicAnalyticsService;
+import dev.reddragon.backtest.service.BacktestReplayEngine;
 import dev.reddragon.ingestion.sec.EightKCategoryMapper;
 import dev.reddragon.ingestion.sec.SecApiProperties;
 import dev.reddragon.ingestion.sec.SecCandidateBuilder;
@@ -47,6 +48,15 @@ public class PipelineConfiguration {
     @Bean
     public PersistenceMapper persistenceMapper() {
         return new PersistenceMapper();
+    }
+
+    @Bean
+    public BacktestReplayEngine backtestReplayEngine(
+            MarketFeatureCalculator marketFeatureCalculator,
+            DeterministicAnalyticsService analyticsService,
+            DisequilibriumValidationEngine validationEngine
+    ) {
+        return new BacktestReplayEngine(marketFeatureCalculator, analyticsService, validationEngine);
     }
 
     @Bean
