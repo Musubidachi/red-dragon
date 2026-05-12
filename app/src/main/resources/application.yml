@@ -1,6 +1,18 @@
 spring:
   application:
     name: red-dragon
+  datasource:
+    url: ${RED_DRAGON_DB_URL:jdbc:h2:mem:reddragon;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1}
+    username: ${RED_DRAGON_DB_USERNAME:sa}
+    password: ${RED_DRAGON_DB_PASSWORD:}
+    driver-class-name: ${RED_DRAGON_DB_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: 8080
@@ -13,6 +25,17 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+red-dragon:
+  sec:
+    user-agent: ${RED_DRAGON_SEC_USER_AGENT:red-dragon fabriziom19@gmail.com}
+    submissions-base-url: ${RED_DRAGON_SEC_SUBMISSIONS_BASE_URL:https://data.sec.gov/submissions}
+    requests-per-second: ${RED_DRAGON_SEC_REQUESTS_PER_SECOND:5}
+  schwab:
+    base-url: ${SCHWAB_MARKETDATA_BASE_URL:https://api.schwabapi.com/marketdata/v1}
+    access-token: ${SCHWAB_ACCESS_TOKEN:}
+    enabled: ${SCHWAB_MARKETDATA_ENABLED:false}
+    cache-ttl-seconds: ${SCHWAB_MARKETDATA_CACHE_TTL_SECONDS:60}
 
 logging:
   level:
