@@ -1,6 +1,5 @@
 package dev.reddragon.ingestion.sec;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
@@ -16,7 +15,6 @@ import java.util.Objects;
  * headers and limiter means there is only one place to look when something
  * about politeness or transport changes.
  */
-@RequiredArgsConstructor
 public class SecHttpClient {
 
     private final SecApiProperties properties;
