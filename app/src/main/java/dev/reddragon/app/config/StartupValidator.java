@@ -9,10 +9,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * Runs at startup to validate the active configuration and surface
- * mis-configurations before the first request is processed.
+ * misconfigurations before the first request is processed.
  *
- * <p>Failures are logged as warnings — the application still starts so that
- * the H2 console and actuator health endpoints remain reachable for diagnosis.
+ * <p>Configuration errors are logged as warnings so actuator and diagnostic
+ * endpoints remain available. The {@link ValidationThresholds} constructor
+ * still enforces hard validity rules for impossible values.</p>
  */
 @Component
 public class StartupValidator implements ApplicationRunner {
@@ -27,28 +28,21 @@ public class StartupValidator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        log.info("StartupValidator: checking active configuration…");
+        log.info("StartupValidator: checking active configuration");
 
-        validateThreshold("passThreshold",            thresholds.getPassThreshold(),            0.5, 1.0);
-        validateThreshold("watchThreshold",           thresholds.getWatchThreshold(),           0.0, thresholds.getPassThreshold());
-        validateThreshold("concentrationThreshold",   thresholds.getConcentrationThreshold(),   thresholds.getPassThreshold(), 1.0);
-        validateThreshold("minStructuralReality",     thresholds.getMinStructuralReality(),     0.0, 1.0);
-        validateThreshold("minMaterialSignificance",  thresholds.getMinMaterialSignificance(),  0.0, 1.0);
-        validateThreshold("minAsymmetry",             thresholds.getMinAsymmetry(),             0.0, 1.0);
+        validateThreshold("passThreshold", thresholds.passThreshold(), 0.5, 1.0);
+        validateThreshold("watchThreshold", thresholds.watchThreshold(), 0.0, thresholds.passThreshold());
+        validateThreshold("concentrationThreshold", thresholds.concentrationThreshold(), thresholds.passThreshold(), 1.0);
+        validateThreshold("minStructuralReality", thresholds.minStructuralReality(), 0.0, 1.0);
+        validateThreshold("minMaterialSignificance", thresholds.minMaterialSignificance(), 0.0, 1.0);
+        validateThreshold("minAsymmetry", thresholds.minAsymmetry(), 0.0, 1.0);
 
-        double weightSum = thresholds.getStructuralRealityWeight()
-                + thresholds.getMaterialSignificanceWeight()
-                + thresholds.getEarlynessWeight()
-                + thresholds.getEquilibriumQualityWeight()
-                + thresholds.getReflexivityPotentialWeight()
-                + thresholds.getAsymmetryWeight()
-                + thresholds.getRegimeCompatibilityWeight()
-                + thresholds.getDeploymentConfidenceWeight();
+        double weightSum = thresholds.totalWeight();
 
         if (Math.abs(weightSum - 1.0) > 0.01) {
-            log.warn("StartupValidator: scoring weights sum to {:.4f} — expected 1.0; review red-dragon.validation weights", weightSum);
+            log.warn("StartupValidator: scoring weights sum to {} — expected 1.0; review red-dragon.validation weights", weightSum);
         } else {
-            log.info("StartupValidator: scoring weights sum to {:.4f} ✓", weightSum);
+            log.info("StartupValidator: scoring weights sum to {}", weightSum);
         }
 
         log.info("StartupValidator: configuration check complete");
