@@ -54,6 +54,7 @@ Only `app` produces a bootable jar. Libraries are plain jars consumed by `app`.
 | GET    | `/api/pipeline/sec/{cik}`         | Fetch SEC filings for a CIK and run each through the pipeline. |
 | POST   | `/api/review/manual`              | Ad-hoc manual review without persistence.            |
 | GET    | `/api/review/candidates`          | List today's PASS / WATCH verdicts with reasoning.   |
+| GET    | `/api/stats/opportunity-quality`  | Conviction-band mix, deployment-tier mix, and top symbols by score. |
 | POST   | `/api/backtest`                   | Run a replay against a list of historical frames.    |
 | POST   | `/market-structure/intraday`      | Derive intraday structure snapshot from bar list.    |
 
