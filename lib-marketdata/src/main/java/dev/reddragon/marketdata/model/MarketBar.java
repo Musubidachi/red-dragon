@@ -53,4 +53,19 @@ public class MarketBar {
     public double range() {
         return high - low;
     }
+
+    /** Returns {@code true} if the close is at or above the open (green candle). */
+    public boolean isGreen() {
+        return close >= open;
+    }
+
+    /**
+     * Returns the candle body as a percentage of the total high-low range.
+     * Returns 0 when range is zero (doji or no data).
+     */
+    public double bodyPercent() {
+        double r = range();
+        if (r == 0) return 0.0;
+        return Math.abs(close - open) / r;
+    }
 }

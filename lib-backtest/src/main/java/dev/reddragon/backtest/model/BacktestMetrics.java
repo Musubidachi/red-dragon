@@ -26,4 +26,28 @@ public record BacktestMetrics(
 
         return new BacktestMetrics(safeOutcomes.size(), averageScore, counts);
     }
+
+    /**
+     * Fraction of frames that resulted in a PASS verdict (0.0 if no frames).
+     */
+    public double passRate() {
+        if (totalFrames == 0) return 0.0;
+        return verdictCounts.getOrDefault(Verdict.PASS, 0L) / (double) totalFrames;
+    }
+
+    /**
+     * Fraction of frames that resulted in a WATCH verdict (0.0 if no frames).
+     */
+    public double watchRate() {
+        if (totalFrames == 0) return 0.0;
+        return verdictCounts.getOrDefault(Verdict.WATCH, 0L) / (double) totalFrames;
+    }
+
+    /**
+     * Fraction of frames that resulted in a REJECT verdict (0.0 if no frames).
+     */
+    public double rejectRate() {
+        if (totalFrames == 0) return 0.0;
+        return verdictCounts.getOrDefault(Verdict.REJECT, 0L) / (double) totalFrames;
+    }
 }

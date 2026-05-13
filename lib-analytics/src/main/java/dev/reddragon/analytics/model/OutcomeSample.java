@@ -40,4 +40,18 @@ public class OutcomeSample {
         this.daysHeld = daysHeld;
         this.thesisWorked = thesisWorked;
     }
+
+    /**
+     * Classifies the realized return into a named category for bucketed analysis.
+     *
+     * @return "STRONG_WIN" (&gt;+20%), "WIN" (&gt;+5%), "FLAT" (±5%), "LOSS" (&lt;-5%),
+     *         or "LARGE_LOSS" (&lt;-20%)
+     */
+    public String returnCategory() {
+        if (realizedReturn > 0.20)  return "STRONG_WIN";
+        if (realizedReturn > 0.05)  return "WIN";
+        if (realizedReturn >= -0.05) return "FLAT";
+        if (realizedReturn >= -0.20) return "LOSS";
+        return "LARGE_LOSS";
+    }
 }

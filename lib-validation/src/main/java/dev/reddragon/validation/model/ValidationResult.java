@@ -53,4 +53,23 @@ public class ValidationResult {
     public boolean watch() {
         return verdict == Verdict.WATCH;
     }
+
+    /**
+     * Returns {@code true} if the deployment tier is actionable (at least PROBE).
+     * Provides a quick filter for the review surface without inspecting tier directly.
+     */
+    public boolean isActionable() {
+        return deploymentTier != null && deploymentTier.isActionable();
+    }
+
+    /**
+     * Returns the first reason code's display name, or a fallback string if
+     * no reason codes are present.  Useful for one-line summary logging.
+     */
+    public String primaryReason() {
+        if (reasonCodes == null || reasonCodes.isEmpty()) {
+            return "No reason codes";
+        }
+        return reasonCodes.get(0).displayName();
+    }
 }

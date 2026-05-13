@@ -1,6 +1,8 @@
 package dev.reddragon.analytics.service;
 
 import dev.reddragon.analytics.model.AnalyticsSnapshot;
+import dev.reddragon.analytics.model.PhaseLabel;
+import dev.reddragon.analytics.model.PhaseTransitionSnapshot;
 import dev.reddragon.analytics.model.RegimeLabel;
 import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import dev.reddragon.ingestion.model.TradeCandidate;
@@ -12,8 +14,14 @@ import java.util.List;
 
 /**
  * Produces deterministic analytics features from a candidate and market data.
+ *
+ * <p>Integrates {@link PropagationPhaseAnalyzer} to append a propagation-phase
+ * note to the snapshot, enriching the trader review surface without requiring
+ * a separate intraday data feed.
  */
 public class DeterministicAnalyticsService {
+
+    private final PropagationPhaseAnalyzer propagationPhaseAnalyzer = new PropagationPhaseAnalyzer();
 
     /**
      * Main processing flow.
@@ -37,6 +45,13 @@ public class DeterministicAnalyticsService {
                 regimeCompatibility
         );
 
+        // Propagation phase — derived from reflexivity as a proxy for propagation level
+        PhaseLabel phase = propagationPhase(candidate, reflexivity);
+        notes.add("Propagation phase: " + phase.name());
+
+        // Lightweight adversarial checks using available data
+        adversarialNotes(candidate, marketData, reflexivity, notes);
+
         return buildSnapshot(
                 candidate,
                 notes,
@@ -47,6 +62,45 @@ public class DeterministicAnalyticsService {
                 reflexivity,
                 deploymentConfidence
         );
+    }
+
+    /**
+     * Derives a {@link PhaseLabel} from the candidate's earlyness and reflexivity scores.
+     * Uses {@link PropagationPhaseAnalyzer} with a synthetic {@link PhaseTransitionSnapshot}
+     * computed from scores available in the current pipeline.
+     */
+    private PhaseLabel propagationPhase(TradeCandidate candidate, double currentReflexivity) {
+        double previous = candidate.earlynessScore();
+        double current  = currentReflexivity;
+        double slope        = current - previous;
+        double acceleration = slope > 0 ? slope * 0.5 : slope * 0.5; // simplified second derivative
+        PhaseTransitionSnapshot snapshot = new PhaseTransitionSnapshot(previous, current, slope, acceleration);
+        return propagationPhaseAnalyzer.process(snapshot);
+    }
+
+    /**
+     * Appends lightweight adversarial observations when available signals suggest risk.
+     * Full adversarial analysis requiring intraday/options snapshots is out of scope
+     * for the standard pipeline run.
+     */
+    private void adversarialNotes(
+            TradeCandidate candidate,
+            MarketDataSnapshot marketData,
+            double reflexivity,
+            List<String> notes
+    ) {
+        // Hype-without-structure signal
+        if (candidate.structuralRealityScore() < 0.45 && reflexivity > 0.70) {
+            notes.add("Adversarial flag: reflexivity is elevated but structural reality is weak; possible hype without substance.");
+        }
+        // Late-entry signal
+        if (candidate.earlynessScore() < 0.40 && marketData.rangePosition() > 0.85) {
+            notes.add("Adversarial flag: earlyness is low and price is near range high; late-entry risk elevated.");
+        }
+        // Liquidity deterioration
+        if (marketData.liquidityScore() < 0.35 && marketData.volatilityStabilityScore() < 0.35) {
+            notes.add("Adversarial flag: both liquidity and volatility stability are degraded; adverse execution risk.");
+        }
     }
 
     private void validate(

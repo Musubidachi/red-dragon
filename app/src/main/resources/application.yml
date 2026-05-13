@@ -12,10 +12,16 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    # db/schema is the canonical migration directory.
+    # db/migration is retained for history but excluded to avoid a duplicate-V1 conflict.
+    locations: classpath:db/schema
 
 server:
   port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+    min-response-size: 2048
 
 management:
   endpoints:
@@ -25,8 +31,27 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: red-dragon
+    description: Probabilistic disequilibrium-based trade candidate validation platform
+    version: "@project.version@"
 
 red-dragon:
+  # Validation thresholds for the STANDARD profile.
+  # All keys are optional — omit any key to keep the hardcoded default.
+  # Uncomment and adjust to tune the framework without recompiling.
+  validation:
+    pass-threshold: ${RED_DRAGON_VALIDATION_PASS_THRESHOLD:0.78}
+    watch-threshold: ${RED_DRAGON_VALIDATION_WATCH_THRESHOLD:0.58}
+    concentration-threshold: ${RED_DRAGON_VALIDATION_CONCENTRATION_THRESHOLD:0.87}
+    min-structural-reality: ${RED_DRAGON_VALIDATION_MIN_STRUCTURAL_REALITY:0.65}
+    min-material-significance: ${RED_DRAGON_VALIDATION_MIN_MATERIAL_SIGNIFICANCE:0.55}
+    min-asymmetry: ${RED_DRAGON_VALIDATION_MIN_ASYMMETRY:0.55}
   sec:
     user-agent: ${RED_DRAGON_SEC_USER_AGENT:red-dragon fabriziom19@gmail.com}
     submissions-base-url: ${RED_DRAGON_SEC_SUBMISSIONS_BASE_URL:https://data.sec.gov/submissions}

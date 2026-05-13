@@ -1,6 +1,7 @@
 package dev.reddragon.app.config;
 
 import dev.reddragon.analytics.service.DeterministicAnalyticsService;
+import dev.reddragon.analytics.service.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.backtest.service.BacktestReplayEngine;
 import dev.reddragon.ingestion.sec.EightKCategoryMapper;
 import dev.reddragon.ingestion.sec.SecApiProperties;
@@ -17,7 +18,9 @@ import dev.reddragon.marketdata.provider.schwab.SchwabMarketDataProperties;
 import dev.reddragon.marketdata.provider.schwab.SchwabMarketDataProvider;
 import dev.reddragon.marketdata.service.MarketFeatureCalculator;
 import dev.reddragon.persistence.mapper.PersistenceMapper;
+import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.validation.engine.DisequilibriumValidationEngine;
+import dev.reddragon.validation.service.ValidationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,8 +44,25 @@ public class PipelineConfiguration {
     }
 
     @Bean
-    public DisequilibriumValidationEngine disequilibriumValidationEngine() {
-        return new DisequilibriumValidationEngine();
+    public DisequilibriumValidationEngine disequilibriumValidationEngine(
+            ValidationThresholds defaultThresholds
+    ) {
+        return new DisequilibriumValidationEngine(defaultThresholds);
+    }
+
+    /**
+     * ValidationService is the stable facade for the validation subsystem.
+     * It wraps DisequilibriumValidationEngine and also resolves RiskFlags
+     * and ValidationConfidenceScore — use this in preference to the engine directly.
+     */
+    @Bean
+    public ValidationService validationService(ValidationThresholds defaultThresholds) {
+        return new ValidationService(defaultThresholds);
+    }
+
+    @Bean
+    public LongHorizonCalibrationAnalyzer longHorizonCalibrationAnalyzer() {
+        return new LongHorizonCalibrationAnalyzer();
     }
 
     @Bean

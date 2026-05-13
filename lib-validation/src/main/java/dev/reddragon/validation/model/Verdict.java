@@ -11,5 +11,19 @@ public enum Verdict {
     WATCH,
 
     /** Candidate fails one or more required validation rules. */
-    REJECT
+    REJECT;
+
+    /** Human-readable label suitable for display in review surfaces and reports. */
+    public String displayName() {
+        return switch (this) {
+            case PASS   -> "Pass";
+            case WATCH  -> "Watch";
+            case REJECT -> "Reject";
+        };
+    }
+
+    /** Returns {@code true} if this verdict warrants trader attention (PASS or WATCH). */
+    public boolean isReviewable() {
+        return this == PASS || this == WATCH;
+    }
 }

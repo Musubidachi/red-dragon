@@ -12,5 +12,24 @@ public enum DeploymentTier {
     OBSERVE,
     PROBE,
     STANDARD,
-    CONCENTRATED
+    CONCENTRATED;
+
+    /** Human-readable label suitable for display in review surfaces and reports. */
+    public String displayName() {
+        return switch (this) {
+            case NONE        -> "None";
+            case OBSERVE     -> "Observe";
+            case PROBE       -> "Probe";
+            case STANDARD    -> "Standard";
+            case CONCENTRATED -> "Concentrated";
+        };
+    }
+
+    /**
+     * Returns {@code true} if this tier represents an actionable deployment posture
+     * (i.e., at least PROBE — excludes NONE and OBSERVE).
+     */
+    public boolean isActionable() {
+        return this == PROBE || this == STANDARD || this == CONCENTRATED;
+    }
 }

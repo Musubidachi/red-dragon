@@ -7,6 +7,7 @@ import dev.reddragon.ingestion.sec.SecIngestionService;
 import dev.reddragon.ingestion.service.ManualCandidateIngestionService;
 import dev.reddragon.marketdata.model.MarketBar;
 import dev.reddragon.marketdata.provider.MarketDataProvider;
+import dev.reddragon.validation.config.ValidationProfile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,11 @@ public class PipelineReviewController {
     private final MarketDataProvider marketDataProvider;
     private final CandidatePipelineOrchestrator orchestrator;
 
+    /**
+     * Run a manually-supplied candidate through the full pipeline.
+     * Include {@code "profile": "CONSERVATIVE"} (or AGGRESSIVE / CONCENTRATION_REVIEW)
+     * in the request body to override the default STANDARD thresholds.
+     */
     @PostMapping("/manual")
     public PipelineRunResult reviewManual(@RequestBody PipelineReviewRequest request) {
         TradeCandidate candidate = manualIngestionService.process(
@@ -42,17 +48,29 @@ public class PipelineReviewController {
                 request.getEarlynessScore(),
                 request.getReflexivityPotentialScore()
         );
-        return orchestrator.process(candidate, marketBars(candidate.symbol(), request));
+        ValidationProfile profile = request.getProfile() != null
+                ? request.getProfile()
+                : ValidationProfile.STANDARD;
+        return orchestrator.process(candidate, marketBars(candidate.symbol(), request), profile);
     }
 
+    /**
+     * Fetch SEC filings for a CIK and run each through the pipeline.
+     * Use {@code ?profile=CONSERVATIVE} to apply stricter thresholds.
+     */
     @GetMapping("/sec/{cik}")
     public List<PipelineRunResult> reviewSecCandidates(
             @PathVariable String cik,
-            @RequestParam(defaultValue = "30") int lookbackDays
+            @RequestParam(defaultValue = "30") int lookbackDays,
+            @RequestParam(defaultValue = "STANDARD") ValidationProfile profile
     ) {
         List<TradeCandidate> candidates = secIngestionService.process(cik);
         return candidates.stream()
-                .map(candidate -> orchestrator.process(candidate, providerBars(candidate.symbol(), lookbackDays)))
+                .map(candidate -> orchestrator.process(
+                        candidate,
+                        providerBars(candidate.symbol(), lookbackDays),
+                        profile
+                ))
                 .toList();
     }
 
@@ -72,7 +90,8 @@ public class PipelineReviewController {
         }
 
         if (request.getMarketDataFrom() != null && request.getMarketDataTo() != null) {
-            return marketDataProvider.historicalDailyBars(symbol, request.getMarketDataFrom(), request.getMarketDataTo());
+            return marketDataProvider.historicalDailyBars(
+                    symbol, request.getMarketDataFrom(), request.getMarketDataTo());
         }
 
         return List.of();

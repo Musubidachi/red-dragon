@@ -1,6 +1,7 @@
 package dev.reddragon.app.api;
 
 import dev.reddragon.ingestion.model.CandidateCatalystType;
+import dev.reddragon.validation.config.ValidationProfile;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -20,4 +21,7 @@ public class PipelineReviewRequest {
     private LocalDate marketDataFrom;
     private LocalDate marketDataTo;
     private List<BarRequest> bars;
+
+    /** Validation strictness profile. Defaults to STANDARD when omitted. */
+    private ValidationProfile profile;
 }

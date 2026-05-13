@@ -46,5 +46,40 @@ public enum ReasonCode {
 
     REQUIRED_DATA_MISSING,
     SCORE_BELOW_THRESHOLD,
-    HARD_GATE_FAILED
+    HARD_GATE_FAILED;
+
+    /** Human-readable label suitable for display in review surfaces and reports. */
+    public String displayName() {
+        // Convert SCREAMING_SNAKE_CASE to Title Case With Spaces
+        String raw = name().replace('_', ' ').toLowerCase();
+        StringBuilder sb = new StringBuilder(raw.length());
+        boolean capitalizeNext = true;
+        for (char c : raw.toCharArray()) {
+            sb.append(capitalizeNext ? Character.toUpperCase(c) : c);
+            capitalizeNext = (c == ' ');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns {@code true} if this reason code represents a positive / supportive
+     * signal rather than a warning, deficiency, or failure.
+     */
+    public boolean isPositive() {
+        return switch (this) {
+            case STRUCTURAL_CATALYST_CONFIRMED,
+                 MATERIAL_IMPACT_HIGH,
+                 MATERIAL_IMPACT_MEDIUM,
+                 EARLY_UNKNOWN_BUT_REAL,
+                 EARLY_EMERGING_PROPAGATION,
+                 EQUILIBRIUM_RESTORATION_LIKELY,
+                 EQUILIBRIUM_ROTATIONAL_SUPPORTIVE,
+                 REFLEXIVITY_FORMING,
+                 ASYMMETRY_FAVORABLE,
+                 REGIME_SUPPORTIVE,
+                 DEPLOYMENT_CONCENTRATION_CANDIDATE,
+                 DEPLOYMENT_STANDARD_REVIEW -> true;
+            default -> false;
+        };
+    }
 }

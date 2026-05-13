@@ -65,6 +65,9 @@ public class MarketFeatureCalculator {
         double averageVolume = averageVolume(bars);
         double liquidityScore = liquidityScore(averageVolume);
         double volatilityStabilityScore = volatilityStabilityScore(latestClose, averageTrueRange);
+        double relativeVolume = relativeVolume(latestBar, averageVolume);
+        double vwapDeviation = vwapDeviation(bars, latestClose);
+        double directionalPersistence = directionalPersistence(bars);
 
         List<String> notes = notes(bars, liquidityScore);
         MarketDataQuality quality = quality(bars, liquidityScore);
@@ -80,6 +83,9 @@ public class MarketFeatureCalculator {
                 averageVolume,
                 liquidityScore,
                 volatilityStabilityScore,
+                relativeVolume,
+                vwapDeviation,
+                directionalPersistence,
                 quality,
                 notes
         );
@@ -146,17 +152,58 @@ public class MarketFeatureCalculator {
         return new MarketDataSnapshot(
                 symbol,
                 Instant.now(),
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0.0, 0.0, 0.0,
                 quality,
                 List.of(note)
         );
+    }
+
+    /**
+     * Ratio of the latest bar's volume to the period average.
+     * Returns 1.0 when average is zero to avoid division by zero.
+     */
+    private double relativeVolume(MarketBar latestBar, double averageVolume) {
+        if (averageVolume == 0) return 1.0;
+        return latestBar.volume() / averageVolume;
+    }
+
+    /**
+     * (latestClose - VWAP) / latestClose where VWAP = Σ(close × volume) / Σvolume.
+     * Returns 0.0 when total volume is zero.
+     */
+    private double vwapDeviation(List<MarketBar> bars, double latestClose) {
+        double totalVolume = 0.0;
+        double totalValue = 0.0;
+        for (MarketBar bar : bars) {
+            totalVolume += bar.volume();
+            totalValue  += bar.close() * bar.volume();
+        }
+        if (totalVolume == 0 || latestClose == 0) return 0.0;
+        double vwap = totalValue / totalVolume;
+        return (latestClose - vwap) / latestClose;
+    }
+
+    /**
+     * Fraction of consecutive bar pairs where both bars moved in the same direction
+     * (both up or both down).  Measures momentum persistence across the lookback window.
+     */
+    private double directionalPersistence(List<MarketBar> bars) {
+        if (bars.size() < 2) return 0.5;
+        int consistent = 0;
+        int total = 0;
+        for (int i = 1; i < bars.size(); i++) {
+            double prev = bars.get(i - 1).close();
+            double curr = bars.get(i).close();
+            if (i >= 2) {
+                double prevPrev = bars.get(i - 2).close();
+                boolean prevUp = curr > prev;
+                boolean currUp = prev > prevPrev;
+                if (prevUp == currUp) consistent++;
+                total++;
+            }
+        }
+        return total == 0 ? 0.5 : (double) consistent / total;
     }
 
     private double averageTrueRange(List<MarketBar> bars) {

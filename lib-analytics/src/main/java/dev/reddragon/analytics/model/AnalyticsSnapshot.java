@@ -50,4 +50,19 @@ public class AnalyticsSnapshot {
         this.deploymentConfidenceScore = AnalyticsScoreUtils.clamp(deploymentConfidenceScore);
         this.reasonNotes = List.copyOf(reasonNotes == null ? List.of() : reasonNotes);
     }
+
+    /**
+     * Returns the name of the dimension with the highest score, useful for
+     * one-line summary logging and review display.
+     */
+    public String dominantScore() {
+        double maxScore = -1;
+        String dominant = "regimeCompatibility";
+        if (regimeCompatibilityScore > maxScore) { maxScore = regimeCompatibilityScore; dominant = "regimeCompatibility"; }
+        if (asymmetryScore > maxScore)            { maxScore = asymmetryScore;            dominant = "asymmetry"; }
+        if (equilibriumQualityScore > maxScore)   { maxScore = equilibriumQualityScore;   dominant = "equilibriumQuality"; }
+        if (reflexivityPotentialScore > maxScore) { maxScore = reflexivityPotentialScore; dominant = "reflexivityPotential"; }
+        if (deploymentConfidenceScore > maxScore) {                                        dominant = "deploymentConfidence"; }
+        return dominant;
+    }
 }

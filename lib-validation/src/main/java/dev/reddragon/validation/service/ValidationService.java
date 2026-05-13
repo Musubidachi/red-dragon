@@ -1,5 +1,6 @@
 package dev.reddragon.validation.service;
 
+import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.validation.engine.DisequilibriumValidationEngine;
 import dev.reddragon.validation.engine.RiskFlagResolver;
 import dev.reddragon.validation.engine.ValidationConfidenceScorer;
@@ -14,6 +15,9 @@ import java.util.Objects;
 
 /**
  * Stable facade for the validation subsystem.
+ *
+ * <p>The no-arg constructor uses default thresholds. Pass explicit
+ * {@link ValidationThresholds} to apply a named profile preset.
  */
 public class ValidationService {
 
@@ -21,8 +25,15 @@ public class ValidationService {
     private final RiskFlagResolver riskFlagResolver;
     private final ValidationConfidenceScorer confidenceScorer;
 
+    /** Creates a service using the default (STANDARD) threshold profile. */
     public ValidationService() {
-        this.validationEngine = new DisequilibriumValidationEngine();
+        this(ValidationThresholds.defaults());
+    }
+
+    /** Creates a service using the supplied thresholds — use with {@link dev.reddragon.validation.config.ValidationThresholdProfileFactory}. */
+    public ValidationService(ValidationThresholds thresholds) {
+        Objects.requireNonNull(thresholds, "thresholds is required");
+        this.validationEngine = new DisequilibriumValidationEngine(thresholds);
         this.riskFlagResolver = new RiskFlagResolver();
         this.confidenceScorer = new ValidationConfidenceScorer();
     }
