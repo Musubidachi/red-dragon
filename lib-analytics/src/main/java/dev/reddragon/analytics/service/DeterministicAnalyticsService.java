@@ -171,6 +171,11 @@ public class DeterministicAnalyticsService {
     }
 
     private RegimeLabel regime(MarketDataSnapshot marketData, List<String> notes) {
+        if (Math.abs(marketData.gapPercent()) > 0.15 && marketData.volatilityStabilityScore() < 0.50) {
+            notes.add("Large opening displacement with unstable volatility; treating environment as news-driven and hostile to equilibrium assumptions.");
+            return RegimeLabel.HOSTILE_NEWS_DRIVEN;
+        }
+
         if (marketData.liquidityScore() < 0.35) {
             notes.add("Liquidity is weak; regime is hostile to concentration.");
             return RegimeLabel.HOSTILE_LIQUIDITY;
@@ -179,6 +184,14 @@ public class DeterministicAnalyticsService {
         if (marketData.volatilityStabilityScore() < 0.35) {
             notes.add("Volatility is unstable; equilibrium behavior is degraded.");
             return RegimeLabel.HOSTILE_VOLATILITY;
+        }
+
+        if (marketData.rangePosition() >= 0.45
+                && marketData.rangePosition() <= 0.55
+                && marketData.volatilityStabilityScore() >= 0.70
+                && marketData.liquidityScore() >= 0.60) {
+            notes.add("Structure is tightly balanced with stable volatility and healthy liquidity; compression regime favorable for selective breakout monitoring.");
+            return RegimeLabel.SUPPORTIVE_COMPRESSION;
         }
 
         if (marketData.rangePosition() >= 0.35 && marketData.rangePosition() <= 0.75) {
@@ -200,7 +213,9 @@ public class DeterministicAnalyticsService {
         return switch (regimeLabel) {
             case SUPPORTIVE_ROTATIONAL -> 0.85;
             case SUPPORTIVE_TREND -> 0.70;
+            case SUPPORTIVE_COMPRESSION -> 0.72;
             case MIXED -> 0.50;
+            case HOSTILE_NEWS_DRIVEN -> 0.22;
             case HOSTILE_VOLATILITY -> 0.25;
             case HOSTILE_LIQUIDITY -> 0.20;
         };
