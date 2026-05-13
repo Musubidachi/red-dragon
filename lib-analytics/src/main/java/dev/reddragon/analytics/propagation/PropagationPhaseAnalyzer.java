@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.propagation;
 
 import dev.reddragon.analytics.model.PhaseLabel;
 import dev.reddragon.analytics.model.PhaseTransitionSnapshot;

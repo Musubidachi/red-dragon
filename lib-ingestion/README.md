@@ -1,5 +1,9 @@
 # lib-ingestion
 
+> **MD layers:** **L1 (Opportunity Discovery)** and the candidate half of
+> **L2 (Data Ingestion)**. See [ARCHITECTURE.md](../ARCHITECTURE.md) for the
+> full mapping.
+
 `lib-ingestion` is responsible for turning outside information into normalized trade candidates that the rest of Red Dragon can evaluate.
 
 This module should answer one question:

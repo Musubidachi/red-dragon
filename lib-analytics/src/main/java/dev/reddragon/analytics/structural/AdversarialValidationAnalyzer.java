@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.structural;
 
 import dev.reddragon.analytics.model.AdversarialFinding;
 import dev.reddragon.analytics.model.AdversarialFindingType;

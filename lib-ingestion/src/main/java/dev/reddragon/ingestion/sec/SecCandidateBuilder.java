@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Builds a {@link TradeCandidate} from a denormalised {@link SecFiling}.
@@ -22,28 +21,46 @@ import java.util.UUID;
  * <p>Scoring rules:
  * <ul>
  *   <li><b>structural reality</b>: SEC filings are factual, so this is high
- *   by construction. Filings carrying severe-negative or contract items
- *   score the highest.</li>
- *   <li><b>material significance</b>: a placeholder of 0.5 until we have a
- *   fundamentals data source. Form 4 insider purchases tilt this upward.</li>
+ *       by construction. Filings carrying severe-negative or contract items
+ *       score the highest.</li>
+ *   <li><b>material significance</b>: derived from
+ *       {@link SecFilingScoringHeuristics#materiality(SecFiling)} using the
+ *       8-K item codes or form type — bankruptcies / M&amp;A are high, generic
+ *       filings are low.</li>
  *   <li><b>earlyness</b>: derived from the time elapsed since the filing.
- *   Fresh filings are higher.</li>
- *   <li><b>reflexivity potential</b>: a placeholder of 0.5 until we have
- *   news / social ingestion.</li>
+ *       Fresh filings are higher.</li>
+ *   <li><b>reflexivity potential</b>: derived from
+ *       {@link SecFilingScoringHeuristics#reflexivity(SecFiling)} — how
+ *       likely the filing is to get covered and amplified.</li>
  * </ul>
+ *
+ * <p>The candidate's id is the SEC <i>accession number</i>, not a random UUID.
+ * This makes ingestion idempotent — the same filing pulled twice produces
+ * the same id, and {@code CandidatePipelineOrchestrator}'s dedup check
+ * stops it from being re-scored and re-saved.
  */
 public class SecCandidateBuilder {
 
     private final EightKCategoryMapper categoryMapper;
+    private final SecFilingScoringHeuristics scoringHeuristics;
     private final Clock clock;
 
-    public SecCandidateBuilder(EightKCategoryMapper categoryMapper, Clock clock) {
+    public SecCandidateBuilder(
+            EightKCategoryMapper categoryMapper,
+            SecFilingScoringHeuristics scoringHeuristics,
+            Clock clock
+    ) {
         this.categoryMapper = categoryMapper;
+        this.scoringHeuristics = scoringHeuristics;
         this.clock = clock;
     }
 
+    public SecCandidateBuilder(EightKCategoryMapper categoryMapper, SecFilingScoringHeuristics scoringHeuristics) {
+        this(categoryMapper, scoringHeuristics, Clock.systemUTC());
+    }
+
     public SecCandidateBuilder(EightKCategoryMapper categoryMapper) {
-        this(categoryMapper, Clock.systemUTC());
+        this(categoryMapper, new SecFilingScoringHeuristics(), Clock.systemUTC());
     }
 
     /**
@@ -54,7 +71,7 @@ public class SecCandidateBuilder {
         Instant observedAt = filingDateToInstant(filing.filingDate());
 
         return new TradeCandidate(
-                UUID.randomUUID().toString(),
+                candidateId(filing),
                 tickerOrPlaceholder(filing),
                 filing.issuerName(),
                 catalystType,
@@ -65,19 +82,29 @@ public class SecCandidateBuilder {
                 buildHeadline(filing),
                 buildSummary(filing),
                 scoreStructuralReality(catalystType),
-                scoreMaterialSignificance(filing),
+                scoringHeuristics.materiality(filing),
                 scoreEarlyness(observedAt),
-                scoreReflexivityPotential()
+                scoringHeuristics.reflexivity(filing)
         );
+    }
+
+    /**
+     * The candidate id is the filing's accession number. Accession numbers
+     * are globally unique within SEC EDGAR, so this gives us a natural key:
+     * the same filing pulled twice produces the same id and the orchestrator
+     * skips the second pass.
+     */
+    private String candidateId(SecFiling filing) {
+        return filing.accessionNumber();
     }
 
     private CandidateCatalystType pickCatalystType(SecFiling filing) {
         return switch (filing.formType()) {
-            case "8-K"               -> categoryMapper.process(filing.itemCodes());
-            case "4"                 -> CandidateCatalystType.STRUCTURAL_DEMAND_CHANGE;
-            case "SC 13D", "SC 13G"  -> CandidateCatalystType.STRUCTURAL_DEMAND_CHANGE;
+            case "8-K"                -> categoryMapper.process(filing.itemCodes());
+            case "4"                  -> CandidateCatalystType.STRUCTURAL_DEMAND_CHANGE;
+            case "SC 13D", "SC 13G"   -> CandidateCatalystType.STRUCTURAL_DEMAND_CHANGE;
             case "S-1", "S-3", "424B" -> CandidateCatalystType.STRUCTURAL_DEMAND_CHANGE;
-            default                  -> CandidateCatalystType.FILING_EVENT;
+            default                   -> CandidateCatalystType.FILING_EVENT;
         };
     }
 
@@ -115,13 +142,6 @@ public class SecCandidateBuilder {
         };
     }
 
-    private double scoreMaterialSignificance(SecFiling filing) {
-        if ("4".equals(filing.formType())) {
-            return 0.65;
-        }
-        return 0.50;
-    }
-
     private double scoreEarlyness(Instant observedAt) {
         long hoursSince = Math.max(0, (Instant.now(clock).getEpochSecond() - observedAt.getEpochSecond()) / 3600);
         if (hoursSince < 4)   return 0.90;
@@ -129,9 +149,5 @@ public class SecCandidateBuilder {
         if (hoursSince < 72)  return 0.60;
         if (hoursSince < 168) return 0.45;
         return 0.30;
-    }
-
-    private double scoreReflexivityPotential() {
-        return 0.50;
     }
 }

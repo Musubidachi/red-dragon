@@ -4,6 +4,7 @@ import dev.reddragon.analytics.model.AnalyticsSnapshot;
 import dev.reddragon.analytics.model.PhaseLabel;
 import dev.reddragon.analytics.model.PhaseTransitionSnapshot;
 import dev.reddragon.analytics.model.RegimeLabel;
+import dev.reddragon.analytics.propagation.PropagationPhaseAnalyzer;
 import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import dev.reddragon.ingestion.model.TradeCandidate;
 import dev.reddragon.marketdata.model.MarketDataSnapshot;

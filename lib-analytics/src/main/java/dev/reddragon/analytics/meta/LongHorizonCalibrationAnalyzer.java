@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.meta;
 
 import dev.reddragon.analytics.model.CalibrationDriftLevel;
 import dev.reddragon.analytics.model.CalibrationReport;

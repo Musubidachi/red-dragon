@@ -1,5 +1,9 @@
 # lib-persistence
 
+> **MD layer:** cross-cutting. Stores the durable artefacts produced by L1/L2
+> (candidates, market bars) and L3/L5 (verdicts, deployment tier). See
+> [ARCHITECTURE.md](../ARCHITECTURE.md) for the full mapping.
+
 `lib-persistence` owns Red Dragon's database model and persistence contracts.
 
 This module should answer one question:

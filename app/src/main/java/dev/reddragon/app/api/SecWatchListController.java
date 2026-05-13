@@ -8,8 +8,7 @@ import dev.reddragon.marketdata.model.MarketBar;
 import dev.reddragon.marketdata.provider.MarketDataProvider;
 import dev.reddragon.validation.config.ValidationProfile;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,9 +34,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pipeline/sec")
 @RequiredArgsConstructor
+@Slf4j
 public class SecWatchListController {
 
-    private static final Logger log = LoggerFactory.getLogger(SecWatchListController.class);
     private static final int MAX_CIKS = 20;
 
     private final SecIngestionService secIngestionService;

@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.structural;
 
 import dev.reddragon.analytics.model.FundamentalImpactSnapshot;
 import dev.reddragon.analytics.util.AnalyticsScoreUtils;
@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Scores whether a catalyst is materially meaningful.
+ * Scores dilution and structural financing risk.
  */
-public class MaterialityImpactScorer {
+public class DilutionRiskScorer {
 
     /**
      * Main processing flow.
@@ -22,10 +22,7 @@ public class MaterialityImpactScorer {
         Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
-                impact.revenueImpactScore() * 0.30
-                        + impact.marketCapRelativeImpactScore() * 0.30
-                        + impact.structuralDemandShiftScore() * 0.30
-                        + impact.insiderAlignmentScore() * 0.10
+                1.0 - impact.dilutionRiskScore()
         );
 
         addNote(score, notes);
@@ -35,15 +32,15 @@ public class MaterialityImpactScorer {
 
     private void addNote(double score, List<String> notes) {
         if (score >= 0.80) {
-            notes.add("Catalyst appears materially significant relative to company scale.");
+            notes.add("Dilution risk appears limited.");
             return;
         }
 
         if (score >= 0.55) {
-            notes.add("Catalyst appears meaningful but not transformative.");
+            notes.add("Dilution risk exists but is manageable.");
             return;
         }
 
-        notes.add("Catalyst appears weak relative to company scale or structure.");
+        notes.add("Dilution or financing risk appears elevated.");
     }
 }

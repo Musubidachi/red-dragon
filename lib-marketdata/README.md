@@ -1,5 +1,9 @@
 # lib-marketdata
 
+> **MD layer:** market-data half of **L2 (Data Ingestion)** plus the raw
+> feature inputs that feed **L4 (Market-State Classification)** in
+> `lib-analytics`. See [ARCHITECTURE.md](../ARCHITECTURE.md) for the full mapping.
+
 `lib-marketdata` is responsible for retrieving market data and deriving the feature set used by analytics and validation.
 
 This module should answer one question:

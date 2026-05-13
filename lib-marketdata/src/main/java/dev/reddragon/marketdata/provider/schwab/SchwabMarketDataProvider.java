@@ -1,6 +1,5 @@
 package dev.reddragon.marketdata.provider.schwab;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.reddragon.marketdata.model.MarketBar;
 import dev.reddragon.marketdata.provider.MarketDataProvider;
@@ -20,16 +19,22 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Schwab daily-price history adapter.
  *
- * <p>The adapter deliberately exposes only normalized {@link MarketBar}s to the
- * rest of the platform. Authentication, response shape, caching, and provider
- * errors stay contained here.
+ * <p>This is the {@code lib-marketdata} entry point into the Schwab REST API.
+ * It speaks Schwab's wire format on the way in and emits normalized
+ * {@link MarketBar}s on the way out. Authentication, response shape, caching,
+ * and provider errors stay contained in this package; nothing outside it
+ * needs to know Schwab exists.
+ *
+ * <p>The three Jackson/cache helpers ({@link SchwabBarCacheEntry},
+ * {@link SchwabPriceHistoryResponse}, {@link SchwabCandle}) live as
+ * top-level package-private records alongside this class.
  */
 public class SchwabMarketDataProvider implements MarketDataProvider {
 
     private final SchwabMarketDataProperties properties;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
-    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private final Map<String, SchwabBarCacheEntry> cache = new ConcurrentHashMap<>();
 
     public SchwabMarketDataProvider(SchwabMarketDataProperties properties) {
         this(properties, RestClient.create(), new ObjectMapper());
@@ -53,13 +58,13 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
         }
 
         String cacheKey = cacheKey(symbol, from, to);
-        CacheEntry cached = cache.get(cacheKey);
+        SchwabBarCacheEntry cached = cache.get(cacheKey);
         if (cached != null && !cached.expired(properties.getCacheTtlSeconds())) {
             return cached.bars();
         }
 
         List<MarketBar> bars = fetchBars(symbol, from, to);
-        cache.put(cacheKey, new CacheEntry(Instant.now(), bars));
+        cache.put(cacheKey, new SchwabBarCacheEntry(Instant.now(), bars));
         return bars;
     }
 
@@ -120,26 +125,5 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
                 ))
                 .sorted(Comparator.comparing(MarketBar::date))
                 .toList();
-    }
-
-    private record CacheEntry(Instant storedAt, List<MarketBar> bars) {
-        boolean expired(long ttlSeconds) {
-            return ttlSeconds <= 0 || Instant.now().isAfter(storedAt.plusSeconds(ttlSeconds));
-        }
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record SchwabPriceHistoryResponse(List<SchwabCandle> candles) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record SchwabCandle(
-            double open,
-            double high,
-            double low,
-            double close,
-            long volume,
-            long datetime
-    ) {
     }
 }

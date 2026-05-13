@@ -2,7 +2,7 @@ package dev.reddragon.analytics.model;
 
 /**
  * Describes long-horizon drift severity detected by
- * {@link dev.reddragon.analytics.service.LongHorizonCalibrationAnalyzer}.
+ * {@link dev.reddragon.analytics.meta.LongHorizonCalibrationAnalyzer}.
  */
 public enum CalibrationDriftLevel {
     STABLE,

@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.structural;
 
 import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import dev.reddragon.ingestion.model.TradeCandidate;

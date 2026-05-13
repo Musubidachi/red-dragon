@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.classification;
 
 import dev.reddragon.analytics.util.AnalyticsScoreUtils;
 import dev.reddragon.marketdata.model.MarketDataSnapshot;

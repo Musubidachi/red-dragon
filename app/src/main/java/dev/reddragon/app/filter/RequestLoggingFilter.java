@@ -8,8 +8,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,9 +20,8 @@ import java.io.IOException;
  */
 @Component
 @WebFilter("/*")
+@Slf4j
 public class RequestLoggingFilter implements Filter {
-
-    private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

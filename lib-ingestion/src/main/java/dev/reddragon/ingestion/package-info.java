@@ -1,18 +1,24 @@
 /**
  * Ingestion: pull candidate trade inputs from external sources.
  *
- * <p>Source families this module is responsible for:
+ * <h2>MD-layer mapping</h2>
+ *
+ * This module implements the first two layers of the trading framework spec:
+ *
  * <ul>
- *   <li>SEC filings (8-K, S-1, 13F, Form 4, etc.) via EDGAR</li>
- *   <li>News and press releases via RSS / vendor feeds</li>
- *   <li>Market scanners (relative volume, gaps, breakouts, 52-week highs)</li>
- *   <li>Macro / sector signals (yields, VIX, sector flows, policy calendars)</li>
+ *   <li><b>MD Layer 1 — Opportunity Discovery Engine</b>: surface possible
+ *       opportunities from SEC EDGAR filings, manual entry, and (future) RSS /
+ *       news / sector scanners. Lives in {@link dev.reddragon.ingestion.sec}
+ *       and {@link dev.reddragon.ingestion.service}.</li>
+ *   <li><b>MD Layer 2 — Data Ingestion Engine</b>: normalize each discovered
+ *       item into a {@link dev.reddragon.ingestion.model.TradeCandidate} —
+ *       timestamping, source tracking, entity extraction, metadata tagging.</li>
  * </ul>
  *
- * <p>Each source produces a stream of {@code Candidate} records — a ticker plus
- * the raw evidence that surfaced it. No enrichment, no scoring, no filtering
- * happens here. Downstream modules attach market-data features (lib-marketdata),
- * compute regime/asymmetry scores (lib-analytics), and apply hard rules
- * (lib-validation).
+ * <p><b>For a junior developer:</b> the boundary contract is simple — every
+ * source produces {@link dev.reddragon.ingestion.model.TradeCandidate}s. No
+ * enrichment, no scoring, no filtering happens here. Downstream modules
+ * attach market-data features (lib-marketdata), score them (lib-analytics),
+ * and apply hard rules (lib-validation).
  */
 package dev.reddragon.ingestion;

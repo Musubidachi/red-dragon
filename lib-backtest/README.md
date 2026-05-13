@@ -1,5 +1,9 @@
 # lib-backtest
 
+> **MD layer:** supports **L8 (Meta-System Adaptation)** by replaying historical
+> frames through the same pipeline as production, so calibration analysis has
+> something to chew on. See [ARCHITECTURE.md](../ARCHITECTURE.md) for the full mapping.
+
 `lib-backtest` is a deterministic replay harness for testing the full candidate pipeline against historical data.
 
 This module should answer one question:

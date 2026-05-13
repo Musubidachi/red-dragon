@@ -3,7 +3,7 @@ package dev.reddragon.app.api;
 import dev.reddragon.analytics.model.AnalyticsScoreBreakdown;
 import dev.reddragon.analytics.model.CalibrationReport;
 import dev.reddragon.analytics.model.OutcomeSample;
-import dev.reddragon.analytics.service.LongHorizonCalibrationAnalyzer;
+import dev.reddragon.analytics.meta.LongHorizonCalibrationAnalyzer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

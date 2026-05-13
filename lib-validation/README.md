@@ -1,5 +1,9 @@
 # lib-validation
 
+> **MD layer:** owns the hard-gate half of **L3 (Structural Validation)** and
+> the tier decision in **L5 (Deployment)**. See [ARCHITECTURE.md](../ARCHITECTURE.md)
+> for the full mapping.
+
 `lib-validation` is responsible for turning candidate context and analytical signals into an actionable review verdict.
 
 This module should answer one question:

@@ -33,17 +33,35 @@ augments discretionary decisions, it does not replace them.
 
 ## Module layout
 
-| Module             | Purpose                                                                   |
-| ------------------ | ------------------------------------------------------------------------- |
-| `app`              | Only deployable artifact. Spring Boot main, web layer, pipeline wiring.   |
-| `lib-ingestion`    | Pull candidate inputs: SEC EDGAR 8-K filings, manual entry.               |
-| `lib-marketdata`   | EOD and intraday price/volume retrieval, VWAP/ATR/range-position features.|
-| `lib-analytics`    | Regime classifier + asymmetry scorer. Pure deterministic functions.       |
-| `lib-validation`   | Seven-dimension hard-rules engine + score aggregation → trade verdict.    |
-| `lib-persistence`  | JPA entities, repositories, Flyway migrations.                            |
-| `lib-backtest`     | Deterministic replay harness for historical candidates and bars.          |
+| Module             | MD layers           | Purpose                                                                   |
+| ------------------ | ------------------- | ------------------------------------------------------------------------- |
+| `app`              | (wires all)         | Only deployable artifact. Spring Boot main, web layer, pipeline wiring.   |
+| `lib-ingestion`    | L1, L2 (candidates) | Pull candidate inputs: SEC EDGAR 8-K filings, manual entry.               |
+| `lib-marketdata`   | L2 (market data)    | EOD and intraday price/volume retrieval, VWAP/ATR/range-position features.|
+| `lib-analytics`    | L3, L4, L5, L6, L8  | Regime classifier + asymmetry scorer. Pure deterministic functions.       |
+| `lib-validation`   | L3 (gates), L5      | Hard-rules engine + score aggregation → trade verdict + deployment tier.  |
+| `lib-persistence`  | cross-cutting       | JPA entities, repositories, Flyway migrations.                            |
+| `lib-backtest`     | supports L8         | Deterministic replay harness for historical candidates and bars.          |
+| `lib-execution`    | (planned, post-L5)  | Future Schwab order placement, dry-run gated. Doc-only as of 2026-05-10.  |
 
 Only `app` produces a bootable jar. Libraries are plain jars consumed by `app`.
+
+> **MD-layer reference:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the full
+> mapping between the eight-layer trading-framework spec and the Java packages
+> in this repo. Every package has a `package-info.java` calling out which MD
+> layer it implements.
+
+## Project conventions for contributors
+
+* **Lombok** is the default for value objects (`@Value`), service constructors
+  (`@RequiredArgsConstructor`), and loggers (`@Slf4j`). Do not write manual
+  builders, getters, or `LoggerFactory.getLogger(...)`.
+* **No nested classes.** Every class, enum, record, and interface lives in its
+  own top-level file. Cache entries and Jackson DTOs included.
+* **Pure functions in `lib-analytics`.** No I/O, no static state, no portfolio
+  awareness — each scorer takes a snapshot in and returns a 0.0–1.0 score out.
+* **Provider adapters stay sealed.** Schwab DTOs are package-private and never
+  leak past `lib-marketdata/.../provider/schwab/`.
 
 ## HTTP API surface
 

@@ -1,11 +1,12 @@
 package dev.reddragon.app.config;
 
+import dev.reddragon.analytics.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.analytics.service.DeterministicAnalyticsService;
-import dev.reddragon.analytics.service.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.backtest.service.BacktestReplayEngine;
 import dev.reddragon.ingestion.sec.EightKCategoryMapper;
 import dev.reddragon.ingestion.sec.SecApiProperties;
 import dev.reddragon.ingestion.sec.SecCandidateBuilder;
+import dev.reddragon.ingestion.sec.SecFilingScoringHeuristics;
 import dev.reddragon.ingestion.sec.SecHttpClient;
 import dev.reddragon.ingestion.sec.SecIngestionService;
 import dev.reddragon.ingestion.sec.SimpleRateLimiter;
@@ -96,7 +97,7 @@ public class PipelineConfiguration {
         return new SecIngestionService(
                 submissions,
                 new SubmissionsFilingExtractor(),
-                new SecCandidateBuilder(new EightKCategoryMapper())
+                new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics())
         );
     }
 

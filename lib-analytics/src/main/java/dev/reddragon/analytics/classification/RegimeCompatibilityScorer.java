@@ -1,4 +1,4 @@
-package dev.reddragon.analytics.service;
+package dev.reddragon.analytics.classification;
 
 import dev.reddragon.analytics.model.RegimeLabel;
 import dev.reddragon.marketdata.model.MarketDataSnapshot;

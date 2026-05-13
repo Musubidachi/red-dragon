@@ -1,122 +1,91 @@
 # lib-analytics
 
-`lib-analytics` is responsible for turning enriched candidate context into explainable analytical signals.
+Pure-function scoring for the disequilibrium pipeline. Five of the eight MD
+layers live here — every per-layer scorer is in its own sub-package so the
+mapping is visible at a glance.
 
-This module should answer two questions:
+## MD-layer mapping
 
-> What market state is this candidate operating in?
->
-> Does the setup appear asymmetric enough to deserve attention?
+| Sub-package      | MD layer | Job                                                       |
+| ---------------- | -------- | --------------------------------------------------------- |
+| `structural/`    | L3       | Is the catalyst real, material, and meaningful?           |
+| `classification/`| L4       | What market regime are we in?                             |
+| `deployment/`    | L5       | How confidently should we deploy?                         |
+| `propagation/`   | L6       | Is the narrative early or saturated?                      |
+| `meta/`          | L8       | Is our own edge drifting?                                 |
+| `service/`       | —        | Orchestrators that blend the above into one snapshot.     |
+| `model/`         | —        | Shared value objects (snapshots, labels, breakdowns).     |
+| `util/`          | —        | Pure math helpers.                                        |
 
-The analytics layer should remain deterministic first. Probabilistic or machine-learning methods can be added later, but the early version should be transparent enough that a trader can challenge every factor.
+Each sub-package has a `package-info.java` listing its members and what they do.
 
-## Responsibilities
+## Public API (the only classes other modules import)
 
-- Classify the current market or symbol-level regime.
-- Score candidate asymmetry using explainable factors.
-- Produce reason codes and factor-level contributions.
-- Keep scoring functions pure where practical.
-- Avoid hidden side effects, persistence, or external data retrieval.
+* `DeterministicAnalyticsService` — the main pipeline entry. Takes a
+  candidate + market-data snapshot and emits an `AnalyticsSnapshot`.
+* `MarketStateClassifier` — standalone regime classifier exposed via
+  the `/market-state` HTTP endpoint.
+* `LongHorizonCalibrationAnalyzer` — meta-layer drift detection from a
+  batch of realized trade outcomes.
 
-Possible analytical outputs:
+Everything else is an internal implementation detail of those three classes.
+The 18 per-layer scorers/analyzers in the sub-packages are package-private
+in spirit even where they are technically `public`.
 
-- regime label
-- regime confidence
-- asymmetry score
-- upside / downside factor notes
-- liquidity risk note
-- volatility context
-- reason codes used by validation
+## Rules for this module
 
-## Non-responsibilities
+1. **Pure functions only.** No `I/O`, no static state, no time-of-day branching,
+   no portfolio awareness. Same input ⇒ same output, always.
+2. **Validation in the constructor.** Value objects use Lombok `@Value` and
+   enforce normalized ranges in the explicit constructor. There is no second
+   line of defense downstream.
+3. **Every score includes its explanation.** Scorers don't return a bare
+   `double` for free-floating consumption — they return a snapshot/finding
+   with reason codes attached so review is auditable.
+4. **No nested classes.** If you have a helper record or enum, it lives in
+   its own top-level file in the same package.
+5. **Adding a new scorer?** Put it in the layer sub-package that matches its
+   job — never in `service/`. The orchestrator in `service/` is the only
+   thing that crosses layers.
 
-This library should not:
+## Where each MD layer lives
 
-- Pull candidates from external sources.
-- Fetch market bars directly from providers.
-- Persist analytics snapshots directly unless routed through persistence contracts.
-- Produce final PASS / WATCH / REJECT verdicts by itself.
-- Place trades or manage portfolio exposure.
+### L3 — Structural Validation
+* `AdversarialValidationAnalyzer` — contradiction-finding against the bullish thesis
+* `AsymmetryScorer` — remaining risk/reward asymmetry
+* `DilutionRiskScorer` — dilution / share-issuance risk
+* `MaterialityImpactScorer` — catalyst materiality vs company size
 
-## Expected flow
+### L4 — Market-State Classification
+* `RegimeCompatibilityScorer` — top-level regime label
+* `EquilibriumQualityScorer` — mean-reversion quality
+* `EquilibriumPhaseAnalyzer` — intraday phase label
+* `DirectionalPersistenceScorer` — trend persistence
+* `VolatilityExpansionScorer` — realized-vol expansion
+* `VwapInteractionScorer` — VWAP behavior
+* `LiquidityTextureScorer` — depth, spread, participation
+* `OptionsFlowScorer` — unusual options activity
 
-```text
-candidate + market-data snapshot
-    -> regime classifier
-    -> asymmetry scorer
-    -> analytical snapshot with reason codes
-    -> validation
-```
+### L5 — Deployment
+* `DeploymentConfidenceScorer` — confidence input. Tier decision itself lives in `lib-validation`.
 
-## Design guidance
+### L6 — Narrative Propagation
+* `NarrativeExpansionScorer`
+* `PropagationPhaseAnalyzer`
+* `ReflexivityScorer`
+* `SectorPropagationScorer`
 
-### Make the first version rule-based
-
-Start with simple rules before probabilistic scoring. A transparent rule-based baseline gives you something to compare against later.
-
-Example regime inputs:
-
-- broad index trend
-- volatility level
-- candidate volatility vs normal range
-- volume / liquidity profile
-- gap behavior
-- price location inside recent range
-
-Example asymmetry inputs:
-
-- distance to invalidation
-- potential catalyst strength
-- liquidity quality
-- volatility expansion or compression
-- current range position
-- market regime alignment
-
-### Return explanations, not just numbers
-
-Every score should include reason codes or factor contributions. A score without an explanation is not useful for discretionary review.
-
-Example reason codes:
-
-- `RANGE_POSITION_FAVORABLE`
-- `LIQUIDITY_ACCEPTABLE`
-- `ATR_TOO_HIGH`
-- `REGIME_RISK_ON`
-- `CATALYST_PRESENT`
-- `DOWNSIDE_TOO_WIDE`
-
-### Keep functions testable
-
-Given the same candidate and market-data snapshot, analytics should produce the same result every time. Avoid network access, time-dependent behavior, and mutable global state inside scoring functions.
-
-## Suggested package layout
-
-```text
-lib-analytics
-└── src/main/java/dev/reddragon/analytics
-    ├── regime          # regime classifier and regime models
-    ├── asymmetry       # asymmetry scorer and factor contributions
-    ├── signal          # analytical signal contracts and reason codes
-    └── config          # scoring weights and thresholds
-```
-
-## First implementation target
-
-1. Define regime labels and analytical snapshot models.
-2. Implement a deterministic regime classifier.
-3. Implement a simple weighted asymmetry scorer.
-4. Return factor-level contributions and reason codes.
-5. Keep all thresholds configurable from a plain object or properties mapping.
+### L8 — Meta-System Adaptation
+* `LiveContextAdaptationAnalyzer`
+* `LongHorizonCalibrationAnalyzer`
 
 ## Testing expectations
 
-Tests should cover:
+* Deterministic scoring for fixed inputs
+* Boundary behavior around thresholds
+* Missing or incomplete snapshots
+* Reason-code generation
+* Aggregation math in the orchestrator
 
-- deterministic scoring for fixed inputs
-- boundary behavior around thresholds
-- missing or incomplete market-data snapshots
-- reason-code generation
-- score aggregation math
-- regime classification for known scenarios
-
-Do not test analytics by depending on live market data. Feed fixed snapshots into the scoring functions.
+Don't test analytics by depending on live market data. Feed fixed snapshots
+into the scoring functions.
