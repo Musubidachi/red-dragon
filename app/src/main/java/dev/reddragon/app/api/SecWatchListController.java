@@ -72,7 +72,9 @@ public class SecWatchListController {
         // Sort: non-duplicates by score desc, duplicates at the bottom
         results.sort(Comparator
                 .comparing(PipelineRunResult::duplicate)
-                .thenComparing(r -> r.validation() != null ? -r.validation().score() : 0.0)
+                .thenComparing(Comparator.comparingDouble(
+                        (PipelineRunResult r) -> r.validation() != null ? -r.validation().score() : 0.0d
+                ))
         );
 
         return results;
