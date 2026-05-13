@@ -1,7 +1,6 @@
 package dev.reddragon.ingestion.sec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.util.Objects;
@@ -13,12 +12,17 @@ import java.util.Objects;
  * a given CIK. The CIK is supplied unpadded; this class zero-pads it to
  * the 10 characters the SEC URL expects.
  */
-@RequiredArgsConstructor
 public class SubmissionsClient {
 
     private final SecApiProperties properties;
     private final SecHttpClient httpClient;
     private final ObjectMapper objectMapper;
+
+    public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient, ObjectMapper objectMapper) {
+        this.properties = properties;
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
+    }
 
     public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient) {
         this(properties, httpClient, new ObjectMapper());

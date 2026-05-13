@@ -1,7 +1,5 @@
 package dev.reddragon.ingestion.sec;
 
-import lombok.Value;
-
 /**
  * Configuration values needed to talk to the SEC EDGAR HTTP API.
  *
@@ -11,17 +9,34 @@ import lombok.Value;
  * values here means every SEC class reads from one place and the operator
  * sets them once.
  */
-@Value
 public class SecApiProperties {
 
     /** The exact string sent in the {@code User-Agent} HTTP header. */
-    String userAgent;
+    private final String userAgent;
 
     /** Base URL for the submissions JSON API. */
-    String submissionsBaseUrl;
+    private final String submissionsBaseUrl;
 
     /** Maximum HTTP requests per second to send to {@code *.sec.gov}. */
-    int requestsPerSecond;
+    private final int requestsPerSecond;
+
+    public SecApiProperties(String userAgent, String submissionsBaseUrl, int requestsPerSecond) {
+        this.userAgent = userAgent;
+        this.submissionsBaseUrl = submissionsBaseUrl;
+        this.requestsPerSecond = requestsPerSecond;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public String getSubmissionsBaseUrl() {
+        return submissionsBaseUrl;
+    }
+
+    public int getRequestsPerSecond() {
+        return requestsPerSecond;
+    }
 
     /**
      * Returns a conservative default suitable for local development. The
