@@ -53,4 +53,8 @@ public interface ValidationVerdictRepository extends JpaRepository<ValidationVer
 
     /** The single highest-scoring verdict ever recorded for a symbol. */
     ValidationVerdictEntity findTopBySymbolOrderByScoreDesc(String symbol);
+
+    /** Verdict history after the provided timestamp, newest-first. */
+    List<ValidationVerdictEntity> findByCreatedAtAfterOrderByCreatedAtDesc(Instant since);
+
 }
