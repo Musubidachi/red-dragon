@@ -16,19 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Schwab daily-price history adapter.
- *
- * <p>This is the {@code lib-marketdata} entry point into the Schwab REST API.
- * It speaks Schwab's wire format on the way in and emits normalized
- * {@link MarketBar}s on the way out. Authentication, response shape, caching,
- * and provider errors stay contained in this package; nothing outside it
- * needs to know Schwab exists.
- *
- * <p>The three Jackson/cache helpers ({@link SchwabBarCacheEntry},
- * {@link SchwabPriceHistoryResponse}, {@link SchwabCandle}) live as
- * top-level package-private records alongside this class.
- */
 public class SchwabMarketDataProvider implements MarketDataProvider {
 
     private final SchwabMarketDataProperties properties;
@@ -63,25 +50,46 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
             return cached.bars();
         }
 
-        List<MarketBar> bars = fetchBars(symbol, from, to);
+        List<MarketBar> bars = fetchBarsWithRetry(symbol, from, to);
         cache.put(cacheKey, new SchwabBarCacheEntry(Instant.now(), bars));
         return bars;
     }
 
     private void validate(String symbol, LocalDate from, LocalDate to) {
-        if (symbol == null || symbol.isBlank()) {
-            throw new IllegalArgumentException("symbol is required");
-        }
-        if (from == null || to == null) {
-            throw new IllegalArgumentException("from and to dates are required");
-        }
-        if (to.isBefore(from)) {
-            throw new IllegalArgumentException("to date cannot be before from date");
-        }
+        if (symbol == null || symbol.isBlank()) throw new IllegalArgumentException("symbol is required");
+        if (from == null || to == null) throw new IllegalArgumentException("from and to dates are required");
+        if (to.isBefore(from)) throw new IllegalArgumentException("to date cannot be before from date");
     }
 
     private String cacheKey(String symbol, LocalDate from, LocalDate to) {
         return symbol.trim().toUpperCase() + ":" + from + ":" + to;
+    }
+
+    private List<MarketBar> fetchBarsWithRetry(String symbol, LocalDate from, LocalDate to) {
+        RuntimeException last = null;
+        int attempts = Math.max(1, properties.getMaxRetries() + 1);
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                return fetchBars(symbol, from, to);
+            } catch (RuntimeException error) {
+                last = error;
+                if (attempt == attempts) {
+                    break;
+                }
+                sleepBackoff(attempt);
+            }
+        }
+        throw new IllegalStateException("Failed to retrieve Schwab market data for " + symbol + " after retries", last);
+    }
+
+    private void sleepBackoff(int attempt) {
+        long sleepMs = Math.max(0L, properties.getRetryBackoffMillis()) * attempt;
+        if (sleepMs == 0L) return;
+        try {
+            Thread.sleep(sleepMs);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private List<MarketBar> fetchBars(String symbol, LocalDate from, LocalDate to) {
@@ -109,20 +117,9 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
     }
 
     private List<MarketBar> toMarketBars(String symbol, SchwabPriceHistoryResponse response) {
-        if (response == null || response.candles() == null) {
-            return List.of();
-        }
-
+        if (response == null || response.candles() == null) return List.of();
         return response.candles().stream()
-                .map(candle -> new MarketBar(
-                        symbol,
-                        Instant.ofEpochMilli(candle.datetime()).atZone(ZoneOffset.UTC).toLocalDate(),
-                        candle.open(),
-                        candle.high(),
-                        candle.low(),
-                        candle.close(),
-                        candle.volume()
-                ))
+                .map(candle -> new MarketBar(symbol, Instant.ofEpochMilli(candle.datetime()).atZone(ZoneOffset.UTC).toLocalDate(), candle.open(), candle.high(), candle.low(), candle.close(), candle.volume()))
                 .sorted(Comparator.comparing(MarketBar::date))
                 .toList();
     }

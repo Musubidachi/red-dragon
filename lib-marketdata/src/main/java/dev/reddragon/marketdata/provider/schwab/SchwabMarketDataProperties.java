@@ -11,6 +11,8 @@ public class SchwabMarketDataProperties {
     String accessToken;
     boolean enabled;
     long cacheTtlSeconds;
+    int maxRetries;
+    long retryBackoffMillis;
 
     public boolean configured() {
         return enabled && accessToken != null && !accessToken.isBlank();

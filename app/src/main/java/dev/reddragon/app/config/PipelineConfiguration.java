@@ -106,9 +106,11 @@ public class PipelineConfiguration {
             @Value("${red-dragon.schwab.base-url}") String baseUrl,
             @Value("${red-dragon.schwab.access-token}") String accessToken,
             @Value("${red-dragon.schwab.enabled}") boolean enabled,
-            @Value("${red-dragon.schwab.cache-ttl-seconds}") long cacheTtlSeconds
+            @Value("${red-dragon.schwab.cache-ttl-seconds}") long cacheTtlSeconds,
+            @Value("${red-dragon.schwab.max-retries:3}") int maxRetries,
+            @Value("${red-dragon.schwab.retry-backoff-millis:250}") long retryBackoffMillis
     ) {
-        return new SchwabMarketDataProperties(baseUrl, accessToken, enabled, cacheTtlSeconds);
+        return new SchwabMarketDataProperties(baseUrl, accessToken, enabled, cacheTtlSeconds, maxRetries, retryBackoffMillis);
     }
 
     @Bean
