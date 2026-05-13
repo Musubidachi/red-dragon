@@ -53,11 +53,21 @@ red-dragon:
     user-agent: ${RED_DRAGON_SEC_USER_AGENT:red-dragon fabriziom19@gmail.com}
     submissions-base-url: ${RED_DRAGON_SEC_SUBMISSIONS_BASE_URL:https://data.sec.gov/submissions}
     requests-per-second: ${RED_DRAGON_SEC_REQUESTS_PER_SECOND:5}
+  scheduler:
+    sec:
+      enabled: ${RED_DRAGON_SEC_SCHEDULER_ENABLED:false}
+      cron: ${RED_DRAGON_SEC_SCHEDULER_CRON:0 0 13 * * MON-FRI}
+      zone: ${RED_DRAGON_SEC_SCHEDULER_ZONE:UTC}
+      ciks: ${RED_DRAGON_SEC_SCHEDULER_CIKS:}
+      lookback-days: ${RED_DRAGON_SEC_SCHEDULER_LOOKBACK_DAYS:30}
+      profile: ${RED_DRAGON_SEC_SCHEDULER_PROFILE:STANDARD}
   schwab:
     base-url: ${SCHWAB_MARKETDATA_BASE_URL:https://api.schwabapi.com/marketdata/v1}
     access-token: ${SCHWAB_ACCESS_TOKEN:}
     enabled: ${SCHWAB_MARKETDATA_ENABLED:false}
     cache-ttl-seconds: ${SCHWAB_MARKETDATA_CACHE_TTL_SECONDS:60}
+    max-retries: ${SCHWAB_MARKETDATA_MAX_RETRIES:3}
+    retry-backoff-millis: ${SCHWAB_MARKETDATA_RETRY_BACKOFF_MILLIS:250}
 
 logging:
   level:

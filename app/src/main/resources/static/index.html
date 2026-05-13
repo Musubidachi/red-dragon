@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Red Dragon Review</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background:#f7f8fa; }
+        h1 { margin-bottom: 0.25rem; }
+        .muted { color:#666; margin-bottom:1rem; }
+        .stats { display:flex; gap:1rem; margin:1rem 0; flex-wrap:wrap; }
+        .card { background:#fff; border-radius:8px; padding:1rem; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+        .candidate { margin-bottom:1rem; }
+        .score { font-weight:700; }
+        code { background:#eef; padding:0.1rem 0.35rem; border-radius:4px; }
+    </style>
+</head>
+<body>
+<h1>Red Dragon Candidate Review</h1>
+<p class="muted">Data source: <code>/api/review/candidates</code> and <code>/api/stats/opportunity-quality</code></p>
+<div class="stats" id="stats"></div>
+<div id="candidates"></div>
+<script>
+    async function loadJson(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        return res.json();
+    }
+
+    function renderStats(data) {
+        const container = document.getElementById('stats');
+        container.innerHTML = '';
+        Object.entries(data).forEach(([k, v]) => {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.innerHTML = `<div><strong>${k}</strong></div><div>${typeof v === 'number' ? v.toFixed(4) : v}</div>`;
+            container.appendChild(el);
+        });
+    }
+
+    function renderCandidates(rows) {
+        const container = document.getElementById('candidates');
+        container.innerHTML = '';
+        if (!Array.isArray(rows) || rows.length === 0) {
+            container.innerHTML = '<div class="card">No candidates found.</div>';
+            return;
+        }
+        rows.forEach(row => {
+            const el = document.createElement('div');
+            el.className = 'card candidate';
+            const val = row.validation || {};
+            const reasons = Array.isArray(val.reasonCodes) ? val.reasonCodes.join(', ') : '';
+            el.innerHTML = `
+                <div><strong>${row.symbol || 'UNKNOWN'}</strong> — ${row.companyName || ''}</div>
+                <div>${row.headline || ''}</div>
+                <div class="score">Verdict: ${val.verdict || 'N/A'} | Score: ${(val.score ?? 0).toFixed ? (val.score).toFixed(4) : (val.score ?? 'N/A')}</div>
+                <div>Deployment: ${val.deploymentTier || 'N/A'}</div>
+                <div>Reasons: ${reasons || 'N/A'}</div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    (async function bootstrap() {
+        try {
+            const [stats, candidates] = await Promise.all([
+                loadJson('/api/stats/opportunity-quality'),
+                loadJson('/api/review/candidates')
+            ]);
+            renderStats(stats);
+            renderCandidates(candidates);
+        } catch (err) {
+            document.getElementById('candidates').innerHTML = `<div class="card">Failed to load data: ${err.message}</div>`;
+        }
+    })();
+</script>
+</body>
+</html>

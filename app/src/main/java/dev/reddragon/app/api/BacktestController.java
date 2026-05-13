@@ -7,6 +7,7 @@ import dev.reddragon.backtest.service.BacktestReplayEngine;
 import dev.reddragon.ingestion.model.CandidateCatalystType;
 import dev.reddragon.ingestion.service.ManualCandidateIngestionService;
 import dev.reddragon.marketdata.model.MarketBar;
+import dev.reddragon.app.pipeline.CalibrationOutcomeService;
 import dev.reddragon.persistence.entity.BacktestResultEntity;
 import dev.reddragon.persistence.repository.BacktestResultRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class BacktestController {
     private final BacktestReplayEngine backtestReplayEngine;
     private final ManualCandidateIngestionService ingestionService;
     private final BacktestResultRepository backtestResultRepository;
+    private final CalibrationOutcomeService calibrationOutcomeService;
 
     @PostMapping
     public BacktestReport runBacktest(@RequestBody BacktestRequest request) {
@@ -61,6 +63,7 @@ public class BacktestController {
                 .map(outcome -> toResultEntity(runId, strategyName, outcome, now))
                 .toList();
         backtestResultRepository.saveAll(entities);
+        calibrationOutcomeService.appendBacktestOutcomes(report.outcomes());
 
         return report;
     }
