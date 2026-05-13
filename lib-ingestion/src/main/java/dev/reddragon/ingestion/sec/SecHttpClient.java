@@ -21,6 +21,12 @@ public class SecHttpClient {
     private final SimpleRateLimiter rateLimiter;
     private final RestClient restClient;
 
+    public SecHttpClient(SecApiProperties properties, SimpleRateLimiter rateLimiter, RestClient restClient) {
+        this.properties = properties;
+        this.rateLimiter = rateLimiter;
+        this.restClient = restClient;
+    }
+
     public SecHttpClient(SecApiProperties properties, SimpleRateLimiter rateLimiter) {
         this(properties, rateLimiter, RestClient.create());
     }

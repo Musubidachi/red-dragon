@@ -18,6 +18,12 @@ public class SubmissionsClient {
     private final SecHttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+    public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient, ObjectMapper objectMapper) {
+        this.properties = properties;
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
+    }
+
     public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient) {
         this(properties, httpClient, new ObjectMapper());
     }
