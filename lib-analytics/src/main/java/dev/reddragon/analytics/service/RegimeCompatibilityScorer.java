@@ -52,6 +52,7 @@ public class RegimeCompatibilityScorer {
             case MIXED -> 0.50;
             case HOSTILE_VOLATILITY -> 0.25;
             case HOSTILE_LIQUIDITY -> 0.20;
+            default -> 0.00;
         };
     }
 

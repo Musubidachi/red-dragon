@@ -68,6 +68,7 @@ public class MarketStateClassifier {
             case MIXED -> 0.50;
             case HOSTILE_VOLATILITY -> 0.36;
             case HOSTILE_LIQUIDITY -> 0.32;
+            default -> 0.00;
         };
 
         double vwapPenalty = Math.min(0.20, Math.abs(snapshot.vwapDistancePercent()) * 0.04);
