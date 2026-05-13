@@ -3,7 +3,6 @@ package dev.reddragon.ingestion.sec;
 import dev.reddragon.ingestion.model.CandidateCatalystType;
 import dev.reddragon.ingestion.model.SourceType;
 import dev.reddragon.ingestion.model.TradeCandidate;
-import lombok.RequiredArgsConstructor;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -33,11 +32,15 @@ import java.util.UUID;
  *   news / social ingestion.</li>
  * </ul>
  */
-@RequiredArgsConstructor
 public class SecCandidateBuilder {
 
     private final EightKCategoryMapper categoryMapper;
     private final Clock clock;
+
+    public SecCandidateBuilder(EightKCategoryMapper categoryMapper, Clock clock) {
+        this.categoryMapper = categoryMapper;
+        this.clock = clock;
+    }
 
     public SecCandidateBuilder(EightKCategoryMapper categoryMapper) {
         this(categoryMapper, Clock.systemUTC());
