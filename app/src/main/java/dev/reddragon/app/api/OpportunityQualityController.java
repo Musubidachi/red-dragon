@@ -65,14 +65,14 @@ public class OpportunityQualityController {
                             .average()
                             .orElse(0.0d);
                     long sampleSize = symbolVerdicts.size();
-                    return Map.of(
-                            "symbol", symbol,
-                            "avgScore", avgScore,
-                            "sampleSize", sampleSize
-                    );
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("symbol", symbol);
+                    row.put("avgScore", avgScore);
+                    row.put("sampleSize", sampleSize);
+                    return row;
                 })
-                .sorted(Comparator.comparingDouble((Map<String, Object> row) -> (double) row.get("avgScore")).reversed()
-                        .thenComparing((Map<String, Object> row) -> (long) row.get("sampleSize"), Comparator.reverseOrder()))
+                .sorted(Comparator.comparingDouble((Map<String, Object> row) -> ((Number) row.get("avgScore")).doubleValue()).reversed()
+                        .thenComparing((Map<String, Object> row) -> ((Number) row.get("sampleSize")).longValue(), Comparator.reverseOrder()))
                 .limit(safeTopSymbols)
                 .toList();
 
