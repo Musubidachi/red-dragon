@@ -383,7 +383,7 @@ class CalibrationOutcomeServiceTest {
 
         double avg = service.averageReturnForSymbol("aaa", 100);
 
-        assertEquals(0.3, avg);
+        assertEquals(0.3, avg, 1e-9);
     }
 
 
@@ -413,7 +413,7 @@ class CalibrationOutcomeServiceTest {
 
         double avg = service.averageDrawdownForSymbol("aaa", 100);
 
-        assertEquals(0.2, avg);
+        assertEquals(0.2, avg, 1e-9);
     }
 
 

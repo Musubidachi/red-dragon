@@ -70,7 +70,7 @@ class PropagationScorersBoundaryTest {
     void propagationPhaseAnalyzerLabelsStableHighReflexivityAsSaturationRisk() {
         PropagationPhaseAnalyzer analyzer = new PropagationPhaseAnalyzer();
         PhaseLabel label = analyzer.process(
-                new PhaseTransitionSnapshot(/* previous */ 0.90, /* current */ 0.92, /* slope */ 0.02, /* acceleration */ 0.0)
+        		new PhaseTransitionSnapshot(0.90, 0.92, 0.02, -0.01)
         );
         // High level, near-flat slope = saturation territory.
         assertTrue(

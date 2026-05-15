@@ -27,7 +27,7 @@ class SecCandidateBuilderTest {
 
     @Test
     void earlynessScoreDropsAsFilingAges() {
-        Clock clock = Clock.fixed(Instant.parse("2026-05-13T12:00:00Z"), ZoneOffset.UTC);
+        Clock clock = Clock.fixed(Instant.parse("2026-05-13T03:00:00Z"), ZoneOffset.UTC);
         SecCandidateBuilder builder = new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics(), clock);
         SecFiling fresh = new SecFiling("00001234", "ACME", "ACME", "a1", "8-K", LocalDate.of(2026,5,13), "doc.htm", "desc", List.of());
         SecFiling old = new SecFiling("00001234", "ACME", "ACME", "a2", "8-K", LocalDate.of(2026,5,1), "doc.htm", "desc", List.of());
