@@ -51,6 +51,24 @@ Only `app` produces a bootable jar. Libraries are plain jars consumed by `app`.
 > in this repo. Every package has a `package-info.java` calling out which MD
 > layer it implements.
 
+## Package layout inside each module
+
+Every module follows the same shape:
+
+```
+<module>/src/main/java/dev/reddragon/<module>/
+    models/      — value objects, DTOs, snapshots, records, enums
+    domains/     — JPA entities (lib-persistence only)
+    services/    — business logic; sub-packaged where useful (e.g. services/sec/, services/engine/, services/provider/schwab/)
+    controllers/ — HTTP controllers (app only)
+    utilities/   — pure static helpers
+    config/      — Spring @Configuration and @Value-annotated properties classes
+```
+
+MD-layer groupings live one level inside `services/` so both axes (type and
+layer) are visible in the file tree — e.g.
+`lib-analytics/services/structural/`, `services/classification/`, etc.
+
 ## Project conventions for contributors
 
 * **Lombok** is the default for value objects (`@Value`), service constructors
@@ -61,54 +79,27 @@ Only `app` produces a bootable jar. Libraries are plain jars consumed by `app`.
 * **Pure functions in `lib-analytics`.** No I/O, no static state, no portfolio
   awareness — each scorer takes a snapshot in and returns a 0.0–1.0 score out.
 * **Provider adapters stay sealed.** Schwab DTOs are package-private and never
-  leak past `lib-marketdata/.../provider/schwab/`.
+  leak past `lib-marketdata/services/provider/schwab/`.
 
 ## HTTP API surface
 
-| Method | Path                              | Purpose                                              |
-| ------ | --------------------------------- | ---------------------------------------------------- |
-| GET    | `/health`                         | Liveness check.                                      |
-| POST   | `/api/pipeline/manual`            | Run a manually-supplied candidate through the full pipeline. |
-| GET    | `/api/pipeline/sec/{cik}`         | Fetch SEC filings for a CIK and run each through the pipeline. |
-| POST   | `/api/review/manual`              | Ad-hoc manual review without persistence.            |
-| GET    | `/api/review/candidates`          | List today's PASS / WATCH verdicts with reasoning.   |
-| GET    | `/api/stats/opportunity-quality`  | Conviction-band mix, deployment-tier mix, and top symbols by score. |
-| POST   | `/api/backtest`                   | Run a replay against a list of historical frames.    |
-| POST   | `/market-structure/intraday`      | Derive intraday structure snapshot from bar list.    |
-
-## Build
-
-Requires JDK 21 and Maven 3.9+.
-
-```
-mvn -q -DskipTests package
-```
-
-Run the app:
-
-```
-mvn -pl app spring-boot:run
-```
-
-Smoke-check:
-
-```
-curl -s http://localhost:8080/health
-```
-
-## Status
-
-Core pipeline is operational end-to-end:
-
-- SEC EDGAR 8-K ingestion is live (CIK → candidate)
-- Market feature calculation is live (ATR, VWAP proxy, range position, liquidity, gap)
-- Regime classification and asymmetry scoring are live (seven-dimension disequilibrium model)
-- Validation engine is live (hard gates + score aggregation → PASS / WATCH / REJECT)
-- Persistence is live (candidate, verdict, market bar saved on every pipeline run)
-- Backtest replay engine is live
-- Candidate review surface is live (GET /api/review/candidates)
-
-Things explicitly deferred: portfolio tracking, order execution, ML-based
-narrative scoring (FinBERT etc.), Kafka/Redis, Angular frontend, historical
-trade analysis. Each can earn its way in once the core pipeline is producing
-verdicts the trader trusts.
+| Method | Path                                | Purpose                                              |
+| ------ | ----------------------------------- | ---------------------------------------------------- |
+| GET    | `/`                                 | Static review dashboard (HTML; calls the APIs below). |
+| GET    | `/health`                           | Liveness check.                                      |
+| GET    | `/actuator/metrics`                 | Micrometer metric registry (incl. pipeline latency). |
+| POST   | `/api/pipeline/manual`              | Run a manually-supplied candidate through the full pipeline. |
+| GET    | `/api/pipeline/sec/{cik}`           | Fetch SEC filings for a CIK and run each through the pipeline. |
+| GET    | `/api/pipeline/sec/watch-list`      | Run multiple CIKs through the pipeline (also called by the daily scheduler). |
+| POST   | `/api/review/manual`                | Ad-hoc manual review without persistence.            |
+| GET    | `/api/review/candidates`            | List recent PASS / WATCH verdicts with reasoning.    |
+| GET    | `/api/stats/opportunity-quality`    | Conviction-band mix, deployment-tier mix, and top symbols by score. |
+| POST   | `/api/backtest`                     | Run a replay against a list of historical frames.    |
+| POST   | `/market-structure/intraday`        | Derive intraday structure snapshot from bar list.    |
+| POST   | `/api/exit-signal`                  | **L7** — HOLD / TIGHTEN / SCALE_OUT / EXIT_NOW for an open position. |
+| POST   | `/api/calibration`                  | Append realized trade outcomes; returns a drift report. |
+| GET    | `/api/calibration`                  | Current calibration drift report from all stored outcomes. |
+| GET    | `/api/calibration/summary`          | Rolling summary: win rate, avg return, avg drawdown. |
+| GET    | `/api/calibration/outcomes`         | Recent outcome rows; supports per-symbol filtering and CSV export. |
+| GET    | `/api/schwab/oauth/authorize-url`   | URL the trader visits to grant Schwab API access.    |
+| GET   

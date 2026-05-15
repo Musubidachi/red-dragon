@@ -10,16 +10,16 @@
  * are computed.
  *
  * <ul>
- *   <li>{@link dev.reddragon.marketdata.provider} — provider-agnostic
+ *   <li>{@link dev.reddragon.marketdata.services.provider} — provider-agnostic
  *       interface plus concrete adapters (Schwab, Noop). The {@code schwab}
  *       sub-package is the only place that knows the Schwab wire format.</li>
- *   <li>{@link dev.reddragon.marketdata.service} — feature calculators
+ *   <li>{@link dev.reddragon.marketdata.services} — feature calculators
  *       (VWAP, ATR, realized vol, etc.) and snapshot builders.</li>
- *   <li>{@link dev.reddragon.marketdata.model} — value objects: bars,
+ *   <li>{@link dev.reddragon.marketdata.models} — value objects: bars,
  *       order-book snapshots, intraday/liquidity/volatility snapshots.</li>
- *   <li>{@link dev.reddragon.marketdata.replay} — frame-based replay for
+ *   <li>{@link dev.reddragon.marketdata.services.replay} — frame-based replay for
  *       backtests.</li>
- *   <li>{@link dev.reddragon.marketdata.stream} — push-style event surface
+ *   <li>{@link dev.reddragon.marketdata.services.stream} — push-style event surface
  *       for future live data.</li>
  * </ul>
  *

@@ -1,9 +1,11 @@
 package dev.reddragon.app.config;
 
-import dev.reddragon.validation.config.ValidationThresholds;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import dev.reddragon.validation.config.ValidationThresholds;
+import lombok.Data;
 
 /**
  * Binds {@code red-dragon.validation.*} from {@code application.yml} to a
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConfigurationProperties(prefix = "red-dragon.validation")
+@Data
 public class ValidationThresholdsProperties {
 
     // Verdict thresholds
@@ -73,63 +76,4 @@ public class ValidationThresholdsProperties {
                 deploymentConfidenceWeight
         );
     }
-
-    // Getters and setters (required by @ConfigurationProperties binding)
-
-    public double getPassThreshold() { return passThreshold; }
-    public void setPassThreshold(double v) { this.passThreshold = v; }
-
-    public double getWatchThreshold() { return watchThreshold; }
-    public void setWatchThreshold(double v) { this.watchThreshold = v; }
-
-    public double getConcentrationThreshold() { return concentrationThreshold; }
-    public void setConcentrationThreshold(double v) { this.concentrationThreshold = v; }
-
-    public double getStandardDeploymentThreshold() { return standardDeploymentThreshold; }
-    public void setStandardDeploymentThreshold(double v) { this.standardDeploymentThreshold = v; }
-
-    public double getProbeDeploymentThreshold() { return probeDeploymentThreshold; }
-    public void setProbeDeploymentThreshold(double v) { this.probeDeploymentThreshold = v; }
-
-    public double getMinStructuralReality() { return minStructuralReality; }
-    public void setMinStructuralReality(double v) { this.minStructuralReality = v; }
-
-    public double getMinMaterialSignificance() { return minMaterialSignificance; }
-    public void setMinMaterialSignificance(double v) { this.minMaterialSignificance = v; }
-
-    public double getMinEarlyness() { return minEarlyness; }
-    public void setMinEarlyness(double v) { this.minEarlyness = v; }
-
-    public double getMinEquilibriumQuality() { return minEquilibriumQuality; }
-    public void setMinEquilibriumQuality(double v) { this.minEquilibriumQuality = v; }
-
-    public double getMinAsymmetry() { return minAsymmetry; }
-    public void setMinAsymmetry(double v) { this.minAsymmetry = v; }
-
-    public double getMinRegimeCompatibility() { return minRegimeCompatibility; }
-    public void setMinRegimeCompatibility(double v) { this.minRegimeCompatibility = v; }
-
-    public double getStructuralRealityWeight() { return structuralRealityWeight; }
-    public void setStructuralRealityWeight(double v) { this.structuralRealityWeight = v; }
-
-    public double getMaterialSignificanceWeight() { return materialSignificanceWeight; }
-    public void setMaterialSignificanceWeight(double v) { this.materialSignificanceWeight = v; }
-
-    public double getEarlynessWeight() { return earlynessWeight; }
-    public void setEarlynessWeight(double v) { this.earlynessWeight = v; }
-
-    public double getEquilibriumQualityWeight() { return equilibriumQualityWeight; }
-    public void setEquilibriumQualityWeight(double v) { this.equilibriumQualityWeight = v; }
-
-    public double getReflexivityPotentialWeight() { return reflexivityPotentialWeight; }
-    public void setReflexivityPotentialWeight(double v) { this.reflexivityPotentialWeight = v; }
-
-    public double getAsymmetryWeight() { return asymmetryWeight; }
-    public void setAsymmetryWeight(double v) { this.asymmetryWeight = v; }
-
-    public double getRegimeCompatibilityWeight() { return regimeCompatibilityWeight; }
-    public void setRegimeCompatibilityWeight(double v) { this.regimeCompatibilityWeight = v; }
-
-    public double getDeploymentConfidenceWeight() { return deploymentConfidenceWeight; }
-    public void setDeploymentConfidenceWeight(double v) { this.deploymentConfidenceWeight = v; }
 }
