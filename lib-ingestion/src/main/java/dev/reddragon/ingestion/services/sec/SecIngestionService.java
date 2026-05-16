@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.ingestion.models.sec.SecFiling;
 import dev.reddragon.ingestion.models.sec.SubmissionsResponse;
 import lombok.RequiredArgsConstructor;

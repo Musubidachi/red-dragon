@@ -4,10 +4,10 @@ import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.validation.services.engine.DisequilibriumValidationEngine;
 import dev.reddragon.validation.services.engine.RiskFlagResolver;
 import dev.reddragon.validation.services.engine.ValidationConfidenceScorer;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.RiskFlag;
-import dev.reddragon.validation.models.ValidationAudit;
-import dev.reddragon.validation.models.ValidationResult;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.RiskFlag;
+import dev.reddragon.domain.models.ValidationAudit;
+import dev.reddragon.domain.models.ValidationResult;
 
 import java.time.Instant;
 import java.util.List;

@@ -1,6 +1,6 @@
 package dev.reddragon.app.controllers;
 
-import dev.reddragon.analytics.models.RegimeLabel;
+import dev.reddragon.domain.models.RegimeLabel;
 import dev.reddragon.persistence.domains.AnalyticsSnapshotEntity;
 import dev.reddragon.persistence.services.repositories.AnalyticsSnapshotRepository;
 import lombok.RequiredArgsConstructor;

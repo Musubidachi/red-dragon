@@ -1,6 +1,6 @@
 package dev.reddragon.app.models;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
+import dev.reddragon.domain.models.CandidateCatalystType;
 import dev.reddragon.validation.config.ValidationProfile;
 import lombok.Data;
 

@@ -1,8 +1,8 @@
 package dev.reddragon.analytics.services;
 
-import dev.reddragon.analytics.models.MarketStateSignal;
-import dev.reddragon.analytics.models.RegimeLabel;
-import dev.reddragon.marketdata.models.MarketIntradayStructureSnapshot;
+import dev.reddragon.domain.models.MarketStateSignal;
+import dev.reddragon.domain.models.RegimeLabel;
+import dev.reddragon.domain.models.MarketIntradayStructureSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;

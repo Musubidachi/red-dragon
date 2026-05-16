@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
-import dev.reddragon.ingestion.models.SourceType;
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.CandidateCatalystType;
+import dev.reddragon.domain.models.SourceType;
+import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.ingestion.models.sec.SecFiling;
 
 /**

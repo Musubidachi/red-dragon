@@ -76,6 +76,20 @@ red-dragon:
     cache-ttl-seconds: ${SCHWAB_MARKETDATA_CACHE_TTL_SECONDS:60}
     max-retries: ${SCHWAB_MARKETDATA_MAX_RETRIES:3}
     retry-backoff-millis: ${SCHWAB_MARKETDATA_RETRY_BACKOFF_MILLIS:250}
+  yahoo:
+    base-url: ${YAHOO_MARKETDATA_BASE_URL:https://query1.finance.yahoo.com}
+    enabled: ${YAHOO_MARKETDATA_ENABLED:false}
+    cache-ttl-seconds: ${YAHOO_MARKETDATA_CACHE_TTL_SECONDS:60}
+    max-retries: ${YAHOO_MARKETDATA_MAX_RETRIES:2}
+    retry-backoff-millis: ${YAHOO_MARKETDATA_RETRY_BACKOFF_MILLIS:250}
+  llm:
+    research:
+      enabled: ${RED_DRAGON_LLM_RESEARCH_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      model: ${OPENAI_MODEL:gpt-4.1-mini}
+      web-search-enabled: ${RED_DRAGON_LLM_WEB_SEARCH_ENABLED:true}
+      web-search-tool-type: ${RED_DRAGON_LLM_WEB_SEARCH_TOOL_TYPE:web_search}
 
 logging:
   level:

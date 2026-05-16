@@ -1,9 +1,9 @@
 package dev.reddragon.validation.services.engine;
 
 import dev.reddragon.validation.config.ValidationThresholds;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.DeploymentTier;
-import dev.reddragon.validation.models.Verdict;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.DeploymentTier;
+import dev.reddragon.domain.models.Verdict;
 
 import java.util.Objects;
 

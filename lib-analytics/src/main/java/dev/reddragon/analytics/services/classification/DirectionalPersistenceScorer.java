@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.classification;
 
-import dev.reddragon.analytics.models.IntradayStructureSnapshot;
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.IntradayStructureSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
 
 import java.util.List;
 import java.util.Objects;

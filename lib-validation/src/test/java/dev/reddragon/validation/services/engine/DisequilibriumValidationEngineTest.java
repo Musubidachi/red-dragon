@@ -1,10 +1,10 @@
 package dev.reddragon.validation.services.engine;
 
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.DeploymentTier;
-import dev.reddragon.validation.models.ReasonCode;
-import dev.reddragon.validation.models.ValidationResult;
-import dev.reddragon.validation.models.Verdict;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.DeploymentTier;
+import dev.reddragon.domain.models.ReasonCode;
+import dev.reddragon.domain.models.ValidationResult;
+import dev.reddragon.domain.models.Verdict;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -4,7 +4,7 @@ import dev.reddragon.persistence.domains.ValidationVerdictEntity;
 import dev.reddragon.persistence.domains.VerdictOverrideEntity;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
 import dev.reddragon.persistence.services.repositories.VerdictOverrideRepository;
-import dev.reddragon.validation.models.Verdict;
+import dev.reddragon.domain.models.Verdict;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;

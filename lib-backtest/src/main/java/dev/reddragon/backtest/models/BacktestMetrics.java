@@ -1,6 +1,6 @@
 package dev.reddragon.backtest.models;
 
-import dev.reddragon.validation.models.Verdict;
+import dev.reddragon.domain.models.Verdict;
 
 import java.util.EnumMap;
 import java.util.List;

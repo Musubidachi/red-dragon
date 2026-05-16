@@ -13,6 +13,8 @@ public interface MarketSnapshotRepository extends JpaRepository<MarketSnapshotEn
 
     List<MarketSnapshotEntity> findTop10BySymbolOrderByObservedAtDesc(String symbol);
 
+    List<MarketSnapshotEntity> findTop25ByCandidateIdOrderByObservedAtDesc(String candidateId);
+
     /** All snapshots for a symbol observed after the given timestamp, newest-first. */
     List<MarketSnapshotEntity> findBySymbolAndObservedAtAfterOrderByObservedAtDesc(
             String symbol,

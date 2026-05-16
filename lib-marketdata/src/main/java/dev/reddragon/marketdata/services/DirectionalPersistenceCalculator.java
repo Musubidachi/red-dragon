@@ -1,6 +1,6 @@
 package dev.reddragon.marketdata.services;
 
-import dev.reddragon.marketdata.models.IntradayBar;
+import dev.reddragon.domain.models.IntradayBar;
 
 import java.util.List;
 import java.util.Objects;

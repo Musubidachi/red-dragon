@@ -1,6 +1,6 @@
 package dev.reddragon.ingestion.services.sec;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
+import dev.reddragon.domain.models.CandidateCatalystType;
 
 import java.util.List;
 import java.util.Set;

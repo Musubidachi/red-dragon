@@ -1,7 +1,7 @@
 package dev.reddragon.validation.services.engine;
 
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.RiskFlag;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.RiskFlag;
 
 import java.util.List;
 import java.util.Objects;

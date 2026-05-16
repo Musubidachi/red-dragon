@@ -1,7 +1,7 @@
 package dev.reddragon.backtest.models;
 
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketBar;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketBar;
 
 import java.util.List;
 

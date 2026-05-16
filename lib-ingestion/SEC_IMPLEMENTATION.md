@@ -4,6 +4,12 @@ How the SEC source adapter fits into `lib-ingestion` and the rest of the
 pipeline. For the HTTP-side rules, see [SEC_API.md](./SEC_API.md). For form-by-form
 parsing details, see [SEC_FORMS.md](./SEC_FORMS.md).
 
+> **Status**: partially implemented. The live implementation fetches the SEC
+> submissions endpoint by CIK and emits `TradeCandidate` objects. The generic
+> `Source` SPI, structured `SecCandidate` payloads, RSS firehose, ticker-map
+> cache, persistent polling cursors, and full body parsers are still future
+> work.
+
 ---
 
 ## 1. Purpose

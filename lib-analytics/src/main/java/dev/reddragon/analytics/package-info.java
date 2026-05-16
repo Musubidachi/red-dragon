@@ -24,9 +24,9 @@
  *       Meta-System Adaptation (is our edge degrading)</li>
  *   <li>{@link dev.reddragon.analytics.services} (top-level)   - Orchestrators
  *       that blend the above layers into single snapshots</li>
- *   <li>{@link dev.reddragon.analytics.models}                 - Shared value
+ *   <li>{@link dev.reddragon.domain.models}                    - Shared value
  *       objects (snapshots, labels, breakdowns)</li>
- *   <li>{@link dev.reddragon.analytics.utilities}              - Pure math helpers</li>
+ *   <li>{@link dev.reddragon.math}                             - Shared math helpers</li>
  * </ul>
  *
  * <p>For a junior developer: everything here is a pure function. No I/O,

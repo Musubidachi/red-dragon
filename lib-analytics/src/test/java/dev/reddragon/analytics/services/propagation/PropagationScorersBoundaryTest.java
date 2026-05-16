@@ -1,10 +1,10 @@
 package dev.reddragon.analytics.services.propagation;
 
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.PhaseTransitionSnapshot;
-import dev.reddragon.ingestion.models.CandidateCatalystType;
-import dev.reddragon.ingestion.models.SourceType;
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.PhaseTransitionSnapshot;
+import dev.reddragon.domain.models.CandidateCatalystType;
+import dev.reddragon.domain.models.SourceType;
+import dev.reddragon.domain.models.TradeCandidate;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

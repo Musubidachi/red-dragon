@@ -1,146 +1,96 @@
 # lib-validation
 
-> **MD layer:** owns the hard-gate half of **L3 (Structural Validation)** and
-> the tier decision in **L5 (Deployment)**. See [ARCHITECTURE.md](../ARCHITECTURE.md)
-> for the full mapping.
+> **MD layer:** owns the hard-gate half of L3 (Structural Validation) and the
+> deployment-tier decision in L5. See [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-`lib-validation` is responsible for turning candidate context and analytical signals into an actionable review verdict.
-
-This module should answer one question:
-
-> Should this candidate be shown to the trader as PASS, WATCH, or REJECT?
-
-Validation is the gatekeeper. It should be stricter than analytics because its job is to prevent low-quality or incomplete candidates from cluttering the review surface.
+`lib-validation` turns candidate context and analytical signals into an
+actionable review verdict.
 
 ## Responsibilities
 
-- Apply hard rejection rules.
-- Aggregate analytics outputs into a final candidate verdict.
-- Produce human-readable rejection, watch, and pass reasons.
-- Separate required-data checks from trade-quality checks.
-- Keep verdict logic deterministic and auditable.
+* Apply hard rejection rules.
+* Aggregate analytics outputs into a final candidate verdict.
+* Produce human-readable reasons and risk flags.
+* Separate required-data checks from trade-quality checks.
+* Resolve a deployment posture separate from the verdict.
+* Keep verdict logic deterministic and auditable.
 
-Possible verdicts:
+## Verdicts And Tiers
 
-- `PASS` — candidate is strong enough for trader review.
-- `WATCH` — candidate has promise but is missing confirmation or has moderate issues.
-- `REJECT` — candidate fails one or more hard rules.
+Verdicts:
 
-## Non-responsibilities
+* `PASS` - candidate is strong enough for trader review.
+* `WATCH` - candidate has promise, but needs confirmation or has moderate defects.
+* `REJECT` - candidate fails one or more required validation rules.
 
-This library should not:
+Deployment tiers:
 
-- Pull raw candidates from external sources.
-- Fetch market data directly from providers.
-- Perform low-level indicator calculations.
-- Persist verdicts directly unless routed through persistence contracts.
-- Place orders or size positions.
-- Replace trader judgment.
+* `NONE`
+* `OBSERVE`
+* `PROBE`
+* `STANDARD`
+* `CONCENTRATED`
 
-## Expected flow
+Older design notes may use names like `PASS_PROBE` or `PASS_CONCENTRATED`.
+In current code, those are represented as `Verdict.PASS` plus the appropriate
+`DeploymentTier`.
+
+## Non-Responsibilities
+
+This library does not pull raw candidates, fetch market data directly, perform
+low-level indicator calculations, persist verdicts directly, place orders, size
+positions, or replace trader judgment.
+
+## Current Flow
 
 ```text
 candidate + market-data snapshot + analytics snapshot
-    -> required data checks
-    -> hard rules
-    -> score aggregation
-    -> PASS / WATCH / REJECT verdict
-    -> review surface / persistence
+    -> CandidateValidationInput
+    -> ValidationFactorFactory
+    -> HardGateEvaluator
+    -> weighted score
+    -> VerdictResolver
+    -> DeploymentResolver
+    -> ValidationResult / ValidationAudit
 ```
 
-## Rule categories
-
-### Required-data rules
-
-These rules determine whether the system has enough reliable information to judge the candidate.
-
-Examples:
-
-- ticker is missing
-- market data is stale
-- insufficient price history
-- no source provenance
-- malformed candidate metadata
-
-### Hard rejection rules
-
-These rules reject candidates that should not be reviewed unless explicitly overridden later.
-
-Examples:
-
-- liquidity below minimum threshold
-- volatility above allowed risk threshold
-- spread or range too wide
-- known data-quality issue
-- unsupported security type
-
-### Watch rules
-
-These rules identify candidates that are not bad enough to reject but not clean enough to pass.
-
-Examples:
-
-- catalyst exists but price confirmation is weak
-- setup is promising but market regime is hostile
-- liquidity is acceptable but thin
-- asymmetry score is near the pass threshold
-
-### Pass rules
-
-A candidate should pass only when required data is present, hard rules are clear, and the aggregate score meets the configured threshold.
-
-## Design guidance
-
-### Validate before scoring
-
-Do not aggregate scores when required data is missing. A candidate with incomplete data should be rejected or watched with a clear reason, not given a misleading numerical verdict.
-
-### Return complete reasoning
-
-The output should explain the verdict using reason codes and display-ready text.
-
-Example reason codes:
-
-- `MISSING_MARKET_DATA`
-- `INSUFFICIENT_HISTORY`
-- `LIQUIDITY_BELOW_MINIMUM`
-- `ASYMMETRY_SCORE_STRONG`
-- `REGIME_NOT_SUPPORTIVE`
-- `PRICE_CONFIRMATION_WEAK`
-
-### Keep thresholds explicit
-
-Thresholds should be visible and configurable. Avoid burying magic numbers inside validator methods.
-
-## Suggested package layout
+## Current Package Layout
 
 ```text
-lib-validation
-└── src/main/java/dev/reddragon/validation
-    ├── verdict         # verdict models and reason codes
-    ├── rule            # hard rules and required-data checks
-    ├── aggregate       # score aggregation and verdict selection
-    └── config          # thresholds and validation settings
+lib-validation/src/main/java/dev/reddragon/validation
+    models/           Verdict, DeploymentTier, ValidationResult, factors, audits
+    services/         ValidationService facade
+    services/engine/  hard gates, scoring, verdict and deployment resolution
+    services/format/  display-ready summaries
+    config/           thresholds and profiles
+    utilities/        score helpers
 ```
 
-## First implementation target
+## Implemented Pieces
 
-1. Define verdict, reason-code, and validation-result models.
-2. Implement required-data checks.
-3. Implement hard liquidity and data-quality rules.
-4. Aggregate analytics score into PASS / WATCH / REJECT.
-5. Return a full reasoning chain for display in the review UI.
+* `ValidationService`
+* `DisequilibriumValidationEngine`
+* `HardGateEvaluator`
+* `ValidationFactorFactory`
+* `ValidationConfidenceScorer`
+* `VerdictResolver`
+* `DeploymentResolver`
+* `RiskFlagResolver`
+* `ValidationSummaryFormatter`
+* Threshold profiles: `STANDARD`, `CONSERVATIVE`, `AGGRESSIVE`,
+  `CONCENTRATION_REVIEW`
 
-## Testing expectations
+## Still Missing Compared To The Design Doc
 
-Tests should cover:
+* Account and instrument compatibility gates.
+* Options-chain existence checks.
+* Full manual-factor capture for propagation stage and narrative coherence.
+* Fundamentals-backed materiality scoring.
+* A dedicated nested `ValidationVerdict` contract exactly matching
+  [VALIDATION_FRAMEWORK.md](VALIDATION_FRAMEWORK.md).
 
-- missing required data
-- hard rejection behavior
-- watch threshold boundaries
-- pass threshold boundaries
-- reason-code ordering
-- deterministic verdicts for fixed candidate snapshots
-- score aggregation math
+## Testing Expectations
 
-Validation tests should read like business-rule documentation. Each test name should make the rule obvious.
+Tests should cover missing required data, hard-gate behavior, watch/pass
+threshold boundaries, deployment-tier boundaries, reason-code ordering, and
+deterministic verdicts for fixed candidate snapshots.

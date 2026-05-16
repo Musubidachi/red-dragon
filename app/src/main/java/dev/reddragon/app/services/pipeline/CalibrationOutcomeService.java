@@ -7,9 +7,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import dev.reddragon.analytics.models.AnalyticsScoreBreakdown;
-import dev.reddragon.analytics.models.CalibrationReport;
-import dev.reddragon.analytics.models.OutcomeSample;
+import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
+import dev.reddragon.domain.models.CalibrationReport;
+import dev.reddragon.domain.models.OutcomeSample;
 import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.backtest.models.BacktestOutcome;
 import dev.reddragon.persistence.domains.CalibrationOutcomeEntity;

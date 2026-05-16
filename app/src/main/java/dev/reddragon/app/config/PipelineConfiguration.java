@@ -4,9 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.reddragon.analytics.services.exit.EquilibriumCompressionScorer;
 import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
+import dev.reddragon.app.services.analysis.NoopTickerResearchClient;
+import dev.reddragon.app.services.analysis.OpenAiTickerResearchClient;
+import dev.reddragon.app.services.analysis.TickerResearchClient;
 import dev.reddragon.app.services.schwab.SchwabOAuthService;
 import dev.reddragon.backtest.services.BacktestReplayEngine;
 import dev.reddragon.ingestion.services.sec.EightKCategoryMapper;
+import dev.reddragon.ingestion.services.sec.CikLookupService;
 import dev.reddragon.ingestion.config.SecApiProperties;
 import dev.reddragon.ingestion.services.sec.SecCandidateBuilder;
 import dev.reddragon.ingestion.services.sec.SecFilingScoringHeuristics;
@@ -18,11 +22,14 @@ import dev.reddragon.ingestion.services.sec.SubmissionsFilingExtractor;
 import dev.reddragon.ingestion.services.ManualCandidateIngestionService;
 import dev.reddragon.marketdata.services.provider.MarketDataProvider;
 import dev.reddragon.marketdata.services.provider.NoopMarketDataProvider;
+import dev.reddragon.marketdata.services.provider.CompositeMarketDataProvider;
 import dev.reddragon.marketdata.services.provider.schwab.SchwabAccessTokenSupplier;
 import dev.reddragon.marketdata.config.SchwabMarketDataProperties;
+import dev.reddragon.marketdata.config.YahooMarketDataProperties;
 import dev.reddragon.marketdata.services.provider.schwab.SchwabMarketDataProvider;
 import dev.reddragon.marketdata.config.SchwabOAuthProperties;
 import dev.reddragon.marketdata.services.provider.schwab.StaticSchwabAccessTokenSupplier;
+import dev.reddragon.marketdata.services.provider.yahoo.YahooMarketDataProvider;
 import dev.reddragon.marketdata.services.MarketFeatureCalculator;
 import dev.reddragon.persistence.services.PersistenceMapper;
 import dev.reddragon.persistence.services.repositories.SchwabTokenRepository;
@@ -35,6 +42,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Top-level wiring for the candidate pipeline.
@@ -125,6 +134,33 @@ public class PipelineConfiguration {
     }
 
     @Bean
+    public CikLookupService cikLookupService(SecApiProperties properties) {
+        SimpleRateLimiter limiter = new SimpleRateLimiter(properties.getRequestsPerSecond());
+        SecHttpClient http = new SecHttpClient(properties, limiter);
+        return new CikLookupService(http);
+    }
+
+    @Bean
+    public LlmResearchProperties llmResearchProperties(
+            @Value("${red-dragon.llm.research.enabled:false}") boolean enabled,
+            @Value("${red-dragon.llm.research.api-key:}") String apiKey,
+            @Value("${red-dragon.llm.research.base-url:https://api.openai.com/v1}") String baseUrl,
+            @Value("${red-dragon.llm.research.model:gpt-4.1-mini}") String model,
+            @Value("${red-dragon.llm.research.web-search-enabled:true}") boolean webSearchEnabled,
+            @Value("${red-dragon.llm.research.web-search-tool-type:web_search}") String webSearchToolType
+    ) {
+        return new LlmResearchProperties(enabled, apiKey, baseUrl, model, webSearchEnabled, webSearchToolType);
+    }
+
+    @Bean
+    public TickerResearchClient tickerResearchClient(LlmResearchProperties properties) {
+        if (properties.configured()) {
+            return new OpenAiTickerResearchClient(properties);
+        }
+        return new NoopTickerResearchClient();
+    }
+
+    @Bean
     public SchwabMarketDataProperties schwabMarketDataProperties(
             @Value("${red-dragon.schwab.base-url}") String baseUrl,
             @Value("${red-dragon.schwab.access-token}") String accessToken,
@@ -134,6 +170,17 @@ public class PipelineConfiguration {
             @Value("${red-dragon.schwab.retry-backoff-millis:250}") long retryBackoffMillis
     ) {
         return new SchwabMarketDataProperties(baseUrl, accessToken, enabled, cacheTtlSeconds, maxRetries, retryBackoffMillis);
+    }
+
+    @Bean
+    public YahooMarketDataProperties yahooMarketDataProperties(
+            @Value("${red-dragon.yahoo.base-url:https://query1.finance.yahoo.com}") String baseUrl,
+            @Value("${red-dragon.yahoo.enabled:false}") boolean enabled,
+            @Value("${red-dragon.yahoo.cache-ttl-seconds:60}") long cacheTtlSeconds,
+            @Value("${red-dragon.yahoo.max-retries:2}") int maxRetries,
+            @Value("${red-dragon.yahoo.retry-backoff-millis:250}") long retryBackoffMillis
+    ) {
+        return new YahooMarketDataProperties(baseUrl, enabled, cacheTtlSeconds, maxRetries, retryBackoffMillis);
     }
 
     @Bean
@@ -177,11 +224,24 @@ public class PipelineConfiguration {
     @Bean
     public MarketDataProvider marketDataProvider(
             SchwabMarketDataProperties properties,
+            SchwabAccessTokenSupplier tokenSupplier,
+            YahooMarketDataProperties yahooProperties
+    ) {
+        List<MarketDataProvider> providers = new ArrayList<>();
+        if (properties.configured() && schwabHasTokenSource(properties, tokenSupplier)) {
+            providers.add(new SchwabMarketDataProvider(properties, RestClient.create(), new ObjectMapper(), tokenSupplier));
+        }
+        if (yahooProperties.configured()) {
+            providers.add(new YahooMarketDataProvider(yahooProperties, RestClient.create(), new ObjectMapper()));
+        }
+        providers.add(new NoopMarketDataProvider());
+        return new CompositeMarketDataProvider(providers);
+    }
+
+    private boolean schwabHasTokenSource(
+            SchwabMarketDataProperties properties,
             SchwabAccessTokenSupplier tokenSupplier
     ) {
-        if (properties.configured()) {
-            return new SchwabMarketDataProvider(properties, RestClient.create(), new ObjectMapper(), tokenSupplier);
-        }
-        return new NoopMarketDataProvider();
+        return properties.staticAccessTokenConfigured() || !(tokenSupplier instanceof StaticSchwabAccessTokenSupplier);
     }
 }

@@ -1,8 +1,8 @@
 package dev.reddragon.analytics.services.classification;
 
-import dev.reddragon.analytics.models.*;
-import dev.reddragon.marketdata.models.MarketDataQuality;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.*;
+import dev.reddragon.domain.models.MarketDataQuality;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

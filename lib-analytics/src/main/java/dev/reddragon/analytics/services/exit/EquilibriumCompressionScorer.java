@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.exit.ExitRecommendation;
-import dev.reddragon.analytics.models.exit.ExitSignal;
-import dev.reddragon.analytics.models.exit.ExitSignalInput;
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.exit.ExitRecommendation;
+import dev.reddragon.domain.models.exit.ExitSignal;
+import dev.reddragon.domain.models.exit.ExitSignalInput;
+import dev.reddragon.math.AnalyticsScoreUtils;
 
 /**
  * <h2>MD Layer 7 — Exit and Equilibrium Compression Engine</h2>

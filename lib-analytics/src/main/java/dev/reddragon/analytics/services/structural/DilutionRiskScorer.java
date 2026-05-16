@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.structural;
 
-import dev.reddragon.analytics.models.FundamentalImpactSnapshot;
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.FundamentalImpactSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
 
 import java.util.List;
 import java.util.Objects;

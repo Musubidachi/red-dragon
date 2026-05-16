@@ -1,15 +1,15 @@
 package dev.reddragon.analytics.services.structural;
 
-import dev.reddragon.analytics.models.AdversarialFinding;
-import dev.reddragon.analytics.models.AdversarialFindingType;
-import dev.reddragon.analytics.models.FundamentalImpactSnapshot;
-import dev.reddragon.analytics.models.IntradayStructureSnapshot;
-import dev.reddragon.analytics.models.LiquidityTextureSnapshot;
-import dev.reddragon.analytics.models.OptionsFlowSnapshot;
-import dev.reddragon.analytics.models.PropagationSnapshot;
-import dev.reddragon.analytics.models.VolatilityExpansionSnapshot;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.AdversarialFinding;
+import dev.reddragon.domain.models.AdversarialFindingType;
+import dev.reddragon.domain.models.FundamentalImpactSnapshot;
+import dev.reddragon.domain.models.IntradayStructureSnapshot;
+import dev.reddragon.domain.models.LiquidityTextureSnapshot;
+import dev.reddragon.domain.models.OptionsFlowSnapshot;
+import dev.reddragon.domain.models.PropagationSnapshot;
+import dev.reddragon.domain.models.VolatilityExpansionSnapshot;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;

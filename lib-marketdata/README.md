@@ -1,115 +1,69 @@
 # lib-marketdata
 
-> **MD layer:** market-data half of **L2 (Data Ingestion)** plus the raw
-> feature inputs that feed **L4 (Market-State Classification)** in
-> `lib-analytics`. See [ARCHITECTURE.md](../ARCHITECTURE.md) for the full mapping.
+> **MD layer:** market-data half of L2 plus raw feature inputs that feed L4 in
+> `lib-analytics`. See [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-`lib-marketdata` is responsible for retrieving market data and deriving the feature set used by analytics and validation.
-
-This module should answer one question:
-
-> What objective market context exists for this candidate right now?
-
-It should not decide whether the trade is worth taking. It supplies clean, explainable features for downstream scoring.
+`lib-marketdata` retrieves market data and derives the feature set used by
+analytics and validation.
 
 ## Responsibilities
 
-- Retrieve price and volume data from one or more providers.
-- Normalize provider-specific responses into internal market-bar models.
-- Derive market features used by the analytics and validation layers.
-- Keep provider adapters behind stable interfaces.
-- Make feature calculations deterministic and testable.
+* Retrieve price and volume data from providers.
+* Normalize provider responses into internal market-bar models.
+* Derive deterministic features for analytics and validation.
+* Keep provider adapters behind stable interfaces.
+* Treat missing or incomplete data as a first-class quality outcome.
 
-Initial feature targets:
+## Current Provider Support
 
-- latest close
-- previous close
-- daily range position
-- average true range, or ATR
-- liquidity / average volume
-- VWAP proxy, if intraday VWAP is not available
-- gap percentage
-- distance from recent high / low
+* `NoopMarketDataProvider` for disabled or unconfigured market data.
+* `SchwabMarketDataProvider` for historical daily bars from Schwab
+  `/pricehistory`, intraday bars from Schwab `/pricehistory`, and latest quotes
+  from Schwab `/quotes`, with short-lived in-memory daily-bar caching and simple
+  retry/backoff.
+* `YahooMarketDataProvider` as an optional secondary chart provider for daily
+  bars, intraday bars, and latest-price fallback.
+* `CompositeMarketDataProvider` for ordered provider fallback.
+* `SchwabAccessTokenSupplier` abstraction so `app` can provide OAuth-backed
+  token rotation or fall back to a static configured access token.
 
-## Non-responsibilities
+## Current Feature Support
 
-This library should not:
+The implemented services cover ATR, VWAP, relative volume, realized volatility,
+spread quality, liquidity consistency, directional persistence, rolling windows,
+multi-timeframe aggregation, intraday structure, liquidity texture, volatility
+expansion, and replay helpers.
 
-- Choose trade direction.
-- Produce PASS / WATCH / REJECT verdicts.
-- Classify macro or market regime by itself.
-- Persist raw market bars directly unless routed through persistence contracts.
-- Track account balances, positions, fills, or execution state.
+## Non-Responsibilities
 
-## Expected flow
+This library does not choose trade direction, produce PASS/WATCH/REJECT
+verdicts, classify macro regime by itself, persist raw bars directly, track
+account balances, track positions, or place orders.
 
-```text
-candidate symbol
-    -> market-data provider adapter
-    -> normalized bars / quote data
-    -> feature calculator
-    -> market-data snapshot
-    -> analytics / validation
-```
-
-## Design guidance
-
-### Separate retrieval from calculation
-
-Provider clients should only fetch and normalize data. Feature calculators should operate on internal models so they can be tested without network calls.
-
-### Use deterministic calculations first
-
-Before introducing complex indicators, build a small feature set that is transparent and easy to validate:
-
-- ATR from recent daily bars
-- range position from high / low / close
-- liquidity from average volume
-- gap percentage from previous close to current open or latest price
-
-### Treat missing data as a first-class outcome
-
-Bad or incomplete market data should not silently produce misleading scores. Return enough status detail for validation to reject or watch a candidate with a clear reason.
-
-Possible data-quality flags:
-
-- missing symbol
-- insufficient history
-- stale data
-- illiquid symbol
-- provider timeout
-- split or corporate-action adjustment uncertainty
-
-## Suggested package layout
+## Current Package Layout
 
 ```text
-lib-marketdata
-└── src/main/java/dev/reddragon/marketdata
-    ├── provider        # external provider interfaces and adapters
-    ├── model           # bars, quotes, snapshots, feature records
-    ├── feature         # ATR, range position, liquidity, gap calculations
-    └── quality         # stale/missing/insufficient data checks
+lib-marketdata/src/main/java/dev/reddragon/marketdata
+    models/      bars, snapshots, feature records, quality enum
+    services/    feature calculators and aggregation services
+    services/provider/ provider interface, noop provider, and composite fallback
+    services/provider/schwab/ Schwab price-history adapter and DTOs
+    services/provider/yahoo/ Yahoo chart fallback adapter
+    config/      Schwab market-data and OAuth properties
+    utilities/   math helpers
 ```
 
-## First implementation target
+## Testing Expectations
 
-Start with end-of-day data before intraday data:
+Tests should cover feature calculations using fixed bar fixtures, insufficient
+lookback periods, stale or missing bars, provider response mapping, provider
+failure handling, and numerical precision tolerances. Avoid live provider data
+in tests.
 
-1. Define internal market bar and feature snapshot models.
-2. Implement one provider adapter.
-3. Fetch recent daily bars for a candidate ticker.
-4. Calculate ATR, range position, and average volume.
-5. Return a market-data snapshot with data-quality status.
+## App Endpoints
 
-## Testing expectations
+`app` exposes the configured provider chain through:
 
-Tests should cover:
-
-- feature calculations using fixed bar fixtures
-- insufficient lookback periods
-- stale or missing bars
-- provider response mapping
-- provider failure handling
-- numerical precision tolerances for derived indicators
-
-Avoid tests that depend on live provider data. Use deterministic fixtures for calculation tests and mock provider clients for retrieval behavior.
+* `GET /api/market-data/{symbol}/daily`
+* `GET /api/market-data/{symbol}/intraday`
+* `GET /api/market-data/{symbol}/quote`

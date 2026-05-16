@@ -1,13 +1,13 @@
 package dev.reddragon.analytics.services;
 
-import dev.reddragon.analytics.models.AnalyticsSnapshot;
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.PhaseTransitionSnapshot;
-import dev.reddragon.analytics.models.RegimeLabel;
+import dev.reddragon.domain.models.AnalyticsSnapshot;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.PhaseTransitionSnapshot;
+import dev.reddragon.domain.models.RegimeLabel;
 import dev.reddragon.analytics.services.propagation.PropagationPhaseAnalyzer;
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 
 import java.time.Instant;
 import java.util.ArrayList;

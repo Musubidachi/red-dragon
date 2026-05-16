@@ -1,10 +1,10 @@
 package dev.reddragon.validation.services.engine;
 
 import dev.reddragon.validation.config.ValidationThresholds;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.ReasonCode;
-import dev.reddragon.validation.models.ValidationFactor;
-import dev.reddragon.validation.models.ValidationStage;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.ReasonCode;
+import dev.reddragon.domain.models.ValidationFactor;
+import dev.reddragon.domain.models.ValidationStage;
 
 import java.util.List;
 import java.util.Objects;

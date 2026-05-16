@@ -1,8 +1,8 @@
 package dev.reddragon.analytics.services.deployment;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
-import dev.reddragon.ingestion.models.SourceType;
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.CandidateCatalystType;
+import dev.reddragon.domain.models.SourceType;
+import dev.reddragon.domain.models.TradeCandidate;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

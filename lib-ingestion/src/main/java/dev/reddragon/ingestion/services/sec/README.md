@@ -33,17 +33,18 @@ Read the classes in this order to understand the flow end-to-end:
 
 ## Wiring
 
-This adapter is not yet wired into Spring beans. To use it from `app`,
-construct the chain once at startup:
+This adapter is wired into Spring by `app/config/PipelineConfiguration.java`.
+The effective construction is:
 
 ```java
-SecApiProperties props      = SecApiProperties.defaults();  // override User-Agent for prod
+SecApiProperties props      = ...; // from red-dragon.sec.* properties
 SimpleRateLimiter limiter   = new SimpleRateLimiter(props.getRequestsPerSecond());
 SecHttpClient http          = new SecHttpClient(props, limiter);
 SubmissionsClient subs      = new SubmissionsClient(props, http);
 SubmissionsFilingExtractor extractor = new SubmissionsFilingExtractor();
 EightKCategoryMapper mapper = new EightKCategoryMapper();
-SecCandidateBuilder builder = new SecCandidateBuilder(mapper);
+SecFilingScoringHeuristics scoring = new SecFilingScoringHeuristics();
+SecCandidateBuilder builder = new SecCandidateBuilder(mapper, scoring);
 SecIngestionService service = new SecIngestionService(subs, extractor, builder);
 
 List<TradeCandidate> candidates = service.process("789019");   // Microsoft
@@ -55,10 +56,13 @@ In scope today:
 
 - 8-K, Form 4, 13D/G, S-1, S-3, 424B (filtered in `SubmissionsFilingExtractor`).
 - Deterministic scoring at ingest. Transparent, no ML.
+- Submissions-endpoint polling by CIK.
 
 Out of scope (deferred):
 
 - Form 4 / 13D body parsing (we read the index and link to the document).
+- Latest-filings RSS firehose polling.
+- `company_tickers*.json` CIK/ticker cache.
 - XBRL parsing of financial statements.
 - News, scanners, macro feeds.
 - Persistence and de-duplication across runs (caller's responsibility).

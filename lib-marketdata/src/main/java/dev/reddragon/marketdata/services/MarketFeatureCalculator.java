@@ -1,9 +1,9 @@
 package dev.reddragon.marketdata.services;
 
-import dev.reddragon.marketdata.models.MarketBar;
-import dev.reddragon.marketdata.models.MarketDataQuality;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
-import dev.reddragon.marketdata.utilities.MarketMathUtils;
+import dev.reddragon.domain.models.MarketBar;
+import dev.reddragon.domain.models.MarketDataQuality;
+import dev.reddragon.domain.models.MarketDataSnapshot;
+import dev.reddragon.math.MarketMathUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -5,7 +5,7 @@ import lombok.Data;
 /**
  * One historical trade outcome submitted for calibration analysis.
  *
- * <p>Fields map directly to {@link dev.reddragon.analytics.models.OutcomeSample}.
+ * <p>Fields map directly to {@link dev.reddragon.domain.models.OutcomeSample}.
  * The {@code scoreBreakdown} fields should come from the analytics snapshot
  * that was produced when the candidate was originally reviewed.
  */

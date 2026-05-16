@@ -8,9 +8,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import dev.reddragon.app.models.PipelineRunResult;
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.ingestion.services.sec.SecIngestionService;
-import dev.reddragon.marketdata.models.MarketBar;
+import dev.reddragon.domain.models.MarketBar;
 import dev.reddragon.marketdata.services.provider.MarketDataProvider;
 import dev.reddragon.validation.config.ValidationProfile;
 import io.micrometer.core.annotation.Timed;

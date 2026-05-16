@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.reddragon.analytics.models.AnalyticsScoreBreakdown;
-import dev.reddragon.analytics.models.CalibrationReport;
-import dev.reddragon.analytics.models.OutcomeSample;
+import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
+import dev.reddragon.domain.models.CalibrationReport;
+import dev.reddragon.domain.models.OutcomeSample;
 import dev.reddragon.app.models.CalibrationOutcomeSampleRequest;
 import dev.reddragon.app.models.CalibrationOutcomeView;
 import dev.reddragon.app.models.CalibrationSummaryView;

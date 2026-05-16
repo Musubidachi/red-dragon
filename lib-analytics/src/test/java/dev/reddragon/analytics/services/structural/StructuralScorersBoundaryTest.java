@@ -1,10 +1,10 @@
 package dev.reddragon.analytics.services.structural;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
-import dev.reddragon.ingestion.models.SourceType;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketDataQuality;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.CandidateCatalystType;
+import dev.reddragon.domain.models.SourceType;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketDataQuality;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

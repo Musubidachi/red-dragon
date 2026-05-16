@@ -1,6 +1,6 @@
 package dev.reddragon.ingestion.services.sec;
 
-import dev.reddragon.ingestion.models.CandidateCatalystType;
+import dev.reddragon.domain.models.CandidateCatalystType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

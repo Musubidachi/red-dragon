@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface MarketBarRepository extends JpaRepository<MarketBarEntity, Long> {
 
+    boolean existsBySymbolAndBarDate(String symbol, LocalDate barDate);
+
     List<MarketBarEntity> findBySymbolAndBarDateBetweenOrderByBarDateAsc(
             String symbol,
             LocalDate from,

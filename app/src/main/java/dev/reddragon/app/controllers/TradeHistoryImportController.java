@@ -5,9 +5,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.reddragon.app.models.NormalizedTradeRecord;
 import dev.reddragon.app.models.TradeHistoryImportRequest;
 import dev.reddragon.app.models.TradeHistoryImportResponse;
+import dev.reddragon.persistence.domains.TradeHistoryImportBatchEntity;
+import dev.reddragon.persistence.domains.TradeHistoryRecordEntity;
+import dev.reddragon.persistence.services.repositories.TradeHistoryImportBatchRepository;
+import dev.reddragon.persistence.services.repositories.TradeHistoryRecordRepository;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/history")
+@RequiredArgsConstructor
 public class TradeHistoryImportController {
+
+    private final TradeHistoryImportBatchRepository batchRepository;
+    private final TradeHistoryRecordRepository recordRepository;
 
     @PostMapping("/import")
     public ResponseEntity<TradeHistoryImportResponse> importCsv(
@@ -30,7 +43,9 @@ public class TradeHistoryImportController {
 
         String[] lines = request.csv().split("\\r?\\n");
         if (lines.length <= 1) {
-            return ResponseEntity.ok(new TradeHistoryImportResponse(0, 0, List.of("No data rows found."), List.of()));
+            warnings.add("No data rows found.");
+            persistImport(0, warnings, List.of());
+            return ResponseEntity.ok(new TradeHistoryImportResponse(0, 0, warnings, List.of()));
         }
 
         int totalRows = 0;
@@ -78,7 +93,81 @@ public class TradeHistoryImportController {
             }
         }
 
+        persistImport(totalRows, warnings, trades);
+
         return ResponseEntity.ok(new TradeHistoryImportResponse(totalRows, trades.size(), warnings, trades));
+    }
+
+    @GetMapping("/imports")
+    public List<TradeHistoryImportBatchEntity> imports() {
+        return batchRepository.findTop25ByOrderByImportedAtDesc();
+    }
+
+    @GetMapping("/imports/{batchId}")
+    public ResponseEntity<Map<String, Object>> importDetail(@PathVariable Long batchId) {
+        return batchRepository.findById(batchId)
+                .map(batch -> ResponseEntity.ok(importDetail(batch)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/trades")
+    public List<TradeHistoryRecordEntity> trades(
+            @RequestParam(required = false) String ticker,
+            @RequestParam(defaultValue = "720") int lookbackHours
+    ) {
+        if (ticker != null && !ticker.isBlank()) {
+            return recordRepository.findByTickerAndTradeTimestampAfterOrderByTradeTimestampDesc(
+                    ticker.trim().toUpperCase(),
+                    Instant.now().minusSeconds(Math.max(1, lookbackHours) * 3600L)
+            );
+        }
+        if (lookbackHours > 0) {
+            return recordRepository.findByTradeTimestampAfterOrderByTradeTimestampDesc(
+                    Instant.now().minusSeconds(lookbackHours * 3600L)
+            );
+        }
+        return recordRepository.findTop100ByOrderByTradeTimestampDesc();
+    }
+
+    private Map<String, Object> importDetail(TradeHistoryImportBatchEntity batch) {
+        return Map.of(
+                "batch", batch,
+                "records", recordRepository.findByImportBatchIdOrderByTradeTimestampAsc(batch.getId())
+        );
+    }
+
+    private void persistImport(
+            int totalRows,
+            List<String> warnings,
+            List<NormalizedTradeRecord> trades
+    ) {
+        TradeHistoryImportBatchEntity batch = batchRepository.save(new TradeHistoryImportBatchEntity(
+                null,
+                Instant.now(),
+                totalRows,
+                trades.size(),
+                String.join("\n", warnings)
+        ));
+        recordRepository.saveAll(trades.stream()
+                .map(trade -> toEntity(batch.getId(), trade))
+                .toList());
+    }
+
+    private TradeHistoryRecordEntity toEntity(Long batchId, NormalizedTradeRecord trade) {
+        return new TradeHistoryRecordEntity(
+                null,
+                batchId,
+                null,
+                trade.timestamp(),
+                trade.ticker(),
+                trade.side(),
+                trade.quantity(),
+                trade.price(),
+                trade.realizedPnl(),
+                trade.account(),
+                trade.strategyType(),
+                trade.marketState()
+        );
     }
 
     private Instant parseTimestamp(String value, int row, List<String> warnings) {

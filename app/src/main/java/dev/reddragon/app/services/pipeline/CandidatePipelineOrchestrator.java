@@ -5,12 +5,12 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.reddragon.analytics.models.AnalyticsSnapshot;
+import dev.reddragon.domain.models.AnalyticsSnapshot;
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
 import dev.reddragon.app.models.PipelineRunResult;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketBar;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketBar;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 import dev.reddragon.marketdata.services.MarketFeatureCalculator;
 import dev.reddragon.persistence.services.PersistenceMapper;
 import dev.reddragon.persistence.services.repositories.AnalyticsSnapshotRepository;
@@ -19,9 +19,9 @@ import dev.reddragon.persistence.services.repositories.MarketBarRepository;
 import dev.reddragon.persistence.services.repositories.MarketSnapshotRepository;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
 import dev.reddragon.validation.config.ValidationProfile;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.ValidationAudit;
-import dev.reddragon.validation.models.ValidationResult;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.ValidationAudit;
+import dev.reddragon.domain.models.ValidationResult;
 import dev.reddragon.validation.services.ValidationService;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -76,11 +76,18 @@ public class CandidatePipelineOrchestrator {
 
         candidateRepository.save(persistenceMapper.toCandidateEntity(candidate));
         validationVerdictRepository.save(persistenceMapper.toValidationVerdictEntity(validation));
-        marketBarRepository.saveAll(persistenceMapper.toMarketBarEntities(bars));
+        persistNewBars(bars);
         marketSnapshotRepository.save(persistenceMapper.toMarketSnapshotEntity(candidate.candidateId(), marketData));
         analyticsSnapshotRepository.save(persistenceMapper.toAnalyticsSnapshotEntity(analytics));
 
         return PipelineRunResult.of(candidate, marketData, analytics, validation);
+    }
+
+    private void persistNewBars(List<MarketBar> bars) {
+        List<MarketBar> newBars = bars.stream()
+                .filter(bar -> !marketBarRepository.existsBySymbolAndBarDate(bar.symbol(), bar.date()))
+                .toList();
+        marketBarRepository.saveAll(persistenceMapper.toMarketBarEntities(newBars));
     }
 
     private CandidateValidationInput validationInput(

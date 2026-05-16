@@ -1,8 +1,8 @@
 package dev.reddragon.validation.services.engine;
 
 import dev.reddragon.validation.config.ValidationThresholds;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.ReasonCode;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.ReasonCode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -1,8 +1,8 @@
 package dev.reddragon.marketdata.services;
 
-import dev.reddragon.marketdata.models.MarketLiquidityTextureSnapshot;
-import dev.reddragon.marketdata.models.OrderBookSnapshot;
-import dev.reddragon.marketdata.utilities.MarketMathUtils;
+import dev.reddragon.domain.models.MarketLiquidityTextureSnapshot;
+import dev.reddragon.domain.models.OrderBookSnapshot;
+import dev.reddragon.math.MarketMathUtils;
 
 import java.util.List;
 import java.util.Objects;

@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-import dev.reddragon.validation.models.ReasonCode;
-import dev.reddragon.validation.models.RiskFlag;
-import dev.reddragon.validation.models.ValidationAudit;
-import dev.reddragon.validation.models.ValidationResult;
-import dev.reddragon.validation.models.ValidationSummary;
+import dev.reddragon.domain.models.ReasonCode;
+import dev.reddragon.domain.models.RiskFlag;
+import dev.reddragon.domain.models.ValidationAudit;
+import dev.reddragon.domain.models.ValidationResult;
+import dev.reddragon.domain.models.ValidationSummary;
 
 /**
  * Produces compact summaries and readable reports from validation audits.

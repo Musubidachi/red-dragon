@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.exit.ExitRecommendation;
-import dev.reddragon.analytics.models.exit.ExitSignal;
-import dev.reddragon.analytics.models.exit.ExitSignalInput;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.exit.ExitRecommendation;
+import dev.reddragon.domain.models.exit.ExitSignal;
+import dev.reddragon.domain.models.exit.ExitSignalInput;
 
 class EquilibriumCompressionScorerTest {
 

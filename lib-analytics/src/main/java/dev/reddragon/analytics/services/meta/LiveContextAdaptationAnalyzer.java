@@ -1,9 +1,9 @@
 package dev.reddragon.analytics.services.meta;
 
-import dev.reddragon.analytics.models.AdversarialFinding;
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.TradeModificationAction;
-import dev.reddragon.analytics.models.TradeModificationRequest;
+import dev.reddragon.domain.models.AdversarialFinding;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.TradeModificationAction;
+import dev.reddragon.domain.models.TradeModificationRequest;
 
 import java.time.Instant;
 import java.util.ArrayList;

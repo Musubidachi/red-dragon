@@ -15,7 +15,7 @@
  *       sub-package is the only place that knows the Schwab wire format.</li>
  *   <li>{@link dev.reddragon.marketdata.services} — feature calculators
  *       (VWAP, ATR, realized vol, etc.) and snapshot builders.</li>
- *   <li>{@link dev.reddragon.marketdata.models} — value objects: bars,
+ *   <li>{@link dev.reddragon.domain.models} — value objects: bars,
  *       order-book snapshots, intraday/liquidity/volatility snapshots.</li>
  *   <li>{@link dev.reddragon.marketdata.services.replay} — frame-based replay for
  *       backtests.</li>

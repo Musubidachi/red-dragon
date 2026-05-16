@@ -2,7 +2,7 @@ package dev.reddragon.app.controllers;
 
 import dev.reddragon.persistence.services.repositories.CandidateRepository;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
-import dev.reddragon.validation.models.Verdict;
+import dev.reddragon.domain.models.Verdict;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.propagation;
 
-import dev.reddragon.analytics.models.PropagationSnapshot;
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.PropagationSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
 
 import java.util.List;
 import java.util.Objects;

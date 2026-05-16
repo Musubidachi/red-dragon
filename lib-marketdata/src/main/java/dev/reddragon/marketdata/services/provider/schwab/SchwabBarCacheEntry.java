@@ -1,6 +1,6 @@
 package dev.reddragon.marketdata.services.provider.schwab;
 
-import dev.reddragon.marketdata.models.MarketBar;
+import dev.reddragon.domain.models.MarketBar;
 
 import java.time.Instant;
 import java.util.List;

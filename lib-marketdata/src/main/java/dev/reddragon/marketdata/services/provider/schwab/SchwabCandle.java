@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * Jackson DTO for a single Schwab daily candle. Field names mirror the
  * Schwab API exactly so deserialization is direct.
  *
- * <p>Converted to a normalized {@link dev.reddragon.marketdata.models.MarketBar}
+ * <p>Converted to a normalized {@link dev.reddragon.domain.models.MarketBar}
  * before leaving the {@code schwab} package.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

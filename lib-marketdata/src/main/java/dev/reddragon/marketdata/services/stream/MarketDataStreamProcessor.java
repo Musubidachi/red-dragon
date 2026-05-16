@@ -3,7 +3,7 @@ package dev.reddragon.marketdata.services.stream;
 import java.util.List;
 import java.util.Objects;
 
-import dev.reddragon.marketdata.models.MarketDataEvent;
+import dev.reddragon.domain.models.MarketDataEvent;
 
 /**
  * Simple streaming abstraction for consuming market-data events.

@@ -1,16 +1,20 @@
 package dev.reddragon.persistence.services;
 
-import dev.reddragon.analytics.models.AnalyticsSnapshot;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketBar;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.AnalyticsSnapshot;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.IntradayBar;
+import dev.reddragon.domain.models.MarketBar;
+import dev.reddragon.domain.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.MarketQuote;
 import dev.reddragon.persistence.domains.AnalyticsSnapshotEntity;
 import dev.reddragon.persistence.domains.CandidateEntity;
+import dev.reddragon.persistence.domains.IntradayBarEntity;
 import dev.reddragon.persistence.domains.MarketBarEntity;
+import dev.reddragon.persistence.domains.MarketQuoteObservationEntity;
 import dev.reddragon.persistence.domains.MarketSnapshotEntity;
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
 import dev.reddragon.persistence.utilities.PersistenceStringUtils;
-import dev.reddragon.validation.models.ValidationResult;
+import dev.reddragon.domain.models.ValidationResult;
 
 import java.time.Instant;
 import java.util.List;
@@ -76,6 +80,48 @@ public class PersistenceMapper {
         return bars.stream()
                 .map(this::toMarketBarEntity)
                 .toList();
+    }
+
+    public IntradayBarEntity toIntradayBarEntity(IntradayBar bar) {
+        Objects.requireNonNull(bar, "intraday bar is required");
+
+        return new IntradayBarEntity(
+                null,
+                bar.symbol(),
+                bar.startTime(),
+                bar.open(),
+                bar.high(),
+                bar.low(),
+                bar.close(),
+                bar.volume(),
+                bar.vwap(),
+                Instant.now()
+        );
+    }
+
+    public List<IntradayBarEntity> toIntradayBarEntities(List<IntradayBar> bars) {
+        if (bars == null || bars.isEmpty()) {
+            return List.of();
+        }
+        return bars.stream()
+                .map(this::toIntradayBarEntity)
+                .toList();
+    }
+
+    public MarketQuoteObservationEntity toMarketQuoteObservationEntity(MarketQuote quote) {
+        Objects.requireNonNull(quote, "market quote is required");
+
+        return new MarketQuoteObservationEntity(
+                null,
+                quote.symbol(),
+                quote.observedAt(),
+                quote.lastPrice(),
+                quote.bidPrice(),
+                quote.askPrice(),
+                quote.volume(),
+                quote.quality().name(),
+                PersistenceStringUtils.joinText(quote.notes())
+        );
     }
 
     public MarketSnapshotEntity toMarketSnapshotEntity(String candidateId, MarketDataSnapshot snapshot) {

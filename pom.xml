@@ -17,6 +17,8 @@
 
     <!--
       Layout (opportunity pipeline: candidates -> enrichment -> validation -> review):
+        lib-math        - shared numeric helpers for score normalization and simple market math
+        lib-domain      - shared value objects and enums used by the internal libraries
         app             - the only deployable artifact (Spring Boot main, web layer, wiring)
         lib-ingestion   - pull candidate inputs: SEC filings, news/RSS, market scanners, macro feeds
         lib-marketdata  - EOD price/volume retrieval, VWAP/ATR/range-position feature derivation
@@ -46,9 +48,12 @@
 
         <!-- third party -->
         <jackson.version>2.17.2</jackson.version>
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <modules>
+        <module>lib-math</module>
+        <module>lib-domain</module>
         <module>lib-ingestion</module>
         <module>lib-marketdata</module>
         <module>lib-analytics</module>
@@ -61,6 +66,16 @@
     <dependencyManagement>
         <dependencies>
             <!-- internal libs -->
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-math</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-domain</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>dev.reddragon</groupId>
                 <artifactId>lib-ingestion</artifactId>
@@ -97,6 +112,19 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>

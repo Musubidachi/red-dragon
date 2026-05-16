@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.classification;
 
-import dev.reddragon.analytics.models.RegimeLabel;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.RegimeLabel;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 
 import java.util.List;
 import java.util.Objects;

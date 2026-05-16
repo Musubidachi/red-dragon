@@ -1,9 +1,9 @@
 package dev.reddragon.validation.services.engine;
 
 import dev.reddragon.validation.config.ValidationThresholds;
-import dev.reddragon.validation.models.ReasonCode;
-import dev.reddragon.validation.models.Verdict;
-import dev.reddragon.validation.models.VerdictDecision;
+import dev.reddragon.domain.models.ReasonCode;
+import dev.reddragon.domain.models.Verdict;
+import dev.reddragon.domain.models.VerdictDecision;
 
 import java.util.ArrayList;
 import java.util.List;

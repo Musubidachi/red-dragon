@@ -4,6 +4,11 @@ Reference for anyone implementing the HTTP client that talks to SEC EDGAR.
 For what to do with the responses, see [SEC_FORMS.md](./SEC_FORMS.md).
 For how the client fits into the pipeline, see [SEC_IMPLEMENTATION.md](./SEC_IMPLEMENTATION.md).
 
+> **Current code note**: `SecHttpClient` currently sets the configured
+> User-Agent, sends `Accept-Encoding: gzip, deflate`, and uses
+> `SimpleRateLimiter`. It does not yet implement exponential backoff/retry,
+> ticker-map fetching, RSS polling, EFTS search, or index-file backfill.
+
 ---
 
 ## 1. Rules of the road

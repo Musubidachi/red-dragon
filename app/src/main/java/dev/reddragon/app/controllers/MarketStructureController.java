@@ -1,7 +1,7 @@
 package dev.reddragon.app.controllers;
 
-import dev.reddragon.marketdata.models.IntradayBar;
-import dev.reddragon.marketdata.models.MarketIntradayStructureSnapshot;
+import dev.reddragon.domain.models.IntradayBar;
+import dev.reddragon.domain.models.MarketIntradayStructureSnapshot;
 import dev.reddragon.marketdata.services.IntradayStructureSnapshotBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -1,8 +1,8 @@
 package dev.reddragon.analytics.services.meta;
 
-import dev.reddragon.analytics.models.CalibrationDriftLevel;
-import dev.reddragon.analytics.models.CalibrationReport;
-import dev.reddragon.analytics.models.OutcomeSample;
+import dev.reddragon.domain.models.CalibrationDriftLevel;
+import dev.reddragon.domain.models.CalibrationReport;
+import dev.reddragon.domain.models.OutcomeSample;
 
 import java.util.ArrayList;
 import java.util.List;

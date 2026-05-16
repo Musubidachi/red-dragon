@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.propagation;
 
-import dev.reddragon.analytics.models.PhaseLabel;
-import dev.reddragon.analytics.models.PhaseTransitionSnapshot;
+import dev.reddragon.domain.models.PhaseLabel;
+import dev.reddragon.domain.models.PhaseTransitionSnapshot;
 
 import java.util.Objects;
 

@@ -17,6 +17,11 @@
     <description>Pull candidate inputs from external sources: SEC filings, news/RSS, market scanners, macro feeds.</description>
 
     <dependencies>
+        <dependency>
+            <groupId>dev.reddragon</groupId>
+            <artifactId>lib-domain</artifactId>
+        </dependency>
+
         <!-- HTTP client for fetching external feeds; pulled transitively in app via spring-boot-starter-web,
              but lib needs the API at compile time. -->
         <dependency>

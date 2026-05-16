@@ -1,8 +1,8 @@
 package dev.reddragon.app.services.pipeline;
 
 import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
-import dev.reddragon.analytics.models.AnalyticsScoreBreakdown;
-import dev.reddragon.analytics.models.OutcomeSample;
+import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
+import dev.reddragon.domain.models.OutcomeSample;
 import dev.reddragon.persistence.domains.CalibrationOutcomeEntity;
 import dev.reddragon.persistence.services.repositories.CalibrationOutcomeRepository;
 import org.junit.jupiter.api.Test;

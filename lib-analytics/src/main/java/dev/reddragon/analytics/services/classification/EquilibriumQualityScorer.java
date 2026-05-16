@@ -1,7 +1,7 @@
 package dev.reddragon.analytics.services.classification;
 
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 
 import java.util.List;
 import java.util.Objects;

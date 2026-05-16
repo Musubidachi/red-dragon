@@ -11,10 +11,10 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import dev.reddragon.analytics.models.AnalyticsScoreBreakdown;
-import dev.reddragon.analytics.models.CalibrationDriftLevel;
-import dev.reddragon.analytics.models.CalibrationReport;
-import dev.reddragon.analytics.models.OutcomeSample;
+import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
+import dev.reddragon.domain.models.CalibrationDriftLevel;
+import dev.reddragon.domain.models.CalibrationReport;
+import dev.reddragon.domain.models.OutcomeSample;
 
 /**
  * Boundary tests for the MD Layer 8 (Meta-System Adaptation) calibration analyzer.

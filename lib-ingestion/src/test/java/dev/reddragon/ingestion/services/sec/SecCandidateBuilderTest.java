@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.ingestion.models.sec.SecFiling;
 
 class SecCandidateBuilderTest {

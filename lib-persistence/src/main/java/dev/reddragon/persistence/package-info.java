@@ -7,7 +7,7 @@
  * produces a durable artefact:
  * <ul>
  *   <li>MD Layer 1 / 2 — candidate rows (one per ingested
- *       {@link dev.reddragon.ingestion.models.TradeCandidate})</li>
+ *       {@link dev.reddragon.domain.models.TradeCandidate})</li>
  *   <li>MD Layer 2 — cached market-data bars</li>
  *   <li>MD Layer 3 / 5 — validation verdicts and deployment tier per candidate</li>
  * </ul>

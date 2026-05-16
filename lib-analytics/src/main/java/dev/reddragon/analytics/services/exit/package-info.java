@@ -14,12 +14,12 @@
  * <p>Members:
  * <ul>
  *   <li>{@link dev.reddragon.analytics.services.exit.EquilibriumCompressionScorer}
- *       — composes signals into an {@link dev.reddragon.analytics.models.exit.ExitSignal}</li>
- *   <li>{@link dev.reddragon.analytics.models.exit.ExitSignal} — output: recommendation
+ *       — composes signals into an {@link dev.reddragon.domain.models.exit.ExitSignal}</li>
+ *   <li>{@link dev.reddragon.domain.models.exit.ExitSignal} — output: recommendation
  *       + compression score + ordered notes</li>
- *   <li>{@link dev.reddragon.analytics.models.exit.ExitSignalInput} — value object the
+ *   <li>{@link dev.reddragon.domain.models.exit.ExitSignalInput} — value object the
  *       trader supplies via {@code POST /api/exit-signal}</li>
- *   <li>{@link dev.reddragon.analytics.models.exit.ExitRecommendation} — HOLD / TIGHTEN
+ *   <li>{@link dev.reddragon.domain.models.exit.ExitRecommendation} — HOLD / TIGHTEN
  *       / SCALE_OUT / EXIT_NOW</li>
  * </ul>
  */

@@ -15,8 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.reddragon.app.models.CandidateReviewItem;
 import dev.reddragon.persistence.domains.CandidateEntity;
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
+import dev.reddragon.persistence.services.repositories.AnalyticsSnapshotRepository;
 import dev.reddragon.persistence.services.repositories.CandidateRepository;
+import dev.reddragon.persistence.services.repositories.MarketSnapshotRepository;
+import dev.reddragon.persistence.services.repositories.TraderNoteRepository;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
+import dev.reddragon.persistence.services.repositories.VerdictOverrideRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -34,6 +38,10 @@ public class CandidateHistoryController {
 
     private final CandidateRepository candidateRepository;
     private final ValidationVerdictRepository verdictRepository;
+    private final MarketSnapshotRepository marketSnapshotRepository;
+    private final AnalyticsSnapshotRepository analyticsSnapshotRepository;
+    private final TraderNoteRepository traderNoteRepository;
+    private final VerdictOverrideRepository overrideRepository;
 
     /**
      * All validation verdicts for a symbol, newest-first.
@@ -83,6 +91,14 @@ public class CandidateHistoryController {
         response.put("summary", nullToEmpty(candidate.getSummary()));
         response.put("observedAt", candidate.getObservedAt());
         response.put("verdicts", verdicts);
+        response.put("marketSnapshots", marketSnapshotRepository
+                .findTop25ByCandidateIdOrderByObservedAtDesc(candidate.getCandidateId()));
+        response.put("analyticsSnapshots", analyticsSnapshotRepository
+                .findTop25ByCandidateIdOrderByObservedAtDesc(candidate.getCandidateId()));
+        response.put("notes", traderNoteRepository
+                .findByCandidateIdOrderByCreatedAtDesc(candidate.getCandidateId()));
+        response.put("overrides", overrideRepository
+                .findByCandidateIdOrderByOverriddenAtDesc(candidate.getCandidateId()));
         return response;
     }
 

@@ -1,6 +1,6 @@
 package dev.reddragon.marketdata.services;
 
-import dev.reddragon.marketdata.models.OrderBookSnapshot;
+import dev.reddragon.domain.models.OrderBookSnapshot;
 
 import java.util.List;
 import java.util.Objects;

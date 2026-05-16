@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>dev.reddragon</groupId>
-            <artifactId>lib-ingestion</artifactId>
+            <artifactId>lib-domain</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.reddragon</groupId>

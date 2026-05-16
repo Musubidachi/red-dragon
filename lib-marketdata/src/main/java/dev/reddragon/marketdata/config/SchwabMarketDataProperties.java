@@ -15,6 +15,10 @@ public class SchwabMarketDataProperties {
     long retryBackoffMillis;
 
     public boolean configured() {
+        return enabled;
+    }
+
+    public boolean staticAccessTokenConfigured() {
         return enabled && accessToken != null && !accessToken.isBlank();
     }
 }

@@ -50,10 +50,14 @@ List<BacktestFrame>  (candidate + historical bars)
 | `BacktestReport`      | Named strategy result containing metrics and all outcomes. |
 | `BacktestReplayEngine`| Stateless service that maps frames to outcomes.          |
 
-## HTTP endpoint
+## HTTP Endpoints
 
-`POST /api/backtest` — accepts a JSON body with `strategyName` and a list of frames,
-returns a full `BacktestReport`. See `BacktestController` in `app` for request shape.
+* `POST /api/backtest` - accepts a JSON body with `strategyName` and a list of
+  frames, returns a full `BacktestReport`, and stores per-frame results.
+* `GET /api/backtest/results/{runId}` - returns stored results for a run.
+* `GET /api/backtest/runs` - lists known run ids.
+
+See `BacktestController` in `app` for request shape.
 
 ## Design guidance
 

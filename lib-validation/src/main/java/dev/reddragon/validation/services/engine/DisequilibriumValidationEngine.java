@@ -1,13 +1,13 @@
 package dev.reddragon.validation.services.engine;
 
 import dev.reddragon.validation.config.ValidationThresholds;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.DeploymentTier;
-import dev.reddragon.validation.models.ReasonCode;
-import dev.reddragon.validation.models.ValidationFactor;
-import dev.reddragon.validation.models.ValidationResult;
-import dev.reddragon.validation.models.VerdictDecision;
-import dev.reddragon.validation.utilities.ValidationScoreUtils;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.DeploymentTier;
+import dev.reddragon.domain.models.ReasonCode;
+import dev.reddragon.domain.models.ValidationFactor;
+import dev.reddragon.domain.models.ValidationResult;
+import dev.reddragon.domain.models.VerdictDecision;
+import dev.reddragon.math.ValidationScoreUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

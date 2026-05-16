@@ -1,8 +1,8 @@
 package dev.reddragon.analytics.services.structural;
 
-import dev.reddragon.analytics.utilities.AnalyticsScoreUtils;
-import dev.reddragon.ingestion.models.TradeCandidate;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.models.TradeCandidate;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 
 import java.util.List;
 import java.util.Objects;

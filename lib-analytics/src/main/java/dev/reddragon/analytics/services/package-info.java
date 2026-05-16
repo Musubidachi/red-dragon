@@ -8,7 +8,7 @@
  * <ul>
  *   <li>{@link dev.reddragon.analytics.services.DeterministicAnalyticsService}
  *       — main pipeline entry point. Takes a candidate + market snapshot and
- *       emits an {@link dev.reddragon.analytics.models.AnalyticsSnapshot}.
+ *       emits an {@link dev.reddragon.domain.models.AnalyticsSnapshot}.
  *       Blends MD Layers 3–6.</li>
  *   <li>{@link dev.reddragon.analytics.services.MarketStateClassifier}
  *       — standalone rule-based classifier exposed via the

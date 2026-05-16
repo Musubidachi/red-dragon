@@ -20,6 +20,10 @@
         <!-- internal libs -->
         <dependency>
             <groupId>dev.reddragon</groupId>
+            <artifactId>lib-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.reddragon</groupId>
             <artifactId>lib-ingestion</artifactId>
         </dependency>
         <dependency>

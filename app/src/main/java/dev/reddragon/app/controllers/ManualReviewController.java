@@ -7,17 +7,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.reddragon.analytics.models.AnalyticsSnapshot;
+import dev.reddragon.domain.models.AnalyticsSnapshot;
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
 import dev.reddragon.app.models.ManualReviewRequest;
 import dev.reddragon.app.models.ManualReviewResponse;
-import dev.reddragon.ingestion.models.TradeCandidate;
+import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.ingestion.services.ManualCandidateIngestionService;
-import dev.reddragon.marketdata.models.MarketBar;
-import dev.reddragon.marketdata.models.MarketDataSnapshot;
+import dev.reddragon.domain.models.MarketBar;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 import dev.reddragon.marketdata.services.MarketFeatureCalculator;
-import dev.reddragon.validation.models.CandidateValidationInput;
-import dev.reddragon.validation.models.ValidationResult;
+import dev.reddragon.domain.models.CandidateValidationInput;
+import dev.reddragon.domain.models.ValidationResult;
 import dev.reddragon.validation.services.engine.DisequilibriumValidationEngine;
 import lombok.RequiredArgsConstructor;
 
