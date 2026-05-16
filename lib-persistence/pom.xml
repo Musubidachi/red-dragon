@@ -19,11 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>dev.reddragon</groupId>
-            <artifactId>lib-ingestion</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.reddragon</groupId>
-            <artifactId>lib-validation</artifactId>
+            <artifactId>lib-domain</artifactId>
         </dependency>
 
         <!-- entities + repositories live here, but the runtime starter / driver are

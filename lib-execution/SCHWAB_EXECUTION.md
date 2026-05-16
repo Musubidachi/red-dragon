@@ -4,8 +4,31 @@ Architecture doc for the broker integration. The module does not yet exist as a
 built Maven module; this directory currently holds the design only. When we
 promote `lib-execution` to a real module, add it to the parent pom.
 
-> **Status**: design only. No code, no pom, not in the parent reactor.
-> This doc is the input to the implementation pass.
+> **Status**: design only for broker execution. There is still no `lib-execution`
+> module, no pom, and no order-placement code in the parent reactor. However,
+> Schwab OAuth and Schwab market-data support have been partially implemented
+> elsewhere: OAuth services/controllers live in `app`, the token entity and
+> repository live in `lib-persistence`, and price-history retrieval lives in
+> `lib-marketdata`.
+
+Implemented outside this module:
+
+- `GET /api/schwab/oauth/authorize-url`
+- `GET /api/schwab/oauth/callback`
+- `POST /api/schwab/oauth/refresh`
+- persisted `schwab_token` rows
+- on-demand/scheduled access-token refresh support
+- Schwab price-history provider for market data
+
+Still not implemented:
+
+- account reads
+- position reads
+- order construction
+- order placement
+- order cancellation
+- fill reconciliation
+- dry-run/live execution mode
 
 ---
 

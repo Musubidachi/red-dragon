@@ -1,31 +1,40 @@
 # SEC EDGAR Ingestion
 
-Index for the SEC ingestion design docs. Read these before implementing the
-SEC source adapter inside `lib-ingestion`.
+Index for the SEC ingestion design docs.
 
-| Doc                                              | What's in it                                                                 |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| [SEC_API.md](./SEC_API.md)                       | API rules of the road (User-Agent, rate limit, TLS, hosts) and the specific endpoints we'll call, with URL formats and the CIK/accession-number gotchas. |
-| [SEC_FORMS.md](./SEC_FORMS.md)                   | Which SEC forms are in scope and why; full 8-K Item-code taxonomy; Form 4 XML structure with transaction-code signal table; 13D/G parsing notes. |
-| [SEC_IMPLEMENTATION.md](./SEC_IMPLEMENTATION.md) | Module purpose; two-loop polling strategy; `SecCandidate` data model; rate-limiter options; open decisions; explicit out-of-scope; suggested implementation order. |
+| Doc | What's in it |
+| --- | --- |
+| [SEC_API.md](./SEC_API.md) | SEC API rules, headers, rate limits, hosts, endpoints, and URL gotchas. |
+| [SEC_FORMS.md](./SEC_FORMS.md) | Forms in scope, 8-K item taxonomy, Form 4 XML notes, and 13D/G parsing notes. |
+| [SEC_IMPLEMENTATION.md](./SEC_IMPLEMENTATION.md) | Original implementation plan, future polling design, and remaining open decisions. |
 
-## Quick orientation
+## Current Implementation
 
-`lib-ingestion` exposes `Source` adapters that produce a stream of `Candidate`
-records. The SEC adapter is the first source. Its narrow job: watch for newly
-filed forms, filter to forms that carry catalyst signal, resolve CIK → ticker,
-emit structured `SecCandidate` records.
+The current code exposes `SecIngestionService`, which fetches a company's SEC
+submissions by CIK and emits normalized `TradeCandidate` objects.
 
-It does **not** score, persist, parse XBRL financials, or know about a portfolio.
-Those belong to other modules.
+Implemented today:
 
-## Starting points
+* Submissions endpoint client.
+* Required SEC User-Agent and simple global rate limiter.
+* Flattening of the SEC column-oriented recent-filings payload.
+* In-scope form filtering: `8-K`, `4`, `SC 13D`, `SC 13G`, `S-1`, `S-3`, `424B`.
+* 8-K item-code mapping to internal catalyst categories.
+* Transparent ingest-time scores for structural reality, materiality, earlyness,
+  and reflexivity.
+* Spring wiring in `app/config/PipelineConfiguration.java`.
 
-- If you're writing the HTTP client → start with [SEC_API.md](./SEC_API.md).
-- If you're writing the parsers → start with [SEC_FORMS.md](./SEC_FORMS.md).
-- If you're wiring the polling/orchestration → start with [SEC_IMPLEMENTATION.md](./SEC_IMPLEMENTATION.md).
+Not implemented yet:
 
-## Top-level references
+* Generic `Source` SPI / `Candidate` interface.
+* Structured `SecCandidate` and per-form payload hierarchy.
+* CIK-to-ticker map loading from `company_tickers*.json`.
+* Latest-filings RSS firehose polling.
+* Persistent per-CIK cursor state or SEC dedupe state outside candidate id checks.
+* Full Form 4 XML, 13D/G body, offering body, or XBRL parsing.
 
-- SEC EDGAR API docs: <https://www.sec.gov/edgar/sec-api-documentation>
-- SEC Fair Access policy (rate limits + UA): <https://www.sec.gov/os/accessing-edgar-data>
+## Boundary
+
+SEC ingestion does not persist, place orders, inspect a portfolio, or decide
+whether a candidate is tradable. It emits `TradeCandidate`; `app` then enriches,
+validates, and persists the pipeline result.

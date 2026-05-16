@@ -3,11 +3,38 @@
 Architecture doc that captures the user's validation philosophy and translates
 it into the engineering surface of `lib-validation`. Companion to the existing
 `package-info.java` (which describes the two-stage hard-rules + score-aggregation
-pipeline) and to the `SecCandidate` / `OrderRequest` contracts that bound the
-module on both sides.
+pipeline) and to the current `TradeCandidate`, `AnalyticsSnapshot`, and
+`MarketDataSnapshot` inputs that feed validation.
 
-> **Status**: design only. No validation code has been written yet. This doc is
-> the input to the implementation pass.
+> **Status**: partially implemented. The philosophy and scoring shape in this
+> doc are still useful, but the current code now includes the validation engine,
+> hard gates, score aggregation, validation profiles, verdict summaries, risk
+> flags, and persistence-facing verdict models. Treat the sections below as the
+> design rationale, not an exact API reference.
+
+## Current implementation snapshot
+
+Implemented today:
+
+- `ValidationService` facade over the validation subsystem.
+- `DisequilibriumValidationEngine` for factor creation, hard gates, score
+  aggregation, verdict resolution, and deployment-tier resolution.
+- `HardGateEvaluator`, `ValidationFactorFactory`, `VerdictResolver`,
+  `DeploymentResolver`, `RiskFlagResolver`, and `ValidationSummaryFormatter`.
+- `Verdict`: `PASS`, `WATCH`, `REJECT`.
+- `DeploymentTier`: `NONE`, `OBSERVE`, `PROBE`, `STANDARD`, `CONCENTRATED`.
+- Configurable threshold profiles through `ValidationProfile`,
+  `ValidationThresholds`, and `ValidationThresholdProfileFactory`.
+- App endpoints for review, verdict summaries, overrides, stats, and profiles.
+
+Still not implemented as described here:
+
+- Dedicated `ValidationVerdict` record with nested hard-rule and dimension-score
+  records.
+- Account/instrument compatibility gates.
+- Options-chain existence checks.
+- Full manual-factor capture for propagation stage and narrative coherence.
+- Fundamentals-backed materiality scoring.
 
 ---
 
@@ -268,6 +295,10 @@ threshold for selective deployment**, not constant participation.
 
 Mapped to existing `VerdictTier`:
 
+> Current code note: the old `PASS_CONCENTRATED` and `PASS_PROBE` names below
+> are represented today as `Verdict.PASS` plus `DeploymentTier.CONCENTRATED` or
+> `DeploymentTier.PROBE`.
+
 - `PASS_CONCENTRATED` — high confidence across all relevant dimensions. The
   type of candidate that historically justified concentration.
 - `PASS_PROBE` — solid candidate but not concentration-worthy. Suitable for
@@ -309,6 +340,12 @@ are pure aggregation.
 ---
 
 ## 5. Data inputs needed (and gaps today)
+
+> Current code note: this table is historical. Today validation consumes
+> `CandidateValidationInput`, built in `app` from `TradeCandidate`,
+> `MarketDataSnapshot`, and `AnalyticsSnapshot`. Equilibrium, asymmetry, and
+> regime compatibility are implemented upstream in `lib-analytics`; fundamentals,
+> news/social coverage counts, and full manual-factor capture remain gaps.
 
 | Dimension              | Required inputs                                                 | Available today?           |
 | ---------------------- | --------------------------------------------------------------- | -------------------------- |

@@ -2,82 +2,138 @@
 
 Probabilistic market-state intelligence platform.
 
-## What this is
+## What This Is
 
-A trade-candidate pipeline. AI-surfaced ideas flow in from external sources,
-get enriched with market-data context, scored against the current market
-regime and an asymmetry rubric, then filtered by a validation layer. What
-survives is presented to the trader for review.
+A trade-candidate pipeline. Ideas flow in from external sources (SEC EDGAR
+filings, manual entry), get enriched with market-data context, scored against
+the current market regime and an asymmetry rubric, then filtered by a
+seven-dimension validation layer. What survives is presented to the trader for
+review with a full reasoning chain attached.
 
-The system is candidate-in / verdict-out. It does not track a portfolio,
-does not place orders, and does not analyze the trader's history. It
-augments discretionary decisions, it does not replace them.
+The system is candidate-in / verdict-out. It does not place orders or track a
+live portfolio. It does store candidate history, validation results, trader
+notes, calibration outcomes, and imported trade-history samples so decisions can
+be reviewed and calibrated later. It augments discretionary decisions; it does
+not replace them.
 
 ## Pipeline
 
-```
-[ ingestion ]  SEC filings, news/RSS, scanners, macro feeds
+```text
+[ ingestion ]  SEC filings, manual candidates
      |
      v
-[ enrichment ] market-data features (VWAP, ATR, range position, liquidity)
+[ enrichment ] market-data features (VWAP, ATR, range position, liquidity, gap)
      |
      v
 [ analytics ]  regime classifier + asymmetry scorer
      |
      v
-[ validation ] hard rules + score aggregation -> PASS / WATCH / REJECT
+[ validation ] hard gates + score aggregation -> PASS / WATCH / REJECT + deployment tier
      |
      v
-[ review ]     trader sees survivors with the reasoning chain attached
+[ review ]     trader sees survivors with full reasoning chain and risk flags
 ```
 
-## Module layout
+## Module Layout
 
-| Module             | Purpose                                                     |
-| ------------------ | ----------------------------------------------------------- |
-| `app`              | Only deployable artifact. Spring Boot main + web layer.     |
-| `lib-ingestion`    | Pull candidate inputs: SEC filings, news/RSS, scanners, macro feeds. |
-| `lib-marketdata`   | EOD price/volume retrieval, VWAP/ATR/range-position features. |
-| `lib-analytics`    | Regime classifier + asymmetry scorer. Pure functions.       |
-| `lib-validation`   | Hard rules engine + score aggregation -> trade verdict.     |
-| `lib-persistence`  | JPA entities, repositories, Flyway migrations.              |
+| Module | MD layers | Purpose |
+| --- | --- | --- |
+| `app` | wires all | Only deployable artifact. Spring Boot main, web layer, pipeline wiring. |
+| `lib-math` | shared | Numeric helpers for clamping, normalized-score validation, weighted averages, and percent-change math. |
+| `lib-domain` | shared | Shared value objects and enums that flow across modules: candidates, market snapshots, analytics snapshots, validation results, and verdict types. |
+| `lib-ingestion` | L1, L2 candidates | Pull candidate inputs: SEC EDGAR filings and manual entry. |
+| `lib-marketdata` | L2 market data | Market-data provider adapters and VWAP/ATR/range/liquidity feature derivation. |
+| `lib-analytics` | L3, L4, L5, L6, L7, L8 | Deterministic scorers for market state, structural quality, propagation, exit, and calibration. |
+| `lib-validation` | L3 gates, L5 tier | Hard-gate engine, score aggregation, verdict, and deployment tier. |
+| `lib-persistence` | cross-cutting | JPA entities, repositories, Flyway migrations, audit/history storage. |
+| `lib-backtest` | supports L8 | Deterministic replay harness for historical candidates and bars. |
+| `lib-execution` | planned | Design docs for future broker execution. Order placement is not implemented. Schwab OAuth and market-data support currently live in `app`, `lib-marketdata`, and `lib-persistence`. |
 
 Only `app` produces a bootable jar. Libraries are plain jars consumed by `app`.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the MD-layer map.
 
-## Build
+## Package Layout
 
-Requires JDK 21 and Maven 3.9+.
+Most modules follow this shape:
 
-```
-mvn -q -DskipTests package
-```
-
-Run the app:
-
-```
-mvn -pl app spring-boot:run
-```
-
-Smoke-check:
-
-```
-curl -s http://localhost:8080/health
+```text
+<module>/src/main/java/dev/reddragon/<module>/
+    models/      value objects, DTOs, snapshots, records, enums
+    domains/     JPA entities (lib-persistence only)
+    services/    business logic
+    controllers/ HTTP controllers (app only)
+    utilities/   pure static helpers
+    config/      Spring configuration and properties classes
 ```
 
-## Roadmap (sequenced)
+`lib-domain` is the exception: it owns shared domain language under
+`dev.reddragon.domain.models`. External API wire DTOs, controller DTOs, and JPA
+entities intentionally stay in their owning modules.
 
-1. Persistence schema (`candidate`, `enrichment_snapshot`, `regime_snapshot`, `validation_verdict`, `market_bar`) + Flyway migrations.
-2. One ingestion source end-to-end. Recommend SEC EDGAR (deterministic, free, structured).
-3. EOD market-data provider + a small feature set (VWAP-proxy, ATR, range position).
-4. Rule-based regime classifier (deterministic before probabilistic).
-5. Hard-rules engine + first asymmetry scorer (simple weighted sum, transparent factors).
-6. Read-only HTML review surface that lists today's PASS / WATCH candidates with reasoning.
+## Project Conventions
 
-Things explicitly deferred: portfolio tracking, order execution, ML-based
-narrative scoring (FinBERT etc.), Kafka/Redis, Angular frontend, historical
-trade analysis. Each can earn its way in once the core pipeline is producing
-verdicts the trader trusts.
+* Lombok is the default for value objects, service constructors, and loggers.
+* No nested classes. Every class, enum, record, and interface lives in its own
+  top-level file.
+* Shared domain models live in `lib-domain`; shared numeric helpers live in
+  `lib-math`.
+* `lib-analytics` is deterministic and side-effect free.
+* Schwab provider DTOs stay inside `lib-marketdata/services/provider/schwab/`.
 
-## Status
+## HTTP API Surface
 
-Skeleton only. No business logic yet.
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/` | Static review dashboard. |
+| GET | `/health` | Liveness check. |
+| GET | `/actuator/metrics` | Micrometer metrics. |
+| POST | `/api/pipeline/manual` | Run a manually supplied candidate through the full pipeline. |
+| GET | `/api/pipeline/sec/{cik}` | Fetch SEC filings for a CIK and run them through the pipeline. |
+| GET | `/api/pipeline/sec/watch-list` | Run configured CIKs through the SEC pipeline. |
+| GET | `/api/pipeline/status` | Pipeline and scheduler status. |
+| GET | `/api/analysis/{ticker}` | Analyze one ticker using market data, SEC lookup, deterministic rules, optional LLM web research, and source-coverage confidence. |
+| POST | `/api/review/manual` | Ad-hoc manual review without persistence. |
+| GET | `/api/review/candidates` | Recent PASS / WATCH verdicts with reasoning. |
+| GET | `/api/candidates` | Stored candidates. |
+| GET | `/api/candidates/{symbol}/history` | Candidate history for one symbol. |
+| GET | `/api/candidates/id/{candidateId}` | Candidate lookup by id. |
+| POST | `/api/candidates/{id}/notes` | Add a trader note to a candidate. |
+| GET | `/api/candidates/{id}/notes` | List trader notes for a candidate. |
+| GET | `/api/stats` | General pipeline stats. |
+| GET | `/api/stats/opportunity-quality` | Conviction mix, deployment-tier mix, and top symbols. |
+| POST | `/api/backtest` | Run a replay against historical frames. |
+| GET | `/api/backtest/results/{runId}` | Stored backtest results for a run. |
+| GET | `/api/backtest/runs` | Stored backtest run ids. |
+| GET | `/api/market-data/{symbol}/daily` | Historical daily bars from the configured provider chain. |
+| GET | `/api/market-data/{symbol}/daily/stored` | Stored daily bars for a symbol/date range. |
+| GET | `/api/market-data/{symbol}/intraday` | Intraday bars from the configured provider chain. |
+| GET | `/api/market-data/{symbol}/intraday/stored` | Stored intraday bars for a symbol/time range. |
+| GET | `/api/market-data/{symbol}/quote` | Latest quote from the configured provider chain. |
+| GET | `/api/market-data/{symbol}/quote/stored` | Stored quote observations for a symbol. |
+| POST | `/api/market-state/classify` | Classify a supplied market-state snapshot. |
+| POST | `/market-structure/intraday` | Derive an intraday structure snapshot from bars. |
+| POST | `/api/exit-signal` | L7 exit signal: HOLD / TIGHTEN / SCALE_OUT / EXIT_NOW. |
+| POST | `/api/calibration` | Append realized outcomes and return a drift report. |
+| GET | `/api/calibration` | Current calibration drift report. |
+| GET | `/api/calibration/summary` | Rolling summary: win rate, average return, average drawdown. |
+| GET | `/api/calibration/outcomes` | Recent outcome rows. |
+| GET | `/api/calibration/outcomes/export` | CSV export of recent outcomes. |
+| GET | `/api/calibration/outcomes/{symbol}` | Recent outcomes for one symbol. |
+| DELETE | `/api/calibration/outcomes` | Delete all calibration outcomes. |
+| DELETE | `/api/calibration/outcomes/{symbol}` | Delete calibration outcomes for one symbol. |
+| POST | `/api/history/import` | Import and normalize trade-history CSV text. |
+| GET | `/api/history/imports` | Recent trade-history import batches. |
+| GET | `/api/history/imports/{batchId}` | One import batch with normalized records. |
+| GET | `/api/history/trades` | Stored normalized trade-history records, optionally filtered by ticker. |
+| GET | `/api/schwab/oauth/authorize-url` | URL the trader visits to grant Schwab API access. |
+| GET | `/api/schwab/oauth/callback` | Exchange Schwab OAuth code and persist tokens. |
+| POST | `/api/schwab/oauth/refresh` | Manually refresh Schwab access token. |
+| GET | `/api/regime/history` | Stored regime / analytics history. |
+| GET | `/api/verdicts/{candidateId}/summary` | Display-ready validation summary. |
+| POST | `/api/verdicts/{id}/override` | Record a manual verdict override. |
+| GET | `/api/verdicts/stats` | Verdict distribution stats. |
+| GET | `/api/validation/profiles` | Available validation threshold profiles. |
+
+Calibration also exposes convenience summary endpoints under
+`/api/calibration/summary/**` for win rate, returns, drawdown, medians, holding
+days, and per-symbol variants.

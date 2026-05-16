@@ -19,11 +19,11 @@
     <dependencies>
         <dependency>
             <groupId>dev.reddragon</groupId>
-            <artifactId>lib-analytics</artifactId>
+            <artifactId>lib-math</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.reddragon</groupId>
-            <artifactId>lib-marketdata</artifactId>
+            <artifactId>lib-domain</artifactId>
         </dependency>
 
         <dependency>

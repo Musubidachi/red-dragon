@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>red-dragon — daily review</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-elev: #161b22;
+      --bg-elev-2: #1c232c;
+      --border: #2a313a;
+      --fg: #e6edf3;
+      --fg-muted: #8b949e;
+      --accent: #d6303a;
+      --pass: #3fb950;
+      --watch: #d29922;
+      --reject: #f85149;
+      --neutral: #6e7681;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+      position: sticky; top: 0; z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: 0.02em;
+    }
+    header h1 .dot { color: var(--accent); }
+    header .timestamp { color: var(--fg-muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+    main { padding: 1.5rem 2rem 4rem; max-width: 1280px; margin: 0 auto; }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+    .stat-card .label {
+      color: var(--fg-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.25rem;
+    }
+
+    .controls {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .pill {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .pill.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .pill:hover:not(.active) { background: var(--bg-elev-2); }
+    .pill.refresh { margin-left: auto; }
+    label.lookback {
+      color: var(--fg-muted);
+      font-size: 0.85rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    label.lookback input {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      width: 4.5rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+      margin: 2rem 0 0.75rem;
+    }
+
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 0.85rem;
+    }
+    .card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      transition: border-color 120ms;
+    }
+    .card:hover { border-color: #3b424a; }
+    .card-head {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .card-head .symbol { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.04em; }
+    .card-head .tier { color: var(--fg-muted); font-size: 0.8rem; }
+    .verdict-badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .verdict-PASS   { background: rgba(63, 185, 80, 0.15);  color: var(--pass); }
+    .verdict-WATCH  { background: rgba(210, 153, 34, 0.15); color: var(--watch); }
+    .verdict-REJECT { background: rgba(248, 81, 73, 0.15);  color: var(--reject); }
+
+    .score-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 0.5rem 0 0.6rem;
+    }
+    .score-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-elev-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .score-bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, #d6303a, #f0a14a, #3fb950);
+    }
+    .score-value { font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+
+    .meta-row {
+      display: flex; justify-content: space-between;
+      color: var(--fg-muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+    .reasons {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--fg);
+      font-size: 0.85rem;
+    }
+    .reasons li { margin-bottom: 0.15rem; }
+    .reasons li.more { color: var(--fg-muted); list-style: none; margin-left: -1.1rem; }
+
+    .empty {
+      color: var(--fg-muted);
+      text-align: center;
+      padding: 2rem 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+
+    .exit-form {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+    }
+    .exit-form .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.7rem;
+      margin: 0.75rem 0 1rem;
+    }
+    .exit-form label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .exit-form input, .exit-form select {
+      width: 100%;
+      margin-top: 0.2rem;
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.4rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .exit-form button {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 0.5rem 1.25rem;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .exit-form button:hover { filter: brightness(1.1); }
+    .exit-output {
+      margin-top: 0.85rem;
+      background: var(--bg-elev-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 0.95rem;
+      font-size: 0.85rem;
+    }
+    .exit-output.HOLD     { border-left: 4px solid var(--pass); }
+    .exit-output.TIGHTEN  { border-left: 4px solid var(--watch); }
+    .exit-output.SCALE_OUT { border-left: 4px solid #f0a14a; }
+    .exit-output.EXIT_NOW { border-left: 4px solid var(--reject); }
+    .exit-output ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+
+    .error { color: var(--reject); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>red-<span class="dot">dragon</span> &nbsp; daily review</h1>
+  <span class="timestamp" id="timestamp">—</span>
+</header>
+
+<main>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-card"><div class="label">Sample size</div><div class="value" id="stat-samples">—</div></div>
+    <div class="stat-card"><div class="label">Win rate</div><div class="value" id="stat-winrate">—</div></div>
+    <div class="stat-card"><div class="label">Avg return</div><div class="value" id="stat-avgreturn">—</div></div>
+    <div class="stat-card"><div class="label">Avg drawdown</div><div class="value" id="stat-avgdrawdown">—</div></div>
+  </div>
+
+  <h2>Candidates</h2>
+
+  <div class="controls">
+    <button class="pill active" data-verdict="PASS,WATCH">Pass + Watch</button>
+    <button class="pill" data-verdict="PASS">Pass only</button>
+    <button class="pill" data-verdict="WATCH">Watch only</button>
+    <label class="lookback">Lookback hours
+      <input type="number" id="lookback" value="24" min="1" max="720">
+    </label>
+    <button class="pill refresh" id="refresh">Refresh</button>
+  </div>
+
+  <div id="candidates"></div>
+
+  <h2>Exit signal (L7)</h2>
+  <p style="color: var(--fg-muted); font-size: 0.85rem; margin-top: 0;">
+    Evaluate an open position: enter what asymmetry was at entry vs now, plus the current phases.
+  </p>
+
+  <form class="exit-form" id="exit-form">
+    <div class="grid">
+      <div>
+        <label>Equilibrium phase</label>
+        <select name="equilibriumPhase">
+          <option>EARLY_DISCOVERY</option>
+          <option>EMERGING_PROPAGATION</option>
+          <option>EARLY_REFLEXIVITY</option>
+          <option>BROAD_ACCELERATION</option>
+          <option>LATE_REFLEXIVITY</option>
+          <option selected>SATURATION_RISK</option>
+          <option>ASYMMETRY_DECAY</option>
+          <option>EQUILIBRIUM_BREAKDOWN</option>
+          <option>EXHAUSTION</option>
+          <option>UNKNOWN</option>
+        </select>
+      </div>
+      <div>
+        <label>Propagation phase</label>
+        <select name="propagationPhase">
+          <option>EARLY_DISCOVERY</option>
+          <option>EMERGING_PROPAGATION</option>
+          <option>EARLY_REFLEXIVITY</option>
+          <option>BROAD_ACCELERATION</option>
+          <option selected>LATE_REFLEXIVITY</option>
+          <option>SATURATION_RISK</option>
+          <option>ASYMMETRY_DECAY</option>
+          <option>EQUILIBRIUM_BREAKDOWN</option>
+          <option>EXHAUSTION</option>
+          <option>UNKNOWN</option>
+        </select>
+      </div>
+      <div>
+        <label>Current asymmetry (0.0 – 1.0)</label>
+        <input type="number" name="currentAsymmetry" step="0.01" min="0" max="1" value="0.35">
+      </div>
+      <div>
+        <label>Entry asymmetry (0.0 – 1.0)</label>
+        <input type="number" name="entryAsymmetry" step="0.01" min="0" max="1" value="0.80">
+      </div>
+      <div>
+        <label>Range position (0.0 – 1.0)</label>
+        <input type="number" name="rangePosition" step="0.01" min="0" max="1" value="0.90">
+      </div>
+      <div>
+        <label>Near recent high?</label>
+        <select name="nearRecentHigh">
+          <option value="true" selected>yes</option>
+          <option value="false">no</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit">Evaluate</button>
+    <div id="exit-output"></div>
+  </form>
+</main>
+
+<script>
+  const $ = (sel) => document.querySelector(sel);
+  const candidatesEl = $('#candidates');
+  const lookbackEl = $('#lookback');
+  const refreshBtn = $('#refresh');
+  let activeVerdict = 'PASS,WATCH';
+
+  document.querySelectorAll('.pill[data-verdict]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pill[data-verdict]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeVerdict = btn.dataset.verdict;
+      loadCandidates();
+    });
+  });
+  refreshBtn.addEventListener('click', () => { loadStats(); loadCandidates(); });
+  lookbackEl.addEventListener('change', loadCandidates);
+
+  function fmtScore(v) { return (v || 0).toFixed(2); }
+  function fmtPct(v) { return ((v || 0) * 100).toFixed(1) + '%'; }
+  function escape(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/calibration/summary?limit=100');
+      if (!res.ok) throw new Error(res.statusText);
+      const stats = await res.json();
+      $('#stat-samples').textContent     = stats.sampleSize || 0;
+      $('#stat-winrate').textContent     = fmtPct(stats.winRate);
+      $('#stat-avgreturn').textContent   = fmtPct(stats.averageReturn);
+      $('#stat-avgdrawdown').textContent = fmtPct(stats.averageDrawdown);
+    } catch (err) {
+      $('#stat-samples').textContent = '—';
+    }
+  }
+
+  async function loadCandidates() {
+    candidatesEl.innerHTML = '<div class="empty">Loading…</div>';
+    const lookback = Math.max(1, parseInt(lookbackEl.value || '24', 10));
+    try {
+      const res = await fetch(`/api/review/candidates?verdicts=${activeVerdict}&lookbackHours=${lookback}`);
+      if (!res.ok) throw new Error(res.statusText);
+      const items = await res.json();
+      renderCandidates(items);
+    } catch (err) {
+      candidatesEl.innerHTML = `<div class="empty error">Failed to load candidates: ${escape(err.message)}</div>`;
+    }
+  }
+
+  function renderCandidates(items) {
+    if (!items || items.length === 0) {
+      candidatesEl.innerHTML = '<div class="empty">No candidates in this window.</div>';
+      return;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'candidate-grid';
+    items.forEach(item => grid.appendChild(card(item)));
+    candidatesEl.innerHTML = '';
+    candidatesEl.appendChild(grid);
+  }
+
+  function card(item) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    const reasons = (item.explanations && item.explanations.length > 0 ? item.explanations : item.reasonCodes) || [];
+    const topReasons = reasons.slice(0, 4);
+    const more = reasons.length - topReasons.length;
+    const ts = item.reviewedAt ? new Date(item.reviewedAt).toLocaleString() : '';
+    el.innerHTML = `
+      <div class="card-head">
+        <span class="symbol">${escape(item.symbol)}</span>
+        <span class="verdict-badge verdict-${escape(item.verdict)}">${escape(item.verdict)}</span>
+      </div>
+      <div class="score-row">
+        <div class="score-bar"><div style="width:${Math.min(100, Math.max(0, item.score * 100))}%"></div></div>
+        <span class="score-value">${fmtScore(item.score)}</span>
+      </div>
+      <div class="meta-row">
+        <span>${escape(item.deploymentTier || '—')}${item.regimeLabel ? ' · ' + escape(item.regimeLabel) : ''}</span>
+        <span>${escape(ts)}</span>
+      </div>
+      <ul class="reasons">
+        ${topReasons.map(r => `<li>${escape(r)}</li>`).join('')}
+        ${more > 0 ? `<li class="more">+${more} more…</li>` : ''}
+      </ul>
+    `;
+    return el;
+  }
+
+  // Exit-signal form
+  $('#exit-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const data = Object.fromEntries(new FormData(form));
+    const body = {
+      equilibriumPhase: data.equilibriumPhase,
+      propagationPhase: data.propagationPhase,
+      currentAsymmetry: parseFloat(data.currentAsymmetry),
+      entryAsymmetry:   parseFloat(data.entryAsymmetry),
+      rangePosition:    parseFloat(data.rangePosition),
+      nearRecentHigh:   data.nearRecentHigh === 'true'
+    };
+    const out = $('#exit-output');
+    out.className = 'exit-output';
+    out.innerHTML = 'Evaluating…';
+    try {
+      const res = await fetch('/api/exit-signal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      const signal = await res.json();
+      out.className = 'exit-output ' + signal.recommendation;
+      out.innerHTML = `
+        <strong>${escape(signal.recommendation)}</strong>
+        &nbsp;<span style="color:var(--fg-muted)">compression score ${fmtScore(signal.compressionScore)}</span>
+        <ul>${(signal.notes || []).map(n => `<li>${escape(n)}</li>`).join('')}</ul>
+      `;
+    } catch (err) {
+      out.className = 'exit-output';
+      out.innerHTML = '<span class="error">Failed: ' + escape(err.message) + '</span>';
+    }
+  });
+
+  // Initial load
+  function setTimestamp() {
+    $('#timestamp').textContent = new Date().toLocaleString();
+  }
+  setTimestamp();
+  loadStats();
+  loadCandidates();
+</script>
+</body>
+</html>

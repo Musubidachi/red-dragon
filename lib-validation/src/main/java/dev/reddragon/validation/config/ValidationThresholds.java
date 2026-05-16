@@ -1,6 +1,6 @@
 package dev.reddragon.validation.config;
 
-import dev.reddragon.validation.util.ValidationScoreUtils;
+import dev.reddragon.math.ValidationScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 

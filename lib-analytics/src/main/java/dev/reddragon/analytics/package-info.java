@@ -1,20 +1,38 @@
 /**
- * Analytics: market-state (regime) classification and asymmetry scoring of
- * candidate trades.
+ * Analytics: market-state classification, asymmetry scoring, structural
+ * validation, propagation tracking, deployment confidence, exit timing,
+ * and meta-system adaptation.
  *
- * <p>Two responsibilities:
+ * <h2>Layout</h2>
+ *
+ * Like every module, this one follows the type-first layout
+ * (models/, services/, utilities/, config/). The MD-layer groupings live
+ * one level inside {@code services/}:
+ *
  * <ul>
- *   <li><b>Regime classifier</b> — given current market features, returns the
- *       governing state (rotational equilibrium, directional expansion,
- *       informational expansion, volatility compression / expansion, liquidity
- *       deterioration, macro instability, news-driven shock).</li>
- *   <li><b>Asymmetry scorer</b> — given an enriched candidate (catalyst type,
- *       freshness, capital-flow signal, fragility risk), returns a probabilistic
- *       score plus the contributing factors so the decision is auditable.</li>
+ *   <li>{@link dev.reddragon.analytics.services.structural}    - MD Layer 3
+ *       Structural Validation (is the catalyst real, material, meaningful)</li>
+ *   <li>{@link dev.reddragon.analytics.services.classification} - MD Layer 4
+ *       Market-State Classification (what regime are we in)</li>
+ *   <li>{@link dev.reddragon.analytics.services.deployment}    - MD Layer 5
+ *       Deployment confidence input (how aggressive should we size)</li>
+ *   <li>{@link dev.reddragon.analytics.services.propagation}   - MD Layer 6
+ *       Narrative Propagation Monitoring (is the story spreading)</li>
+ *   <li>{@link dev.reddragon.analytics.services.exit}          - MD Layer 7
+ *       Exit / Equilibrium Compression (when to hold, scale, exit)</li>
+ *   <li>{@link dev.reddragon.analytics.services.meta}          - MD Layer 8
+ *       Meta-System Adaptation (is our edge degrading)</li>
+ *   <li>{@link dev.reddragon.analytics.services} (top-level)   - Orchestrators
+ *       that blend the above layers into single snapshots</li>
+ *   <li>{@link dev.reddragon.domain.models}                    - Shared value
+ *       objects (snapshots, labels, breakdowns)</li>
+ *   <li>{@link dev.reddragon.math}                             - Shared math helpers</li>
  * </ul>
  *
- * <p>Pure functions over inputs. No I/O, no portfolio state, no order routing.
- * Outputs are consumed by {@code lib-validation} which combines them with hard
- * rules into a single verdict.
+ * <p>For a junior developer: everything here is a pure function. No I/O,
+ * no portfolio state, no order routing. Each scorer takes a snapshot in
+ * and returns a 0.0-1.0 score out. The orchestrators in services/ compose
+ * the layers; lib-validation then combines the analytics output with hard
+ * rules into a single trade verdict.
  */
 package dev.reddragon.analytics;

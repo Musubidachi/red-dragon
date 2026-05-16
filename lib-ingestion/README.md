@@ -1,105 +1,56 @@
 # lib-ingestion
 
-`lib-ingestion` is responsible for turning outside information into normalized trade candidates that the rest of Red Dragon can evaluate.
+> **MD layers:** L1 (Opportunity Discovery) and the candidate half of L2 (Data
+> Ingestion). See [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-This module should answer one question:
+`lib-ingestion` turns outside information into normalized `TradeCandidate`
+objects that the rest of Red Dragon can evaluate.
 
-> What new market-relevant candidates should the system consider?
+## Current Implementation
 
-It should not decide whether a candidate is attractive, safe, asymmetric, or valid. Those decisions belong downstream.
+Implemented sources:
+
+* Manual candidate ingestion through `ManualCandidateIngestionService`.
+* SEC EDGAR submissions ingestion through `services/sec/SecIngestionService`.
+
+The SEC implementation currently fetches recent company submissions by CIK,
+filters in-scope forms, flattens filing metadata, maps 8-K item codes, and
+builds scored `TradeCandidate` records.
 
 ## Responsibilities
 
-- Pull raw candidate inputs from external sources.
-- Normalize source-specific payloads into internal candidate objects.
-- Preserve enough source metadata for auditability and review.
-- Keep source adapters isolated from the rest of the pipeline.
-- Fail safely when a source is unavailable or malformed.
+* Pull raw candidate inputs from external sources.
+* Normalize source-specific payloads into internal candidate objects.
+* Preserve enough source metadata for auditability and review.
+* Keep source adapters isolated from the rest of the pipeline.
+* Fail safely when a source is unavailable or malformed.
 
-Potential sources include:
+## Non-Responsibilities
 
-- SEC EDGAR filings
-- News or RSS feeds
-- Market scanners
-- Macro feeds
-- Manually supplied candidate lists
+This library should not classify market regime, fetch OHLCV bars, persist
+candidates directly, place orders, or know anything about portfolio state.
 
-## Non-responsibilities
-
-This library should not:
-
-- Score trade quality.
-- Classify market regime.
-- Fetch historical OHLCV bars for feature calculation.
-- Persist candidates directly unless routed through persistence contracts.
-- Know anything about portfolio state, open positions, or order execution.
-
-## Expected flow
+## Current Package Layout
 
 ```text
-external source
-    -> source adapter
-    -> raw source payload
-    -> parser / mapper
-    -> normalized candidate
-    -> downstream enrichment
+lib-ingestion/src/main/java/dev/reddragon/ingestion
+    models/       TradeCandidate, SourceType, CandidateCatalystType, SEC models
+    services/     manual ingestion service
+    services/sec/ SEC submissions client, rate limiter, filing extractor, candidate builder
+    config/       SecApiProperties
+    utilities/    text helpers
 ```
 
-## Design guidance
+## Planned Or Deferred
 
-### Keep adapters thin
+* Generic source SPI.
+* News/RSS, scanner, and macro adapters.
+* SEC RSS firehose polling.
+* SEC CIK/ticker cache from `company_tickers*.json`.
+* Full Form 4, 13D/G, offering body, and XBRL parsing.
 
-Each source adapter should focus on retrieving and minimally parsing that source. Shared normalization logic should live outside the adapter when possible.
+## Testing Expectations
 
-### Prefer deterministic sources first
-
-SEC EDGAR is the best first ingestion target because it is structured, free, and easier to validate than social/news sentiment feeds.
-
-### Preserve provenance
-
-Every candidate should carry enough source context to explain why it entered the system:
-
-- source name
-- source timestamp
-- source URL or identifier
-- raw symbol / company identifier
-- normalized ticker, if available
-- trigger type, such as filing, headline, scanner result, or macro event
-
-### Avoid premature AI scoring
-
-AI-generated summaries may be useful later, but this module should first prove that it can reliably produce candidates from deterministic sources.
-
-## Suggested package layout
-
-```text
-lib-ingestion
-└── src/main/java/dev/reddragon/ingestion
-    ├── candidate       # normalized candidate contracts
-    ├── source          # source interfaces and common source metadata
-    ├── sec             # SEC EDGAR adapter and parser
-    ├── news            # RSS/news adapters, later
-    └── scanner         # scanner adapters, later
-```
-
-## First implementation target
-
-Start with one end-to-end deterministic source:
-
-1. Fetch recent SEC company filing metadata.
-2. Filter for filing types that can plausibly produce trade candidates.
-3. Normalize each result into a candidate.
-4. Attach source metadata and explanation text.
-5. Hand candidates to the application layer for enrichment.
-
-## Testing expectations
-
-Tests should cover:
-
-- parser behavior with representative source payloads
-- malformed or missing fields
-- duplicate candidate handling
-- source adapter failures
-- deterministic mapping from raw payload to normalized candidate
-
-Use fixture files for realistic source samples instead of building every test payload inline.
+Tests should cover parser behavior, malformed or missing fields, deterministic
+mapping from raw payload to normalized candidate, duplicate behavior, and source
+adapter failures. Prefer realistic fixtures where useful.

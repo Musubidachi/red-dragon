@@ -15,29 +15,83 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+    min-response-size: 2048
 
 management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
+  info:
+    env:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        reddragon.pipeline.candidate: true
+        reddragon.sec.watchlist: true
+      slo:
+        http.server.requests: 50ms,100ms,250ms,500ms,1s,2s,5s
+
+info:
+  app:
+    name: red-dragon
+    description: Probabilistic disequilibrium-based trade candidate validation platform
+    version: "@project.version@"
 
 red-dragon:
+  cors:
+    allowed-origin-patterns: ${RED_DRAGON_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200}
+  validation:
+    pass-threshold: ${RED_DRAGON_VALIDATION_PASS_THRESHOLD:0.78}
+    watch-threshold: ${RED_DRAGON_VALIDATION_WATCH_THRESHOLD:0.58}
+    concentration-threshold: ${RED_DRAGON_VALIDATION_CONCENTRATION_THRESHOLD:0.87}
+    min-structural-reality: ${RED_DRAGON_VALIDATION_MIN_STRUCTURAL_REALITY:0.65}
+    min-material-significance: ${RED_DRAGON_VALIDATION_MIN_MATERIAL_SIGNIFICANCE:0.55}
+    min-asymmetry: ${RED_DRAGON_VALIDATION_MIN_ASYMMETRY:0.55}
   sec:
     user-agent: ${RED_DRAGON_SEC_USER_AGENT:red-dragon fabriziom19@gmail.com}
     submissions-base-url: ${RED_DRAGON_SEC_SUBMISSIONS_BASE_URL:https://data.sec.gov/submissions}
     requests-per-second: ${RED_DRAGON_SEC_REQUESTS_PER_SECOND:5}
+  scheduler:
+    sec:
+      enabled: ${RED_DRAGON_SEC_SCHEDULER_ENABLED:false}
+      cron: ${RED_DRAGON_SEC_SCHEDULER_CRON:0 0 13 * * MON-FRI}
+      zone: ${RED_DRAGON_SEC_SCHEDULER_ZONE:UTC}
+      ciks: ${RED_DRAGON_SEC_SCHEDULER_CIKS:}
+      lookback-days: ${RED_DRAGON_SEC_SCHEDULER_LOOKBACK_DAYS:30}
+      profile: ${RED_DRAGON_SEC_SCHEDULER_PROFILE:STANDARD}
   schwab:
     base-url: ${SCHWAB_MARKETDATA_BASE_URL:https://api.schwabapi.com/marketdata/v1}
     access-token: ${SCHWAB_ACCESS_TOKEN:}
     enabled: ${SCHWAB_MARKETDATA_ENABLED:false}
     cache-ttl-seconds: ${SCHWAB_MARKETDATA_CACHE_TTL_SECONDS:60}
+    max-retries: ${SCHWAB_MARKETDATA_MAX_RETRIES:3}
+    retry-backoff-millis: ${SCHWAB_MARKETDATA_RETRY_BACKOFF_MILLIS:250}
+  yahoo:
+    base-url: ${YAHOO_MARKETDATA_BASE_URL:https://query1.finance.yahoo.com}
+    enabled: ${YAHOO_MARKETDATA_ENABLED:false}
+    cache-ttl-seconds: ${YAHOO_MARKETDATA_CACHE_TTL_SECONDS:60}
+    max-retries: ${YAHOO_MARKETDATA_MAX_RETRIES:2}
+    retry-backoff-millis: ${YAHOO_MARKETDATA_RETRY_BACKOFF_MILLIS:250}
+  llm:
+    research:
+      enabled: ${RED_DRAGON_LLM_RESEARCH_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      model: ${OPENAI_MODEL:gpt-4.1-mini}
+      web-search-enabled: ${RED_DRAGON_LLM_WEB_SEARCH_ENABLED:true}
+      web-search-tool-type: ${RED_DRAGON_LLM_WEB_SEARCH_TOOL_TYPE:web_search}
 
 logging:
   level:
     root: INFO
-    dev.reddragon: DEBUG
+    dev.reddragon: ${RED_DRAGON_LOG_LEVEL:INFO}
