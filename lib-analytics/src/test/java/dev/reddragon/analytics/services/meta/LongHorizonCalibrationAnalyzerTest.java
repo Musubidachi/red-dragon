@@ -20,8 +20,8 @@ import dev.reddragon.domain.models.OutcomeSample;
  * Boundary tests for the MD Layer 8 (Meta-System Adaptation) calibration analyzer.
  *
  * <p>Each test pins one drift band against the three knobs the analyzer reads
- * (win rate, average return, average drawdown) so threshold changes can't
- * drift silently.
+ * (historical win rate, average return, average drawdown) so threshold changes
+ * can't drift silently.
  */
 class LongHorizonCalibrationAnalyzerTest {
 
@@ -44,7 +44,7 @@ class LongHorizonCalibrationAnalyzerTest {
         CalibrationReport report = analyzer.process(List.of());
 
         assertEquals(CalibrationDriftLevel.STABLE, report.driftLevel());
-        //assertEquals(0.0, report.winRate());
+        assertEquals(0.0, report.historicalWinRate());
         assertEquals(0.0, report.averageReturn());
         assertEquals(0.0, report.averageDrawdown());
         assertTrue(
@@ -63,7 +63,7 @@ class LongHorizonCalibrationAnalyzerTest {
         CalibrationReport report = analyzer.process(samples);
 
         assertEquals(CalibrationDriftLevel.STABLE, report.driftLevel());
-        //assertEquals(0.70, report.winRate(), 1e-9);
+        assertEquals(0.70, report.historicalWinRate(), 1e-9);
     }
 
     @Test
