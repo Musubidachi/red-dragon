@@ -48,4 +48,24 @@ public class MarketQuoteObservationEntity {
 
     @Column(name = "notes", length = 4000)
     private String notes;
+
+    /** DB-populated insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public MarketQuoteObservationEntity(
+            Long id,
+            String symbol,
+            Instant observedAt,
+            double lastPrice,
+            double bidPrice,
+            double askPrice,
+            long volume,
+            String quality,
+            String notes
+    ) {
+        this(id, symbol, observedAt, lastPrice, bidPrice, askPrice, volume,
+                quality, notes, null);
+    }
 }

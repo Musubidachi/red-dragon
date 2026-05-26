@@ -45,7 +45,11 @@ class MarketFeatureCalculatorTest {
         assertEquals("ACME", snapshot.symbol());
         assertTrue(snapshot.latestClose() > 0);
         assertTrue(snapshot.averageTrueRange() > 0);
-        assertTrue(snapshot.liquidityScore() >= 0.6, "1M-volume bars should score liquid");
+        // Scoring is no longer this layer's responsibility — the snapshot
+        // carries placeholder zeros until the lib-analytics scorer enriches
+        // it. See lib-marketdata REVIEW.md Finding #8 architectural fix.
+        assertEquals(0.0, snapshot.liquidityScore());
+        assertEquals(0.0, snapshot.volatilityStabilityScore());
     }
 
     @Test

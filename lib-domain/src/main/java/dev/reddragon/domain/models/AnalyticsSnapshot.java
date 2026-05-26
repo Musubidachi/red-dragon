@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @Value
 @Accessors(fluent = true)
@@ -42,7 +43,7 @@ public class AnalyticsSnapshot {
         this.candidateId = candidateId.trim();
         this.symbol = symbol.trim().toUpperCase();
         this.observedAt = observedAt == null ? Instant.now() : observedAt;
-        this.regimeLabel = regimeLabel == null ? RegimeLabel.MIXED : regimeLabel;
+        this.regimeLabel = Objects.requireNonNull(regimeLabel, "regimeLabel is required");
         this.regimeCompatibilityScore = AnalyticsScoreUtils.clamp(regimeCompatibilityScore);
         this.asymmetryScore = AnalyticsScoreUtils.clamp(asymmetryScore);
         this.equilibriumQualityScore = AnalyticsScoreUtils.clamp(equilibriumQualityScore);
@@ -54,15 +55,18 @@ public class AnalyticsSnapshot {
     /**
      * Returns the name of the dimension with the highest score, useful for
      * one-line summary logging and review display.
+     *
+     * <p>Each comparison updates both {@code maxScore} and {@code dominant}
+     * consistently so that adding a new dimension at the end of the chain
+     * does not require special-casing the previous last line.
      */
     public String dominantScore() {
-        double maxScore = -1;
+        double maxScore = regimeCompatibilityScore;
         String dominant = "regimeCompatibility";
-        if (regimeCompatibilityScore > maxScore) { maxScore = regimeCompatibilityScore; dominant = "regimeCompatibility"; }
         if (asymmetryScore > maxScore)            { maxScore = asymmetryScore;            dominant = "asymmetry"; }
         if (equilibriumQualityScore > maxScore)   { maxScore = equilibriumQualityScore;   dominant = "equilibriumQuality"; }
         if (reflexivityPotentialScore > maxScore) { maxScore = reflexivityPotentialScore; dominant = "reflexivityPotential"; }
-        if (deploymentConfidenceScore > maxScore) {                                        dominant = "deploymentConfidence"; }
+        if (deploymentConfidenceScore > maxScore) { maxScore = deploymentConfidenceScore; dominant = "deploymentConfidence"; }
         return dominant;
     }
 }

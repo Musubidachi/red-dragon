@@ -10,6 +10,7 @@ public enum CandidateCatalystType {
     GOVERNMENT_GRANT,
     POLICY_CHANGE,
     CONTRACT,
+    MERGER_AND_ACQUISITION,
     SUPPLY_CONSTRAINT,
     SECTOR_INCENTIVE,
     LIQUIDITY_SHIFT,
@@ -22,17 +23,18 @@ public enum CandidateCatalystType {
     /** Human-readable label suitable for display in review surfaces and reports. */
     public String displayName() {
         return switch (this) {
-            case GOVERNMENT_GRANT        -> "Government Grant";
-            case POLICY_CHANGE           -> "Policy Change";
-            case CONTRACT                -> "Contract";
-            case SUPPLY_CONSTRAINT       -> "Supply Constraint";
-            case SECTOR_INCENTIVE        -> "Sector Incentive";
-            case LIQUIDITY_SHIFT         -> "Liquidity Shift";
+            case GOVERNMENT_GRANT         -> "Government Grant";
+            case POLICY_CHANGE            -> "Policy Change";
+            case CONTRACT                 -> "Contract";
+            case MERGER_AND_ACQUISITION   -> "Merger & Acquisition";
+            case SUPPLY_CONSTRAINT        -> "Supply Constraint";
+            case SECTOR_INCENTIVE         -> "Sector Incentive";
+            case LIQUIDITY_SHIFT          -> "Liquidity Shift";
             case STRUCTURAL_DEMAND_CHANGE -> "Structural Demand Change";
-            case FILING_EVENT            -> "Filing Event";
-            case NEWS_EVENT              -> "News Event";
-            case SCANNER_EVENT           -> "Scanner Event";
-            case MANUAL_THESIS           -> "Manual Thesis";
+            case FILING_EVENT             -> "Filing Event";
+            case NEWS_EVENT               -> "News Event";
+            case SCANNER_EVENT            -> "Scanner Event";
+            case MANUAL_THESIS            -> "Manual Thesis";
         };
     }
 }

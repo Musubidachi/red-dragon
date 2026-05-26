@@ -1,6 +1,7 @@
 package dev.reddragon.domain.models;
 
 import dev.reddragon.math.ValidationScoreUtils;
+import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -60,6 +61,7 @@ public class CandidateValidationInput {
 
     String notes;
 
+    @Builder(toBuilder = true)
     public CandidateValidationInput(
             String candidateId,
             String symbol,

@@ -2,6 +2,7 @@ package dev.reddragon.backtest.models;
 
 import dev.reddragon.domain.models.Verdict;
 
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,17 @@ public record BacktestMetrics(
         double averageScore,
         Map<Verdict, Long> verdictCounts
 ) {
+    /**
+     * Compact constructor wraps {@code verdictCounts} in an unmodifiable view
+     * so a downstream caller cannot mutate the map and break determinism of
+     * the enclosing {@link BacktestReport}.
+     */
+    public BacktestMetrics {
+        verdictCounts = verdictCounts == null
+                ? Map.of()
+                : Collections.unmodifiableMap(new EnumMap<>(verdictCounts));
+    }
+
     public static BacktestMetrics from(List<BacktestOutcome> outcomes) {
         List<BacktestOutcome> safeOutcomes = outcomes == null ? List.of() : outcomes;
         double averageScore = safeOutcomes.stream()

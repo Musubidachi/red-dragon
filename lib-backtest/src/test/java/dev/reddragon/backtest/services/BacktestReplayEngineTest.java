@@ -1,6 +1,7 @@
 package dev.reddragon.backtest.services;
 
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
+import dev.reddragon.analytics.services.marketscoring.MarketDataSnapshotScorer;
 import dev.reddragon.backtest.models.BacktestFrame;
 import dev.reddragon.backtest.models.BacktestOutcome;
 import dev.reddragon.backtest.models.BacktestReport;
@@ -10,6 +11,7 @@ import dev.reddragon.domain.models.SourceType;
 import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.marketdata.services.MarketFeatureCalculator;
 import dev.reddragon.validation.config.ValidationThresholds;
+import dev.reddragon.validation.services.engine.CandidateValidationInputFactory;
 import dev.reddragon.validation.services.engine.DisequilibriumValidationEngine;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +36,10 @@ class BacktestReplayEngineTest {
 
     private final BacktestReplayEngine engine = new BacktestReplayEngine(
             new MarketFeatureCalculator(),
+            new MarketDataSnapshotScorer(),
             new DeterministicAnalyticsService(),
-            new DisequilibriumValidationEngine(ValidationThresholds.defaults())
+            new DisequilibriumValidationEngine(ValidationThresholds.defaults()),
+            new CandidateValidationInputFactory()
     );
 
     @Test

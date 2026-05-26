@@ -53,17 +53,16 @@ public class VerdictOverrideController {
             throw new IllegalArgumentException("Unknown verdict: " + overrideVerdictRaw);
         }
 
-        VerdictOverrideEntity override = new VerdictOverrideEntity(
-                null,
-                verdict.getId(),
-                verdict.getCandidateId(),
-                verdict.getSymbol(),
-                verdict.getVerdict(),
-                overrideVerdict.name(),
-                body.get("reason"),
-                Instant.now(),
-                body.get("author")
-        );
+        VerdictOverrideEntity override = VerdictOverrideEntity.builder()
+                .verdictId(verdict.getId())
+                .candidateId(verdict.getCandidateId())
+                .symbol(verdict.getSymbol())
+                .originalVerdict(verdict.getVerdict())
+                .overrideVerdict(overrideVerdict.name())
+                .reason(body.get("reason"))
+                .overriddenAt(Instant.now())
+                .author(body.get("author"))
+                .build();
         return ResponseEntity.ok(overrideRepository.save(override));
     }
 }

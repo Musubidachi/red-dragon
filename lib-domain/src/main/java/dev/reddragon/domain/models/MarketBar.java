@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Value
 @Accessors(fluent = true)
-public class MarketBar {
+public class MarketBar implements OhlcBar {
     String symbol;
     LocalDate date;
     double open;

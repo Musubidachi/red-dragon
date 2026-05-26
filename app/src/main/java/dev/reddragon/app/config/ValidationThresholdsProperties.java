@@ -33,6 +33,7 @@ public class ValidationThresholdsProperties {
     private double concentrationThreshold = 0.87;
     private double standardDeploymentThreshold = 0.78;
     private double probeDeploymentThreshold = 0.58;
+    private double observeDeploymentThreshold = 0.58;
 
     // Minimum required scores (hard gate)
     private double minStructuralReality = 0.65;
@@ -60,6 +61,7 @@ public class ValidationThresholdsProperties {
                 concentrationThreshold,
                 standardDeploymentThreshold,
                 probeDeploymentThreshold,
+                observeDeploymentThreshold,
                 minStructuralReality,
                 minMaterialSignificance,
                 minEarlyness,

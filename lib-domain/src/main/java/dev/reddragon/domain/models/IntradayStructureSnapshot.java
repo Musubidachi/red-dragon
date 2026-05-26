@@ -5,7 +5,13 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Normalized intraday structure inputs supplied by market-data adapters.
+ * Normalized intraday structure inputs supplied to L4 scorers — the
+ * <b>score-only</b> shape, no symbol/sessionVwap/latestClose context.
+ *
+ * <p>Produced from {@link MarketIntradayStructureSnapshot} (which carries the
+ * provider context) before being passed into pure-function scorers in
+ * {@code lib-analytics}. Two distinct types exist so the analytics layer
+ * cannot accidentally depend on provider-side state.
  */
 @Value
 @Accessors(fluent = true)

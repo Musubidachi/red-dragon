@@ -18,6 +18,14 @@ public class ValidationThresholds {
     double concentrationThreshold;
     double standardDeploymentThreshold;
     double probeDeploymentThreshold;
+    /**
+     * Lower edge of the OBSERVE deployment band. Scores in
+     * {@code [observeDeploymentThreshold, probeDeploymentThreshold)} produce
+     * the OBSERVE tier. Defaults are set equal to {@code probeDeploymentThreshold}
+     * so OBSERVE is unreachable by default (matching legacy behavior); operators
+     * can set this lower to activate the OBSERVE band per validation profile.
+     */
+    double observeDeploymentThreshold;
 
     double minStructuralReality;
     double minMaterialSignificance;
@@ -42,6 +50,7 @@ public class ValidationThresholds {
                 0.87,
                 0.78,
                 0.58,
+                0.58,  // observeDeploymentThreshold (= probe, so OBSERVE unreachable by default)
 
                 0.65,
                 0.55,
@@ -67,6 +76,7 @@ public class ValidationThresholds {
             double concentrationThreshold,
             double standardDeploymentThreshold,
             double probeDeploymentThreshold,
+            double observeDeploymentThreshold,
             double minStructuralReality,
             double minMaterialSignificance,
             double minEarlyness,
@@ -87,6 +97,7 @@ public class ValidationThresholds {
         ValidationScoreUtils.requireNormalized("concentrationThreshold", concentrationThreshold);
         ValidationScoreUtils.requireNormalized("standardDeploymentThreshold", standardDeploymentThreshold);
         ValidationScoreUtils.requireNormalized("probeDeploymentThreshold", probeDeploymentThreshold);
+        ValidationScoreUtils.requireNormalized("observeDeploymentThreshold", observeDeploymentThreshold);
         ValidationScoreUtils.requireNormalized("minStructuralReality", minStructuralReality);
         ValidationScoreUtils.requireNormalized("minMaterialSignificance", minMaterialSignificance);
         ValidationScoreUtils.requireNormalized("minEarlyness", minEarlyness);
@@ -116,12 +127,29 @@ public class ValidationThresholds {
         if (watchThreshold > passThreshold) {
             throw new IllegalArgumentException("watchThreshold cannot be greater than passThreshold");
         }
+        if (observeDeploymentThreshold > probeDeploymentThreshold) {
+            throw new IllegalArgumentException(
+                    "observeDeploymentThreshold cannot be greater than probeDeploymentThreshold");
+        }
+        if (probeDeploymentThreshold > standardDeploymentThreshold) {
+            throw new IllegalArgumentException(
+                    "probeDeploymentThreshold cannot be greater than standardDeploymentThreshold");
+        }
+        if (standardDeploymentThreshold > concentrationThreshold) {
+            throw new IllegalArgumentException(
+                    "standardDeploymentThreshold cannot be greater than concentrationThreshold");
+        }
+        if (passThreshold > concentrationThreshold) {
+            throw new IllegalArgumentException(
+                    "passThreshold cannot be greater than concentrationThreshold");
+        }
 
         this.passThreshold = passThreshold;
         this.watchThreshold = watchThreshold;
         this.concentrationThreshold = concentrationThreshold;
         this.standardDeploymentThreshold = standardDeploymentThreshold;
         this.probeDeploymentThreshold = probeDeploymentThreshold;
+        this.observeDeploymentThreshold = observeDeploymentThreshold;
         this.minStructuralReality = minStructuralReality;
         this.minMaterialSignificance = minMaterialSignificance;
         this.minEarlyness = minEarlyness;

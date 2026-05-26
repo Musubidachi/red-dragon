@@ -36,4 +36,19 @@ public class TradeHistoryImportBatchEntity {
 
     @Column(name = "warnings", length = 8000)
     private String warnings;
+
+    /** DB-populated insertion timestamp (V13); distinct from {@link #importedAt}. */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public TradeHistoryImportBatchEntity(
+            Long id,
+            Instant importedAt,
+            int totalRows,
+            int importedRows,
+            String warnings
+    ) {
+        this(id, importedAt, totalRows, importedRows, warnings, null);
+    }
 }

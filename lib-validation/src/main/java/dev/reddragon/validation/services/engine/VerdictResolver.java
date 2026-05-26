@@ -1,5 +1,6 @@
 package dev.reddragon.validation.services.engine;
 
+import dev.reddragon.math.ValidationScoreUtils;
 import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.domain.models.ReasonCode;
 import dev.reddragon.domain.models.Verdict;
@@ -27,6 +28,9 @@ public class VerdictResolver {
             double score,
             List<ReasonCode> hardGateFailures
     ) {
+        ValidationScoreUtils.requireNormalized("score", score);
+        Objects.requireNonNull(hardGateFailures, "hardGateFailures is required");
+
         List<ReasonCode> reasons = new ArrayList<>();
         List<String> explanations = new ArrayList<>();
 

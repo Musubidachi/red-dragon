@@ -47,14 +47,13 @@ public class TraderNoteController {
         }
         String author = body.get("author");
 
-        TraderNoteEntity note = new TraderNoteEntity(
-                null,
-                candidate.getCandidateId(),
-                candidate.getSymbol(),
-                noteText,
-                Instant.now(),
-                author
-        );
+        TraderNoteEntity note = TraderNoteEntity.builder()
+                .candidateId(candidate.getCandidateId())
+                .symbol(candidate.getSymbol())
+                .noteText(noteText)
+                .createdAt(Instant.now())
+                .author(author)
+                .build();
         return ResponseEntity.ok(traderNoteRepository.save(note));
     }
 

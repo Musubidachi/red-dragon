@@ -38,4 +38,54 @@ class SecCandidateBuilderTest {
         assertEquals(0.90, freshCandidate.earlynessScore());
         assertEquals(0.30, oldCandidate.earlynessScore());
     }
+
+    @Test
+    void acceptanceDateTimePreferredOverFilingDateForEarlyness() {
+        // The bug this guards (lib-ingestion REVIEW.md Finding #18):
+        // a filing made at 4 PM ET on 2026-05-12 (= 2026-05-12T20:00Z)
+        // anchored at filingDate=2026-05-12 produces observedAt =
+        // 2026-05-12T00:00Z — 20 hours BEFORE the actual filing. Earlyness
+        // tier (now 3 hours after the real filing) should still be the
+        // freshest bucket. Without acceptanceDateTime, the same fixture
+        // would report 23 hours elapsed and drop one tier.
+        Clock clock = Clock.fixed(Instant.parse("2026-05-12T23:00:00Z"), ZoneOffset.UTC);
+        SecCandidateBuilder builder = new SecCandidateBuilder(
+                new EightKCategoryMapper(),
+                new SecFilingScoringHeuristics(),
+                clock);
+
+        Instant acceptedAt = Instant.parse("2026-05-12T20:00:00Z"); // 4 PM ET
+        SecFiling withAcceptance = new SecFiling(
+                "00001234", "ACME", "ACME", "a1", "8-K",
+                LocalDate.of(2026, 5, 12),
+                acceptedAt,
+                "doc.htm", "desc", List.of());
+
+        TradeCandidate candidate = builder.process(withAcceptance);
+
+        // 3 hours since accepted; well under the 4-hour fresh tier (0.90).
+        assertEquals(0.90, candidate.earlynessScore());
+    }
+
+    @Test
+    void filingDateFallbackUsedWhenAcceptanceMissing() {
+        // Same filingDate, but no acceptanceDateTime — anchor reverts
+        // to filingDate.atStartOfDay(UTC), which is 23 hours back. That
+        // drops the tier from 0.90 to 0.75. This locks in the documented
+        // fallback behaviour so future refactors don't lose it.
+        Clock clock = Clock.fixed(Instant.parse("2026-05-12T23:00:00Z"), ZoneOffset.UTC);
+        SecCandidateBuilder builder = new SecCandidateBuilder(
+                new EightKCategoryMapper(),
+                new SecFilingScoringHeuristics(),
+                clock);
+
+        SecFiling withoutAcceptance = new SecFiling(
+                "00001234", "ACME", "ACME", "a1", "8-K",
+                LocalDate.of(2026, 5, 12),
+                /* acceptanceDateTime */ null,
+                "doc.htm", "desc", List.of());
+
+        TradeCandidate candidate = builder.process(withoutAcceptance);
+        assertEquals(0.75, candidate.earlynessScore());
+    }
 }

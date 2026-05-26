@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 
 import dev.reddragon.domain.models.CandidateCatalystType;
 import dev.reddragon.domain.models.SourceType;
@@ -66,14 +67,27 @@ public class SecCandidateBuilder {
 
     /**
      * Build a fully populated {@link TradeCandidate} from one filing.
+     *
+     * <p>{@link SecFiling#ticker} must be present — {@link
+     * SubmissionsFilingExtractor} filters out tickerless filings at the
+     * source (see lib-ingestion REVIEW.md Finding #17), so reaching this
+     * method with a null/blank ticker indicates a programmer error
+     * upstream.
      */
     public TradeCandidate process(SecFiling filing) {
+        Objects.requireNonNull(filing, "filing is required");
+        if (filing.ticker() == null || filing.ticker().isBlank()) {
+            throw new IllegalArgumentException(
+                    "SecFiling.ticker is required; upstream extractor should have dropped this filing. "
+                            + "accession=" + filing.accessionNumber() + " cik=" + filing.cik());
+        }
+
         CandidateCatalystType catalystType = pickCatalystType(filing);
-        Instant observedAt = filingDateToInstant(filing.filingDate());
+        Instant observedAt = filingObservedAt(filing);
 
         return new TradeCandidate(
                 candidateId(filing),
-                tickerOrPlaceholder(filing),
+                filing.ticker(),
                 filing.issuerName(),
                 catalystType,
                 SourceType.SEC_EDGAR,
@@ -109,17 +123,30 @@ public class SecCandidateBuilder {
         };
     }
 
-    private String tickerOrPlaceholder(SecFiling filing) {
-        return filing.ticker() == null || filing.ticker().isBlank()
-                ? "UNKNOWN"
-                : filing.ticker();
-    }
-
-    private Instant filingDateToInstant(LocalDate filingDate) {
-        if (filingDate == null) {
-            return Instant.now(clock);
+    /**
+     * Pick the most precise observed-at instant available. The SEC's
+     * {@code acceptanceDateTime} (when present) gives a second-precision
+     * wall-clock — that's the right anchor for earlyness scoring. When
+     * it's missing (older fixtures, stub responses, sources that don't
+     * carry it), we fall back to {@code filingDate.atStartOfDay(UTC)},
+     * which is what the pipeline did historically. Final fallback is the
+     * injected clock so a filing record without any timestamps still
+     * scores deterministically.
+     *
+     * <p>See lib-ingestion REVIEW.md Finding #18 for why this matters:
+     * UTC-midnight anchoring is wrong by up to a full day for filings
+     * made during US market hours, causing the {@code scoreEarlyness}
+     * tier to jump as soon as midnight UTC ticks over instead of
+     * tracking the actual filing timestamp.
+     */
+    private Instant filingObservedAt(SecFiling filing) {
+        if (filing.acceptanceDateTime() != null) {
+            return filing.acceptanceDateTime();
         }
-        return filingDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        if (filing.filingDate() != null) {
+            return filing.filingDate().atStartOfDay().toInstant(ZoneOffset.UTC);
+        }
+        return Instant.now(clock);
     }
 
     private String buildHeadline(SecFiling filing) {
@@ -135,11 +162,32 @@ public class SecCandidateBuilder {
         return ("Accession " + filing.accessionNumber() + "." + itemsPart + docPart).trim();
     }
 
+    /**
+     * Structural-reality score for the catalyst labels that
+     * {@code pickCatalystType} can produce after the V12-era taxonomy
+     * extension. SEC filings are factual documents, so the baseline is high;
+     * the per-label deltas reflect how directly the filing speaks to the
+     * underlying company state.
+     *
+     * <p>Default branch throws so future contributors editing
+     * {@code pickCatalystType} to return new values are forced to update
+     * this mapping rather than silently inheriting a stale fallback.
+     */
     private double scoreStructuralReality(CandidateCatalystType catalystType) {
         return switch (catalystType) {
+            // Binary corporate event — highest structural certainty.
+            case MERGER_AND_ACQUISITION             -> 0.92;
+            // Severe-negative + contract events: directly factual.
             case STRUCTURAL_DEMAND_CHANGE, CONTRACT -> 0.90;
+            // Filing-event (earnings, governance, residual 8-K): factual but
+            // information content varies.
             case FILING_EVENT                       -> 0.75;
-            default                                 -> 0.70;
+            // Disclosure / Reg FD attachments: corporate disclosure but the
+            // actual signal lives in the press release the form references.
+            case NEWS_EVENT                         -> 0.65;
+            default -> throw new IllegalStateException(
+                    "scoreStructuralReality has no mapping for " + catalystType
+                            + "; pickCatalystType should not return this value");
         };
     }
 

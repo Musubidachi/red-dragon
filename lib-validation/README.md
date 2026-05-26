@@ -58,13 +58,17 @@ candidate + market-data snapshot + analytics snapshot
 
 ```text
 lib-validation/src/main/java/dev/reddragon/validation
-    models/           Verdict, DeploymentTier, ValidationResult, factors, audits
     services/         ValidationService facade
     services/engine/  hard gates, scoring, verdict and deployment resolution
     services/format/  display-ready summaries
     config/           thresholds and profiles
-    utilities/        score helpers
 ```
+
+Verdict, DeploymentTier, ValidationResult, ValidationFactor, ValidationAudit,
+ValidationStage, ValidationSummary, VerdictDecision, ReasonCode, and RiskFlag
+all live in `lib-domain` so they can flow across modules. Numeric helpers
+(clamping, weighted averages, score validation) live in `lib-math`. This
+module owns only the validation engine and its configuration.
 
 ## Implemented Pieces
 

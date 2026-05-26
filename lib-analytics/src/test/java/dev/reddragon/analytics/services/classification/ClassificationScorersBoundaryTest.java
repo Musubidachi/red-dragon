@@ -64,12 +64,12 @@ class ClassificationScorersBoundaryTest {
         RegimeCompatibilityScorer scorer = new RegimeCompatibilityScorer();
 
         RegimeLabel hostileLiquidity = scorer.process(snapshot(0.2,0.8,0.5), new ArrayList<>());
-        RegimeLabel supportiveRotation = scorer.process(snapshot(0.8,0.8,0.5), new ArrayList<>());
+        RegimeLabel supportiveCompression = scorer.process(snapshot(0.8,0.8,0.5), new ArrayList<>());
 
         assertEquals(RegimeLabel.HOSTILE_LIQUIDITY, hostileLiquidity);
-        assertEquals(RegimeLabel.SUPPORTIVE_ROTATIONAL, supportiveRotation);
+        assertEquals(RegimeLabel.SUPPORTIVE_COMPRESSION, supportiveCompression);
         assertEquals(0.20, scorer.score(RegimeLabel.HOSTILE_LIQUIDITY));
-        assertEquals(0.85, scorer.score(RegimeLabel.SUPPORTIVE_ROTATIONAL));
+        assertEquals(0.72, scorer.score(RegimeLabel.SUPPORTIVE_COMPRESSION));
     }
 
     @Test

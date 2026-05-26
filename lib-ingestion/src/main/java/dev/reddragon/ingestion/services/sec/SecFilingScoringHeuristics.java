@@ -33,11 +33,15 @@ public class SecFilingScoringHeuristics {
 
     // 8-K item-code groups, mirroring the taxonomy used by EightKCategoryMapper.
     // Kept private here so each scoring axis can weight them independently.
-    private static final Set<String> SEVERE_ITEMS    = Set.of("1.03", "3.01", "4.02", "2.04");
-    private static final Set<String> MNA_ITEMS       = Set.of("2.01", "5.01");
-    private static final Set<String> CONTRACT_ITEMS  = Set.of("1.01", "1.02");
-    private static final Set<String> DILUTION_ITEMS  = Set.of("3.02", "3.03");
-    private static final Set<String> EARNINGS_ITEMS  = Set.of("2.02");
+    // Buckets and members must stay aligned with EightKCategoryMapper —
+    // adding an item to one without adding it to the other produces a
+    // candidate whose label and score disagree.
+    private static final Set<String> SEVERE_ITEMS     = Set.of("1.03", "2.04", "2.05", "2.06", "3.01", "4.02");
+    private static final Set<String> MNA_ITEMS        = Set.of("2.01", "5.01");
+    private static final Set<String> CONTRACT_ITEMS   = Set.of("1.01", "1.02");
+    private static final Set<String> DILUTION_ITEMS   = Set.of("2.03", "3.02", "3.03");
+    private static final Set<String> DISCLOSURE_ITEMS = Set.of("7.01", "8.01");
+    private static final Set<String> EARNINGS_ITEMS   = Set.of("2.02");
     private static final Set<String> GOVERNANCE_ITEMS = Set.of("4.01", "5.02", "5.03", "5.07");
 
     /**
@@ -83,10 +87,12 @@ public class SecFilingScoringHeuristics {
             return 0.40;
         }
         // Order matters — return the highest-materiality bucket present.
-        if (containsAny(itemCodes, SEVERE_ITEMS))     return 0.90; // bankruptcy, restatements
+        // Bucket priority and members align with EightKCategoryMapper.
+        if (containsAny(itemCodes, SEVERE_ITEMS))     return 0.90; // bankruptcy, restatements, impairments, restructuring
         if (containsAny(itemCodes, MNA_ITEMS))        return 0.85; // acquisitions, change of control
         if (containsAny(itemCodes, CONTRACT_ITEMS))   return 0.75; // material agreements
-        if (containsAny(itemCodes, DILUTION_ITEMS))   return 0.65; // unregistered issuance
+        if (containsAny(itemCodes, DILUTION_ITEMS))   return 0.65; // new debt / unregistered issuance
+        if (containsAny(itemCodes, DISCLOSURE_ITEMS)) return 0.55; // Reg FD / Other Events — depends on attachment
         if (containsAny(itemCodes, EARNINGS_ITEMS))   return 0.55; // results announcements
         if (containsAny(itemCodes, GOVERNANCE_ITEMS)) return 0.50; // auditor / officer changes
         return 0.40;
@@ -100,8 +106,9 @@ public class SecFilingScoringHeuristics {
         }
         // Order matters — return the highest-attention bucket present.
         if (containsAny(itemCodes, MNA_ITEMS))        return 0.90; // M&A front-page news
-        if (containsAny(itemCodes, SEVERE_ITEMS))     return 0.80; // bankruptcy gets press
+        if (containsAny(itemCodes, SEVERE_ITEMS))     return 0.80; // bankruptcy / impairments get press
         if (containsAny(itemCodes, EARNINGS_ITEMS))   return 0.75; // always covered by analysts
+        if (containsAny(itemCodes, DISCLOSURE_ITEMS)) return 0.60; // Reg FD / Other Events — deliberate disclosure usually gets press
         if (containsAny(itemCodes, DILUTION_ITEMS))   return 0.60; // algos react, retail does too
         if (containsAny(itemCodes, CONTRACT_ITEMS))   return 0.55; // depends on size
         if (containsAny(itemCodes, GOVERNANCE_ITEMS)) return 0.40; // depends on prominence

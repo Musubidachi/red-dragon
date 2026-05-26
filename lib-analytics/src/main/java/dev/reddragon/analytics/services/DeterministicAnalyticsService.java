@@ -1,31 +1,98 @@
 package dev.reddragon.analytics.services;
 
+import dev.reddragon.analytics.services.classification.EquilibriumQualityScorer;
+import dev.reddragon.analytics.services.classification.RegimeCompatibilityScorer;
+import dev.reddragon.analytics.services.deployment.DeploymentConfidenceScorer;
+import dev.reddragon.analytics.services.propagation.PropagationPhaseAnalyzer;
+import dev.reddragon.analytics.services.propagation.ReflexivityScorer;
+import dev.reddragon.analytics.services.structural.AdversarialValidationAnalyzer;
+import dev.reddragon.analytics.services.structural.AsymmetryScorer;
+import dev.reddragon.domain.models.AdversarialFinding;
 import dev.reddragon.domain.models.AnalyticsSnapshot;
+import dev.reddragon.domain.models.MarketDataSnapshot;
 import dev.reddragon.domain.models.PhaseLabel;
 import dev.reddragon.domain.models.PhaseTransitionSnapshot;
 import dev.reddragon.domain.models.RegimeLabel;
-import dev.reddragon.analytics.services.propagation.PropagationPhaseAnalyzer;
-import dev.reddragon.math.AnalyticsScoreUtils;
 import dev.reddragon.domain.models.TradeCandidate;
-import dev.reddragon.domain.models.MarketDataSnapshot;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Produces deterministic analytics features from a candidate and market data.
  *
- * <p>Integrates {@link PropagationPhaseAnalyzer} to append a propagation-phase
- * note to the snapshot, enriching the trader review surface without requiring
- * a separate intraday data feed.
+ * <p>This orchestrator is intentionally thin — it composes the documented
+ * L3/L4/L5/L6 scorers in the order described by {@code ARCHITECTURE.md} and
+ * does not embed scoring logic of its own. The previous inline math has been
+ * deleted in favour of delegation so the standalone scorer endpoints
+ * (e.g. {@code POST /api/market-state/classify}) and the candidate pipeline
+ * cannot drift apart.
+ *
+ * <p>The orchestrator only has a {@link TradeCandidate} and a
+ * {@link MarketDataSnapshot} to work with; the richer adversarial analysis
+ * also requires intraday-structure, liquidity-texture, propagation,
+ * fundamental-impact, volatility-expansion, and options-flow snapshots. For
+ * the pipeline path we pass {@code null} for those snapshots;
+ * {@link AdversarialValidationAnalyzer#process} silently skips checks whose
+ * required snapshots are missing. Full-data callers that construct all
+ * eight snapshots get the full ten-check pass.
+ *
+ * <p>A lightweight adversarial pre-pass also runs every time, using the
+ * orchestrator's derived {@code reflexivity} and the
+ * {@link MarketDataSnapshot}'s liquidity/volatility/rangePosition fields.
+ * These three checks are not redundant with the analyzer because they
+ * consume different inputs (the analyzer reads richer snapshot types).
  */
 public class DeterministicAnalyticsService {
 
-    private final PropagationPhaseAnalyzer propagationPhaseAnalyzer = new PropagationPhaseAnalyzer();
+    private final RegimeCompatibilityScorer regimeCompatibilityScorer;
+    private final EquilibriumQualityScorer equilibriumQualityScorer;
+    private final AsymmetryScorer asymmetryScorer;
+    private final ReflexivityScorer reflexivityScorer;
+    private final DeploymentConfidenceScorer deploymentConfidenceScorer;
+    private final AdversarialValidationAnalyzer adversarialValidationAnalyzer;
+    private final PropagationPhaseAnalyzer propagationPhaseAnalyzer;
 
     /**
-     * Main processing flow.
+     * Convenience constructor that news-up default instances of every scorer.
+     * Used by Spring wiring and by test fixtures that don't want to construct
+     * the full dependency graph by hand.
+     */
+    public DeterministicAnalyticsService() {
+        this(
+                new RegimeCompatibilityScorer(),
+                new EquilibriumQualityScorer(),
+                new AsymmetryScorer(),
+                new ReflexivityScorer(),
+                new DeploymentConfidenceScorer(),
+                new AdversarialValidationAnalyzer(),
+                new PropagationPhaseAnalyzer()
+        );
+    }
+
+    public DeterministicAnalyticsService(
+            RegimeCompatibilityScorer regimeCompatibilityScorer,
+            EquilibriumQualityScorer equilibriumQualityScorer,
+            AsymmetryScorer asymmetryScorer,
+            ReflexivityScorer reflexivityScorer,
+            DeploymentConfidenceScorer deploymentConfidenceScorer,
+            AdversarialValidationAnalyzer adversarialValidationAnalyzer,
+            PropagationPhaseAnalyzer propagationPhaseAnalyzer
+    ) {
+        this.regimeCompatibilityScorer = Objects.requireNonNull(regimeCompatibilityScorer, "regimeCompatibilityScorer is required");
+        this.equilibriumQualityScorer = Objects.requireNonNull(equilibriumQualityScorer, "equilibriumQualityScorer is required");
+        this.asymmetryScorer = Objects.requireNonNull(asymmetryScorer, "asymmetryScorer is required");
+        this.reflexivityScorer = Objects.requireNonNull(reflexivityScorer, "reflexivityScorer is required");
+        this.deploymentConfidenceScorer = Objects.requireNonNull(deploymentConfidenceScorer, "deploymentConfidenceScorer is required");
+        this.adversarialValidationAnalyzer = Objects.requireNonNull(adversarialValidationAnalyzer, "adversarialValidationAnalyzer is required");
+        this.propagationPhaseAnalyzer = Objects.requireNonNull(propagationPhaseAnalyzer, "propagationPhaseAnalyzer is required");
+    }
+
+    /**
+     * Main processing flow. Composes the L4 regime classification, L3 asymmetry
+     * + adversarial checks, L4 equilibrium quality, L6 reflexivity, L5 deployment
+     * confidence, and L6 propagation phase into a single {@link AnalyticsSnapshot}.
      */
     public AnalyticsSnapshot process(
             TradeCandidate candidate,
@@ -35,26 +102,47 @@ public class DeterministicAnalyticsService {
 
         List<String> notes = new ArrayList<>();
 
-        RegimeLabel regime = regime(marketData, notes);
-        double regimeCompatibility = regimeCompatibility(regime);
-        double equilibriumQuality = equilibriumQuality(marketData);
-        double asymmetry = asymmetry(candidate, marketData, equilibriumQuality, notes);
-        double reflexivity = reflexivity(candidate);
-        double deploymentConfidence = deploymentConfidence(
+        // L4 — classify the regime and translate to a compatibility score
+        RegimeLabel regime = regimeCompatibilityScorer.process(marketData, notes);
+        double regimeCompatibility = regimeCompatibilityScorer.score(regime);
+
+        // L4 — usable-for-restoration score
+        double equilibriumQuality = equilibriumQualityScorer.process(marketData, notes);
+
+        // L3 — asymmetry consumes equilibrium quality as a fourth dimension
+        double asymmetry = asymmetryScorer.process(candidate, marketData, equilibriumQuality, notes);
+
+        // L6 — reflexivity (propagation potential)
+        double reflexivity = reflexivityScorer.process(candidate, notes);
+
+        // L5 — confidence input (lib-validation owns the final tier decision)
+        double deploymentConfidence = deploymentConfidenceScorer.process(
                 candidate,
                 asymmetry,
-                regimeCompatibility
+                equilibriumQuality,
+                regimeCompatibility,
+                reflexivity,
+                notes
         );
 
-        // Propagation phase — derived from reflexivity as a proxy for propagation level
+        // L6 — propagation phase from earlyness → reflexivity slope
         PhaseLabel phase = propagationPhase(candidate, reflexivity);
         notes.add("Propagation phase: " + phase.name());
 
-        // Lightweight adversarial checks using available data
-        adversarialNotes(candidate, marketData, reflexivity, notes);
+        // L3 — adversarial checks. Two passes:
+        //   1. AdversarialValidationAnalyzer runs the rich-data checks; it
+        //      gracefully skips checks whose snapshots the pipeline does
+        //      not have.
+        //   2. A lightweight pass below covers the candidate-only / pipeline-
+        //      only adversarial flags that the analyzer's check set does not
+        //      duplicate (it uses derived reflexivity and MarketDataSnapshot
+        //      fields rather than the richer snapshot types).
+        appendAdversarialFindings(candidate, marketData, notes);
+        appendLightweightAdversarialNotes(candidate, marketData, reflexivity, notes);
 
         return buildSnapshot(
                 candidate,
+                marketData,
                 notes,
                 regime,
                 regimeCompatibility,
@@ -66,40 +154,83 @@ public class DeterministicAnalyticsService {
     }
 
     /**
-     * Derives a {@link PhaseLabel} from the candidate's earlyness and reflexivity scores.
-     * Uses {@link PropagationPhaseAnalyzer} with a synthetic {@link PhaseTransitionSnapshot}
-     * computed from scores available in the current pipeline.
+     * Derives a {@link PhaseLabel} from the candidate's earlyness and reflexivity
+     * scores via {@link PropagationPhaseAnalyzer}.
      */
     private PhaseLabel propagationPhase(TradeCandidate candidate, double currentReflexivity) {
         double previous = candidate.earlynessScore();
         double current  = currentReflexivity;
         double slope        = current - previous;
-        double acceleration = slope > 0 ? slope * 0.5 : slope * 0.5; // simplified second derivative
+        // Half-scale the slope as a coarse proxy for the second derivative.
+        double acceleration = slope * 0.5;
         PhaseTransitionSnapshot snapshot = new PhaseTransitionSnapshot(previous, current, slope, acceleration);
         return propagationPhaseAnalyzer.process(snapshot);
     }
 
     /**
-     * Appends lightweight adversarial observations when available signals suggest risk.
-     * Full adversarial analysis requiring intraday/options snapshots is out of scope
-     * for the standard pipeline run.
+     * Run {@link AdversarialValidationAnalyzer} with the data the orchestrator
+     * has. {@link AdversarialValidationAnalyzer#process} silently skips checks
+     * whose required snapshots are missing, so passing {@code null} for the
+     * snapshots the pipeline does not have is the right contract — the few
+     * checks that need only {@code TradeCandidate} + {@code MarketDataSnapshot}
+     * still fire (today the analyzer needs at least one of the optional
+     * snapshots to run any check, so the pipeline path is silent until those
+     * are wired in; the standalone {@code /api/analysis/{ticker}} flow does
+     * construct the richer snapshots and gets the full ten-check pass).
+     *
+     * <p>The {@link AdversarialFinding}s that do fire are appended to {@code
+     * notes} so the trader review surface sees them alongside the other
+     * orchestrator-produced narrative.
      */
-    private void adversarialNotes(
+    private void appendAdversarialFindings(
+            TradeCandidate candidate,
+            MarketDataSnapshot marketData,
+            List<String> notes
+    ) {
+        List<AdversarialFinding> findings = adversarialValidationAnalyzer.process(
+                candidate,
+                marketData,
+                null,   // IntradayStructureSnapshot — not available in pipeline path
+                null,   // LiquidityTextureSnapshot
+                null,   // PropagationSnapshot
+                null,   // FundamentalImpactSnapshot
+                null,   // VolatilityExpansionSnapshot
+                null    // OptionsFlowSnapshot
+        );
+        for (AdversarialFinding finding : findings) {
+            notes.add("Adversarial flag (" + finding.type().name() + "): " + finding.explanation());
+        }
+    }
+
+    // ---- Lightweight adversarial-note triggers -----------------------------
+    // These run on the candidate + derived reflexivity + MarketDataSnapshot
+    // data the orchestrator has. They are NOT redundant with
+    // AdversarialValidationAnalyzer because that analyzer uses richer
+    // snapshot types (PropagationSnapshot, LiquidityTextureSnapshot, etc.)
+    // and only fires when those are supplied. These three checks fire
+    // whenever any candidate flows through the pipeline.
+    private static final double LITE_HYPE_STRUCTURAL_MAX           = 0.45;
+    private static final double LITE_HYPE_REFLEXIVITY_MIN          = 0.70;
+    private static final double LITE_LATE_ENTRY_EARLYNESS_MAX      = 0.40;
+    private static final double LITE_LATE_ENTRY_RANGE_MIN          = 0.85;
+    private static final double LITE_LIQUIDITY_DETERIORATION_FLOOR = 0.35;
+
+    private void appendLightweightAdversarialNotes(
             TradeCandidate candidate,
             MarketDataSnapshot marketData,
             double reflexivity,
             List<String> notes
     ) {
-        // Hype-without-structure signal
-        if (candidate.structuralRealityScore() < 0.45 && reflexivity > 0.70) {
+        if (candidate.structuralRealityScore() < LITE_HYPE_STRUCTURAL_MAX
+                && reflexivity > LITE_HYPE_REFLEXIVITY_MIN) {
             notes.add("Adversarial flag: reflexivity is elevated but structural reality is weak; possible hype without substance.");
         }
-        // Late-entry signal
-        if (candidate.earlynessScore() < 0.40 && marketData.rangePosition() > 0.85) {
+        if (candidate.earlynessScore() < LITE_LATE_ENTRY_EARLYNESS_MAX
+                && marketData.rangePosition() > LITE_LATE_ENTRY_RANGE_MIN) {
             notes.add("Adversarial flag: earlyness is low and price is near range high; late-entry risk elevated.");
         }
-        // Liquidity deterioration
-        if (marketData.liquidityScore() < 0.35 && marketData.volatilityStabilityScore() < 0.35) {
+        if (marketData.liquidityScore() < LITE_LIQUIDITY_DETERIORATION_FLOOR
+                && marketData.volatilityStabilityScore() < LITE_LIQUIDITY_DETERIORATION_FLOOR) {
             notes.add("Adversarial flag: both liquidity and volatility stability are degraded; adverse execution risk.");
         }
     }
@@ -111,44 +242,14 @@ public class DeterministicAnalyticsService {
         if (candidate == null) {
             throw new IllegalArgumentException("candidate is required");
         }
-
         if (marketData == null) {
             throw new IllegalArgumentException("marketData is required");
         }
     }
 
-    private double equilibriumQuality(MarketDataSnapshot marketData) {
-        return AnalyticsScoreUtils.average(
-                marketData.liquidityScore(),
-                marketData.volatilityStabilityScore()
-        );
-    }
-
-    private double reflexivity(TradeCandidate candidate) {
-        return AnalyticsScoreUtils.clamp(
-                AnalyticsScoreUtils.average(
-                        candidate.reflexivityPotentialScore(),
-                        candidate.earlynessScore()
-                )
-        );
-    }
-
-    private double deploymentConfidence(
-            TradeCandidate candidate,
-            double asymmetry,
-            double regimeCompatibility
-    ) {
-        return AnalyticsScoreUtils.clamp(
-                candidate.structuralRealityScore() * 0.25
-                        + candidate.materialSignificanceScore() * 0.20
-                        + candidate.earlynessScore() * 0.20
-                        + asymmetry * 0.25
-                        + regimeCompatibility * 0.10
-        );
-    }
-
     private AnalyticsSnapshot buildSnapshot(
             TradeCandidate candidate,
+            MarketDataSnapshot marketData,
             List<String> notes,
             RegimeLabel regime,
             double regimeCompatibility,
@@ -157,10 +258,12 @@ public class DeterministicAnalyticsService {
             double reflexivity,
             double deploymentConfidence
     ) {
+        // Anchor analytics to the market-data observation timestamp so identical
+        // inputs produce identical snapshots (backtests, replays, idempotency).
         return new AnalyticsSnapshot(
                 candidate.candidateId(),
                 candidate.symbol(),
-                Instant.now(),
+                marketData.observedAt(),
                 regime,
                 regimeCompatibility,
                 asymmetry,
@@ -171,97 +274,4 @@ public class DeterministicAnalyticsService {
         );
     }
 
-    private RegimeLabel regime(MarketDataSnapshot marketData, List<String> notes) {
-        if (Math.abs(marketData.gapPercent()) > 0.15 && marketData.volatilityStabilityScore() < 0.50) {
-            notes.add("Large opening displacement with unstable volatility; treating environment as news-driven and hostile to equilibrium assumptions.");
-            return RegimeLabel.HOSTILE_NEWS_DRIVEN;
-        }
-
-        if (marketData.liquidityScore() < 0.35) {
-            notes.add("Liquidity is weak; regime is hostile to concentration.");
-            return RegimeLabel.HOSTILE_LIQUIDITY;
-        }
-
-        if (marketData.volatilityStabilityScore() < 0.35) {
-            notes.add("Volatility is unstable; equilibrium behavior is degraded.");
-            return RegimeLabel.HOSTILE_VOLATILITY;
-        }
-
-        if (marketData.rangePosition() >= 0.45
-                && marketData.rangePosition() <= 0.55
-                && marketData.volatilityStabilityScore() >= 0.70
-                && marketData.liquidityScore() >= 0.60) {
-            notes.add("Structure is tightly balanced with stable volatility and healthy liquidity; compression regime favorable for selective breakout monitoring.");
-            return RegimeLabel.SUPPORTIVE_COMPRESSION;
-        }
-
-        if (marketData.rangePosition() >= 0.35 && marketData.rangePosition() <= 0.75) {
-            notes.add("Range position is balanced enough for rotational/restoration behavior.");
-            return RegimeLabel.SUPPORTIVE_ROTATIONAL;
-        }
-
-        if (marketData.rangePosition() > 0.75
-                && marketData.volatilityStabilityScore() >= 0.60) {
-            notes.add("Trend pressure is present but volatility remains controlled.");
-            return RegimeLabel.SUPPORTIVE_TREND;
-        }
-
-        notes.add("Market regime is mixed; no hard support or rejection from market structure alone.");
-        return RegimeLabel.MIXED;
-    }
-
-    private double regimeCompatibility(RegimeLabel regimeLabel) {
-        return switch (regimeLabel) {
-            case SUPPORTIVE_ROTATIONAL -> 0.85;
-            case SUPPORTIVE_TREND -> 0.70;
-            case SUPPORTIVE_COMPRESSION -> 0.72;
-            case MIXED -> 0.50;
-            case HOSTILE_NEWS_DRIVEN -> 0.22;
-            case HOSTILE_VOLATILITY -> 0.25;
-            case HOSTILE_LIQUIDITY -> 0.20;
-        };
-    }
-
-    private double asymmetry(
-            TradeCandidate candidate,
-            MarketDataSnapshot marketData,
-            double equilibriumQuality,
-            List<String> notes
-    ) {
-        double rangePenalty = rangePenalty(marketData, notes);
-        double gapPenalty = gapPenalty(marketData, notes);
-
-        return AnalyticsScoreUtils.clamp(
-                candidate.structuralRealityScore() * 0.25
-                        + candidate.materialSignificanceScore() * 0.25
-                        + candidate.earlynessScore() * 0.25
-                        + equilibriumQuality * 0.25
-                        - rangePenalty
-                        - gapPenalty
-        );
-    }
-
-    private double rangePenalty(
-            MarketDataSnapshot marketData,
-            List<String> notes
-    ) {
-        if (marketData.rangePosition() > 0.85) {
-            notes.add("Range position is extended; remaining asymmetry may be compressed.");
-            return 0.20;
-        }
-
-        return 0.0;
-    }
-
-    private double gapPenalty(
-            MarketDataSnapshot marketData,
-            List<String> notes
-    ) {
-        if (Math.abs(marketData.gapPercent()) > 0.12) {
-            notes.add("Large gap detected; entry asymmetry may be degraded.");
-            return 0.15;
-        }
-
-        return 0.0;
-    }
 }

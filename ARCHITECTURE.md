@@ -78,7 +78,7 @@ candidate in  →  enrich  →  classify  →  validate  →  verdict out
 * `lib-analytics/services/structural/AsymmetryScorer.java` — risk/reward asymmetry
 * `lib-analytics/services/structural/DilutionRiskScorer.java` — dilution risk
 * `lib-analytics/services/structural/MaterialityImpactScorer.java` — catalyst materiality
-* `lib-validation/services/engine/HardGateEvaluator.java` — fail-fast hard rules
+* `lib-validation/services/engine/HardGateEvaluator.java` — hard rules; evaluates every gate and collects all failures so the trader sees every reason for rejection in one pass (not strictly "fail-fast")
 
 ### L4 — Market-State Classification
 * `lib-analytics/services/classification/RegimeCompatibilityScorer.java` — top-level regime label
@@ -106,6 +106,14 @@ candidate in  →  enrich  →  classify  →  validate  →  verdict out
 * `lib-domain/models/exit/ExitSignal.java` — output: recommendation + compression score + notes
 * `lib-domain/models/exit/ExitSignalInput.java` — input value object
 * `lib-domain/models/exit/ExitRecommendation.java` — HOLD / TIGHTEN / SCALE_OUT / EXIT_NOW
+
+> **Note on L5-style split.** L5 deliberately separates the scorer (in
+> `lib-analytics`) from the resolver (in `lib-validation`) because the tier
+> decision is binding. L7 does **not** follow that split: the scorer maps
+> directly to an `ExitRecommendation` enum inside `lib-analytics`, because
+> the exit output is advisory-only — the trader still makes the call. A
+> separate `ExitResolver` in `lib-validation` would add ceremony without
+> additional safety, so the simpler arrangement is intentional.
 
 ### L8 — Meta-System Adaptation
 * `lib-analytics/services/meta/LiveContextAdaptationAnalyzer.java`

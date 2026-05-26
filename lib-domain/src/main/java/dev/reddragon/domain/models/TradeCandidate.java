@@ -1,6 +1,7 @@
 package dev.reddragon.domain.models;
 
 import dev.reddragon.domain.utilities.IngestionTextUtils;
+import dev.reddragon.math.ValidationScoreUtils;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -85,21 +86,14 @@ public class TradeCandidate {
         this.observedAt = observedAt == null ? Instant.now() : observedAt;
         this.headline = IngestionTextUtils.clean(headline);
         this.summary = IngestionTextUtils.clean(summary);
-        this.structuralRealityScore = requireNormalized("structuralRealityScore", structuralRealityScore);
-        this.materialSignificanceScore = requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        this.earlynessScore = requireNormalized("earlynessScore", earlynessScore);
-        this.reflexivityPotentialScore = requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
+        this.structuralRealityScore = ValidationScoreUtils.requireNormalized("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = ValidationScoreUtils.requireNormalized("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = ValidationScoreUtils.requireNormalized("earlynessScore", earlynessScore);
+        this.reflexivityPotentialScore = ValidationScoreUtils.requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
     }
 
     /** True if structural-reality is high enough that we trust the catalyst is real (>= 0.65). */
     public boolean hasCredibleStructuralCatalyst() {
         return structuralRealityScore >= 0.65;
-    }
-
-    private static double requireNormalized(String fieldName, double value) {
-        if (value < 0.0 || value > 1.0) {
-            throw new IllegalArgumentException(fieldName + " must be between 0.0 and 1.0");
-        }
-        return value;
     }
 }

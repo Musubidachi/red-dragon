@@ -55,23 +55,68 @@ public class MarketDataSnapshot {
         }
         this.symbol = symbol.trim().toUpperCase();
         this.observedAt = observedAt == null ? Instant.now() : observedAt;
-        this.latestClose = latestClose;
-        this.previousClose = previousClose;
-        this.gapPercent = gapPercent;
-        this.averageTrueRange = averageTrueRange;
+        this.latestClose = requireFiniteNonNegative("latestClose", latestClose);
+        this.previousClose = requireFiniteNonNegative("previousClose", previousClose);
+        this.gapPercent = requireFinite("gapPercent", gapPercent);
+        this.averageTrueRange = requireFiniteNonNegative("averageTrueRange", averageTrueRange);
         this.rangePosition = MarketMathUtils.clamp(rangePosition);
-        this.averageVolume = averageVolume;
+        this.averageVolume = requireFiniteNonNegative("averageVolume", averageVolume);
         this.liquidityScore = MarketMathUtils.clamp(liquidityScore);
         this.volatilityStabilityScore = MarketMathUtils.clamp(volatilityStabilityScore);
-        this.relativeVolume = Math.max(0.0, relativeVolume);
-        this.vwapDeviation = vwapDeviation;
+        this.relativeVolume = MarketMathUtils.floorAtZero(requireFinite("relativeVolume", relativeVolume));
+        this.vwapDeviation = requireFinite("vwapDeviation", vwapDeviation);
         this.directionalPersistence = MarketMathUtils.clamp(directionalPersistence);
         this.quality = quality == null ? MarketDataQuality.COMPLETE : quality;
         this.notes = List.copyOf(notes == null ? List.of() : notes);
     }
 
+    /**
+     * Reject {@code NaN}, {@code ±Infinity}, and negative values. Prices,
+     * volumes, and ATR are physically non-negative; a negative value here
+     * is a programmer error, not a market condition.
+     */
+    private static double requireFiniteNonNegative(String fieldName, double value) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(fieldName + " must be finite");
+        }
+        if (value < 0.0) {
+            throw new IllegalArgumentException(fieldName + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * Reject {@code NaN} and {@code ±Infinity}. Gap percent and vwap
+     * deviation can legitimately be negative; only non-finite values are
+     * a programmer error.
+     */
+    private static double requireFinite(String fieldName, double value) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(fieldName + " must be finite");
+        }
+        return value;
+    }
+
     public boolean complete() {
         return quality == MarketDataQuality.COMPLETE;
+    }
+
+    /**
+     * Return a new snapshot identical to this one except that the two
+     * score fields are replaced with the supplied values. Used by the
+     * lib-analytics {@code MarketDataSnapshotScorer} to enrich a raw
+     * marketdata-emitted snapshot (which carries score=0 placeholders)
+     * with the scoring step's computed values. See lib-marketdata
+     * REVIEW.md Finding #8 — scoring lives in L4 ({@code lib-analytics}),
+     * marketdata only emits raw features.
+     */
+    public MarketDataSnapshot withScores(double liquidityScore, double volatilityStabilityScore) {
+        return new MarketDataSnapshot(
+                symbol, observedAt, latestClose, previousClose, gapPercent,
+                averageTrueRange, rangePosition, averageVolume,
+                liquidityScore, volatilityStabilityScore,
+                relativeVolume, vwapDeviation, directionalPersistence,
+                quality, notes);
     }
 
     /**

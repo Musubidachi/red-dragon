@@ -11,6 +11,7 @@ import dev.reddragon.domain.models.Verdict;
 import dev.reddragon.persistence.domains.CandidateEntity;
 import dev.reddragon.persistence.domains.MarketBarEntity;
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
+import dev.reddragon.persistence.domains.ValidationVerdictReasonEntity;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -18,7 +19,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,7 +75,7 @@ class PersistenceMapperTest {
     }
 
     @Test
-    void toValidationVerdictEntityCopiesFieldsAndJoinsReasonCodes() {
+    void toValidationVerdictEntityMapsReasonsIntoChildRows() {
         ValidationResult result = new ValidationResult(
                 "c-1", "ACME",
                 Verdict.PASS, DeploymentTier.STANDARD,
@@ -90,10 +92,27 @@ class PersistenceMapperTest {
         assertEquals("PASS", entity.getVerdict());
         assertEquals("STANDARD", entity.getDeploymentTier());
         assertEquals(0.78, entity.getScore(), 1e-9);
-        assertNotNull(entity.getReasonCodes(),
-                "reason codes should be joined into a single string");
-        assertTrue(entity.getReasonCodes().contains("STRUCTURAL_CATALYST_CONFIRMED"));
-        assertTrue(entity.getReasonCodes().contains("MATERIAL_IMPACT_HIGH"));
+        // V12+ contract: legacy string blob columns are no longer written.
+        assertNull(entity.getReasonCodes(), "legacy reason_codes column should be null post-V12");
+        assertNull(entity.getExplanations(), "legacy explanations column should be null post-V12");
+        // Reasons live in the normalized child collection now.
+        assertEquals(2, entity.getReasons().size());
+
+        ValidationVerdictReasonEntity first = entity.getReasons().get(0);
+        assertEquals("STRUCTURAL_CATALYST_CONFIRMED", first.getReasonCode());
+        assertEquals("structural reality high", first.getExplanation());
+        assertEquals((short) 0, first.getSortOrder());
+        assertSame(entity, first.getVerdict(),
+                "child should back-reference the parent so Hibernate cascades the FK");
+
+        ValidationVerdictReasonEntity second = entity.getReasons().get(1);
+        assertEquals("MATERIAL_IMPACT_HIGH", second.getReasonCode());
+        assertEquals("material impact high", second.getExplanation());
+        assertEquals((short) 1, second.getSortOrder());
+
+        // The convenience accessors should reconstruct the legacy joined strings.
+        assertTrue(entity.legacyReasonCodes().contains("STRUCTURAL_CATALYST_CONFIRMED"));
+        assertTrue(entity.legacyReasonCodes().contains("MATERIAL_IMPACT_HIGH"));
     }
 
     @Test

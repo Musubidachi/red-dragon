@@ -49,9 +49,12 @@ public class VerdictSummaryController {
         result.put("latestVerdict",   latest.getVerdict());
         result.put("latestScore",     latest.getScore());
         result.put("deploymentTier",  latest.getDeploymentTier());
-        result.put("reasonCodes",     latest.getReasonCodes() != null
-                ? List.of(latest.getReasonCodes().split(","))
-                : List.of());
+        // Read reason codes from the V12 normalized child table.
+        result.put("reasonCodes",     latest.getReasons() == null
+                ? List.of()
+                : latest.getReasons().stream()
+                        .map(r -> r.getReasonCode())
+                        .toList());
         result.put("verdictCount",    history.size());
         result.put("lastEvaluated",   latest.getCreatedAt().toString());
 

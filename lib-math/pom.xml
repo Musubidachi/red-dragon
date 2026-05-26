@@ -14,7 +14,7 @@
     <artifactId>lib-math</artifactId>
     <packaging>jar</packaging>
     <name>red-dragon-lib-math</name>
-    <description>Small shared numeric helpers for normalization, clamping, and weighted scores.</description>
+    <description>Shared numeric helpers for clamping, normalized-score validation, weighted averages, and percent-change math.</description>
 
     <dependencies>
         <dependency>

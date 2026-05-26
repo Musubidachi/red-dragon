@@ -36,4 +36,35 @@ public class CalibrationOutcomeEntity {
     private double maxDrawdown;
     private int daysHeld;
     private boolean thesisWorked;
+
+    /** DB-populated insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public CalibrationOutcomeEntity(
+            Long id,
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double asymmetryScore,
+            double regimeCompatibilityScore,
+            double deploymentConfidenceScore,
+            double realizedReturn,
+            double maxDrawdown,
+            int daysHeld,
+            boolean thesisWorked
+    ) {
+        this(id, candidateId, symbol, observedAt,
+                structuralRealityScore, materialSignificanceScore, earlynessScore,
+                equilibriumQualityScore, reflexivityPotentialScore, asymmetryScore,
+                regimeCompatibilityScore, deploymentConfidenceScore,
+                realizedReturn, maxDrawdown, daysHeld, thesisWorked,
+                null);
+    }
 }

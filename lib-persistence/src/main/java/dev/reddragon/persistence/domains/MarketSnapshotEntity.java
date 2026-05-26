@@ -75,4 +75,34 @@ public class MarketSnapshotEntity {
     /** Fraction of bars with consistent directional momentum (nullable for old rows). */
     @Column(name = "directional_persistence")
     private Double directionalPersistence;
+
+    /** DB-populated insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public MarketSnapshotEntity(
+            Long id,
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            double latestClose,
+            double previousClose,
+            double gapPercent,
+            double averageTrueRange,
+            double rangePosition,
+            double averageVolume,
+            double liquidityScore,
+            double volatilityStabilityScore,
+            String quality,
+            String notes,
+            Double relativeVolume,
+            Double vwapDeviation,
+            Double directionalPersistence
+    ) {
+        this(id, candidateId, symbol, observedAt, latestClose, previousClose,
+                gapPercent, averageTrueRange, rangePosition, averageVolume,
+                liquidityScore, volatilityStabilityScore, quality, notes,
+                relativeVolume, vwapDeviation, directionalPersistence, null);
+    }
 }

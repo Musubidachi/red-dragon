@@ -5,7 +5,10 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Derived liquidity texture metrics produced by marketdata calculators.
+ * Derived liquidity texture metrics <b>with provider context</b>: symbol plus
+ * the normalized scores. Output of {@code lib-marketdata}'s
+ * {@code LiquidityTextureSnapshotBuilder}. See {@link LiquidityTextureSnapshot}
+ * for the trimmed score-only shape consumed by L4 scorers.
  */
 @Value
 @Accessors(fluent = true)

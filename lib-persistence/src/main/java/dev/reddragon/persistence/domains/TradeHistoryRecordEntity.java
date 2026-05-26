@@ -61,4 +61,28 @@ public class TradeHistoryRecordEntity {
 
     @Column(name = "market_state", length = 64)
     private String marketState;
+
+    /** DB-populated insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public TradeHistoryRecordEntity(
+            Long id,
+            Long importBatchId,
+            TradeHistoryImportBatchEntity importBatch,
+            Instant tradeTimestamp,
+            String ticker,
+            String side,
+            double quantity,
+            double price,
+            Double realizedPnl,
+            String account,
+            String strategyType,
+            String marketState
+    ) {
+        this(id, importBatchId, importBatch, tradeTimestamp, ticker, side,
+                quantity, price, realizedPnl, account, strategyType, marketState,
+                null);
+    }
 }

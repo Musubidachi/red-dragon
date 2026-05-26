@@ -123,6 +123,13 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
                     quote.path("mark").asDouble(0.0),
                     quote.path("closePrice").asDouble(0.0)
             );
+            // No usable price → return unavailable so the composite chain
+            // falls back to the next provider instead of caching a synthetic
+            // EMPTY_BARS quote that masks the gap.
+            if (last <= 0.0) {
+                return MarketQuote.unavailable(normalized,
+                        "Schwab quote did not include a usable last price.");
+            }
             return new MarketQuote(
                     normalized,
                     quoteInstant(quote),
@@ -130,8 +137,8 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
                     quote.path("bidPrice").asDouble(0.0),
                     quote.path("askPrice").asDouble(0.0),
                     quote.path("totalVolume").asLong(0L),
-                    last > 0.0 ? MarketDataQuality.COMPLETE : MarketDataQuality.EMPTY_BARS,
-                    last > 0.0 ? List.of("Provider: Schwab") : List.of("Schwab quote did not include a usable last price.")
+                    MarketDataQuality.COMPLETE,
+                    List.of("Provider: Schwab")
             );
         } catch (Exception error) {
             throw new IllegalStateException("Failed to retrieve Schwab quote for " + symbol, error);
@@ -196,6 +203,10 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
     private List<MarketBar> fetchBars(String symbol, LocalDate from, LocalDate to) {
         try {
             return toMarketBars(symbol, fetchPriceHistory(buildUri(symbol, from, to)));
+        } catch (IllegalStateException error) {
+            // fetchPriceHistory already wraps in IllegalStateException with a clear
+            // root cause; rethrow as-is rather than nesting another layer.
+            throw error;
         } catch (Exception error) {
             throw new IllegalStateException("Failed to retrieve Schwab market data for " + symbol, error);
         }

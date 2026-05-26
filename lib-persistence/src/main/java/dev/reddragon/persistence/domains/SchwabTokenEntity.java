@@ -5,7 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,4 +49,42 @@ public class SchwabTokenEntity {
 
     @Column(name = "token_type", nullable = false, length = 32)
     private String tokenType;
+
+    /** DB-populated insertion timestamp (V13); distinct from {@link #issuedAt}. */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Last mutation timestamp (V13). Refreshes on token row updates. */
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    /** Optimistic-lock version (V13). Guards against concurrent refresh writes. */
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
+    /** Backwards-compatible pre-V13 6-arg constructor. */
+    public SchwabTokenEntity(
+            Long id,
+            String accessToken,
+            String refreshToken,
+            Instant issuedAt,
+            Instant expiresAt,
+            String tokenType
+    ) {
+        this(id, accessToken, refreshToken, issuedAt, expiresAt, tokenType,
+                null, null, 0L);
+    }
+
+    @PrePersist
+    void onInsert() {
+        if (updatedAt == null) {
+            updatedAt = Instant.now();
+        }
+    }
+
+    @PreUpdate
+    void touchUpdatedAt() {
+        updatedAt = Instant.now();
+    }
 }
