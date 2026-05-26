@@ -57,6 +57,26 @@ public class PipelineReviewController {
     }
 
     /**
+     * Resolve a ticker to SEC CIK, fetch filings, and run each through the pipeline.
+     * Use {@code ?profile=CONSERVATIVE} to apply stricter thresholds.
+     */
+    @GetMapping("/sec/ticker/{ticker}")
+    public List<PipelineRunResult> reviewSecCandidatesByTicker(
+            @PathVariable String ticker,
+            @RequestParam(defaultValue = "30") int lookbackDays,
+            @RequestParam(defaultValue = "STANDARD") ValidationProfile profile
+    ) {
+        List<TradeCandidate> candidates = secIngestionService.processByTicker(ticker);
+        return candidates.stream()
+                .map(candidate -> orchestrator.process(
+                        candidate,
+                        providerBars(candidate.symbol(), lookbackDays),
+                        profile
+                ))
+                .toList();
+    }
+
+    /**
      * Fetch SEC filings for a CIK and run each through the pipeline.
      * Use {@code ?profile=CONSERVATIVE} to apply stricter thresholds.
      */

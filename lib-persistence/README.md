@@ -12,8 +12,8 @@ and Flyway migrations.
 * Define JPA entities and repositories.
 * Own Flyway migrations.
 * Store candidates, market bars, market snapshots, analytics snapshots,
-  validation verdicts, overrides, trader notes, backtest results, calibration
-  outcomes, and Schwab OAuth tokens.
+  validation verdicts and reasons, overrides, trader notes, backtest results,
+  calibration outcomes, trade-history imports, and Schwab OAuth tokens.
 * Preserve source provenance and reasoning chains.
 * Keep schema changes versioned and reviewable.
 
@@ -50,7 +50,7 @@ host web controllers, place orders, or contain the Spring Boot main class.
 
 ```text
 lib-persistence/src/main/java/dev/reddragon/persistence
-    domains/                JPA entities (14 entities, one file each)
+    domains/                JPA entities (15 entities, one file each)
     services/               PersistenceMapper
     services/repositories/  Spring Data repositories (one per entity)
     utilities/              PersistenceStringUtils
@@ -71,6 +71,8 @@ lib-persistence/src/main/resources/db/migration   (runtime source of truth)
     V10__backtest_result_candidate_fk.sql          retroactive FK on backtest_result(candidate_id)
     V11__market_bar_audit_column.sql               adds created_at to market_bar (matches V8 intraday_bar)
     V12__validation_verdict_reason.sql             normalizes reason_codes blob into a child table
+    V13__version_and_audit_columns.sql             optimistic locking and audit columns
+    V14__idempotency_keys.sql                      deterministic validation idempotency and backtest uniqueness
 
 lib-persistence/src/main/resources/db/drafts      pre-migration design notes; NOT applied at runtime
 ```

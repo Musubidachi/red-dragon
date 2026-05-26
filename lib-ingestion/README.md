@@ -12,10 +12,12 @@ Implemented sources:
 
 * Manual candidate ingestion through `ManualCandidateIngestionService`.
 * SEC EDGAR submissions ingestion through `services/sec/SecIngestionService`.
+* SEC ticker-to-CIK lookup through `services/sec/CikLookupService`, including
+  TTL refresh and fail-stale cache behavior.
 
-The SEC implementation currently fetches recent company submissions by CIK,
-filters in-scope forms, flattens filing metadata, maps 8-K item codes, and
-builds scored `TradeCandidate` records.
+The SEC implementation currently fetches recent company submissions by CIK or
+ticker, filters in-scope forms, flattens filing metadata, maps 8-K item codes,
+and builds scored `TradeCandidate` records.
 
 ## Responsibilities
 
@@ -46,7 +48,7 @@ lib-ingestion/src/main/java/dev/reddragon/ingestion
 * Generic source SPI.
 * News/RSS, scanner, and macro adapters.
 * SEC RSS firehose polling.
-* SEC CIK/ticker cache from `company_tickers*.json`.
+* CIK-to-tickers reverse map for future firehose ingestion.
 * Full Form 4, 13D/G, offering body, and XBRL parsing.
 
 ## Testing Expectations
