@@ -9,24 +9,30 @@
 --
 -- Natural keys chosen:
 --
---   * validation_verdict: (candidate_id, created_at) — a candidate can
---     legitimately have multiple verdicts over time (re-evaluation
---     when inputs change), but never two with the same created_at. The
---     V13 `updated_at` column distinguishes mutations; created_at
---     distinguishes new evaluations.
+--   * validation_verdict: idempotency_key. The application supplies a
+--     deterministic SHA-256 fingerprint of the semantic validation output
+--     (candidate id, symbol, verdict, deployment tier, score, factors,
+--     reason codes, and explanations). Retried writes of the same verdict
+--     collide even though created_at is generated at write time; genuine
+--     re-evaluations with changed inputs/results get a different key.
+--     Historical rows from before this column existed remain NULL because
+--     the exact output fingerprint was not persisted; PostgreSQL unique
+--     indexes allow multiple NULLs, so this does not block migration.
 --
---   * backtest_result: (run_id, candidate_id) — a single backtest run
+--   * backtest_result: (run_id, candidate_id) - a single backtest run
 --     produces at most one row per candidate. Reruns get a new run_id.
 --
 -- SAFETY: if duplicates exist in pre-existing data, the constraint
--- creation will FAIL. Operators must run the duplicate-detection
+-- creation can FAIL. Operators must run the duplicate-detection
 -- pre-checks below and clean up (typically keeping the highest id per
 -- key) before the migration applies cleanly:
 --
---   -- validation_verdict duplicates:
---   select candidate_id, created_at, count(*)
+--   -- validation_verdict duplicates after the application starts writing
+--   -- idempotency keys:
+--   select idempotency_key, count(*)
 --   from validation_verdict
---   group by candidate_id, created_at
+--   where idempotency_key is not null
+--   group by idempotency_key
 --   having count(*) > 1;
 --
 --   -- backtest_result duplicates:
@@ -38,9 +44,12 @@
 -- Re-runnable: every clause uses `if not exists` so a partial-failure
 -- recovery just continues from where the previous attempt stopped.
 
--- Idempotency key on validation_verdict.
-create unique index if not exists uk_validation_verdict_candidate_time
-    on validation_verdict(candidate_id, created_at);
+-- Idempotency key on validation_verdict. Nullable for historical rows.
+alter table validation_verdict
+    add column if not exists idempotency_key varchar(128);
+
+create unique index if not exists uk_validation_verdict_idempotency_key
+    on validation_verdict(idempotency_key);
 
 -- Idempotency key on backtest_result.
 create unique index if not exists uk_backtest_result_run_candidate

@@ -1,7 +1,7 @@
 # lib-persistence — Implementation Review
 
 **Date:** 2026-05-17
-**Last fix pass:** 2026-05-25 (V14 idempotency unique keys on `validation_verdict (candidate_id, created_at)` and `backtest_result (run_id, candidate_id)`). Previous: 2026-05-24 (V13 optimistic-lock @Version + audit columns); 2026-05-21 (V12 validation_verdict_reason child table); 2026-05-20 local fixes.
+**Last fix pass:** 2026-05-26 (V14 validation verdict idempotency now uses an application-supplied deterministic fingerprint; V12 recursive CTE is PostgreSQL-correct with `WITH RECURSIVE`). Previous: 2026-05-25 (V14 idempotency unique keys); 2026-05-24 (V13 optimistic-lock @Version + audit columns); 2026-05-21 (V12 validation_verdict_reason child table); 2026-05-20 local fixes.
 **Reviewer:** Automated audit pass
 **Scope:** `lib-persistence/` — 14 JPA entities, 13 repositories, 1 mapper, 1 utility class, 9 Flyway migrations (now 10 after the fix pass).
 
@@ -21,7 +21,7 @@
 | 8 | Medium | `@AllArgsConstructor` positional construction | **Fixed (high-traffic entities)** — `@Builder` added to `CandidateEntity`, `ValidationVerdictEntity`, `VerdictOverrideEntity`, `TraderNoteEntity`, `BacktestResultEntity`. Builders coexist with the existing `@AllArgsConstructor` (Lombok generates both), so JPA reflection-based reconstitution is unaffected. `PersistenceMapper.toCandidateEntity` and `toValidationVerdictEntity` migrated to the builder API; `VerdictOverrideController`, `TraderNoteController`, and `BacktestController` switched too. Remaining 9 entities are construction-light (mostly internal); adding the annotation later is a one-line per-entity change. |
 | 9 | — | TRADE_DECISION.md confirmation | — (no action needed; doc and code aligned on "design only") |
 | 10 | Medium | Audit-pattern inconsistency between `market_bar` and `intraday_bar` | **Fixed** — new `V11__market_bar_audit_column.sql` adds `created_at timestamp default current_timestamp not null`; `MarketBarEntity` mapped with `insertable = false, updatable = false` so the DB default populates; `PersistenceMapper.toMarketBarEntity` passes `null` for the new column |
-| 11 | Medium | No idempotency keys on `validation_verdict` or `backtest_result` | **Fixed** — V14 adds two unique indexes: `uk_validation_verdict_candidate_time` on `(candidate_id, created_at)` and `uk_backtest_result_run_candidate` on `(run_id, candidate_id)`. Retried POSTs, duplicate events, and repeated backtest runs now collide at the DB layer rather than silently doubling up. Migration uses `create unique index if not exists` so a partial-failure recovery just continues. SAFETY note in the migration header walks operators through the duplicate-detection pre-checks they must run if existing data already contains collisions. |
+| 11 | Medium | No idempotency keys on `validation_verdict` or `backtest_result` | **Fixed** — V14 adds `validation_verdict.idempotency_key` with unique index `uk_validation_verdict_idempotency_key`, plus `uk_backtest_result_run_candidate` on `(run_id, candidate_id)`. `PersistenceMapper` now writes a deterministic SHA-256 fingerprint for each validation verdict, so retried POSTs collide even though `created_at` changes at write time. Migration uses `if not exists` clauses so a partial-failure recovery just continues. SAFETY note in the migration header walks operators through duplicate-detection pre-checks. |
 | 12 | Medium | Test coverage gap (5 of 6 areas uncovered) | Open — additive |
 | 13 | Low | `@AllArgsConstructor` exposes generated id | Open |
 | 14 | Medium | Schwab token plaintext | Open — security work, tracked separately |
@@ -364,7 +364,7 @@ Memory note `project_red_dragon_known_gaps.md`: "Tier 1-3 items implemented (ide
 
 **Why it matters:** A network retry, a duplicate event, or a developer test loop can pollute the verdict history. The `L8` loop's "rolling win rate" is sample-count-sensitive; duplicate samples skew it.
 
-**Proposed fix:** Add `unique(candidate_id, created_at)` or, if multiple verdicts per candidate are expected (re-evaluation), add a `revision integer not null` column and unique on `(candidate_id, revision)`. Same applies to `backtest_result` (currently no idempotency at DB layer for `run_id + candidate_id`).
+**Implemented fix:** V14 adds nullable `validation_verdict.idempotency_key` plus a unique index over that key. New writes populate it with a deterministic SHA-256 fingerprint of the semantic validation output, so a retry collides even if `created_at` differs. `backtest_result` uses the natural `(run_id, candidate_id)` key.
 
 ---
 

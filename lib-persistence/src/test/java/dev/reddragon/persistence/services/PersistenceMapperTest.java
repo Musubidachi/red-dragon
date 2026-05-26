@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,6 +93,8 @@ class PersistenceMapperTest {
         assertEquals("PASS", entity.getVerdict());
         assertEquals("STANDARD", entity.getDeploymentTier());
         assertEquals(0.78, entity.getScore(), 1e-9);
+        assertTrue(entity.getIdempotencyKey().startsWith("vv:"));
+        assertEquals(67, entity.getIdempotencyKey().length());
         // V12+ contract: legacy string blob columns are no longer written.
         assertNull(entity.getReasonCodes(), "legacy reason_codes column should be null post-V12");
         assertNull(entity.getExplanations(), "legacy explanations column should be null post-V12");
@@ -113,6 +116,33 @@ class PersistenceMapperTest {
         // The convenience accessors should reconstruct the legacy joined strings.
         assertTrue(entity.legacyReasonCodes().contains("STRUCTURAL_CATALYST_CONFIRMED"));
         assertTrue(entity.legacyReasonCodes().contains("MATERIAL_IMPACT_HIGH"));
+    }
+
+    @Test
+    void toValidationVerdictEntityBuildsStableSemanticIdempotencyKey() {
+        ValidationResult result = new ValidationResult(
+                "c-1", "ACME",
+                Verdict.PASS, DeploymentTier.STANDARD,
+                0.78,
+                List.of(),
+                List.of(ReasonCode.STRUCTURAL_CATALYST_CONFIRMED),
+                List.of("structural reality high")
+        );
+        ValidationResult changedResult = new ValidationResult(
+                "c-1", "ACME",
+                Verdict.PASS, DeploymentTier.STANDARD,
+                0.78,
+                List.of(),
+                List.of(ReasonCode.STRUCTURAL_CATALYST_CONFIRMED),
+                List.of("structural reality changed")
+        );
+
+        String first = mapper.toValidationVerdictEntity(result).getIdempotencyKey();
+        String second = mapper.toValidationVerdictEntity(result).getIdempotencyKey();
+        String changed = mapper.toValidationVerdictEntity(changedResult).getIdempotencyKey();
+
+        assertEquals(first, second);
+        assertNotEquals(first, changed);
     }
 
     @Test

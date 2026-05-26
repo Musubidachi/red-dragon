@@ -49,7 +49,7 @@ create index idx_validation_verdict_reason_code
 -- H2 supports recursive CTE syntax; Postgres does too. Other engines may
 -- need a different splitting strategy.
 insert into validation_verdict_reason (verdict_id, reason_code, explanation, sort_order)
-with codes (verdict_id, code, rest, idx) as (
+with recursive codes (verdict_id, code, rest, idx) as (
     -- seed: first code (or full string if no comma) for every verdict
     select id,
            case when position(',' in coalesce(reason_codes, '')) > 0

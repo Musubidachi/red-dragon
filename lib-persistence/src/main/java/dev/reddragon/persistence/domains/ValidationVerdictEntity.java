@@ -52,6 +52,14 @@ public class ValidationVerdictEntity {
     private double score;
 
     /**
+     * Deterministic semantic fingerprint for idempotent verdict writes.
+     * Historical rows may be null; new writes are populated by
+     * {@code PersistenceMapper}.
+     */
+    @Column(name = "idempotency_key", length = 128)
+    private String idempotencyKey;
+
+    /**
      * @deprecated as of V12. Reasons live in {@code validation_verdict_reason}
      * as one row per code; this column is retained nullable for backfill
      * compatibility with rows written before V12 but is no longer populated
@@ -125,7 +133,7 @@ public class ValidationVerdictEntity {
             List<ValidationVerdictReasonEntity> reasons
     ) {
         this(id, candidateId, symbol, verdict, deploymentTier, score,
-                reasonCodes, explanations, createdAt,
+                null, reasonCodes, explanations, createdAt,
                 reasons == null ? new ArrayList<>() : reasons,
                 null, 0L);
     }

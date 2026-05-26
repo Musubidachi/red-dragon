@@ -18,8 +18,12 @@ import dev.reddragon.persistence.utilities.PersistenceStringUtils;
 import dev.reddragon.domain.models.ReasonCode;
 import dev.reddragon.domain.models.ValidationResult;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 
@@ -69,6 +73,7 @@ public class PersistenceMapper {
                 .verdict(result.verdict().name())
                 .deploymentTier(result.deploymentTier().name())
                 .score(result.score())
+                .idempotencyKey(validationVerdictIdempotencyKey(result))
                 .reasonCodes(null)   // legacy column — no longer written (V12+)
                 .explanations(null)  // legacy column — no longer written (V12+)
                 .createdAt(Instant.now())
@@ -76,6 +81,46 @@ public class PersistenceMapper {
                 .build();
         entity.getReasons().addAll(buildReasonEntities(entity, result));
         return entity;
+    }
+
+    private String validationVerdictIdempotencyKey(ValidationResult result) {
+        StringBuilder payload = new StringBuilder();
+        appendCanonical(payload, "v1");
+        appendCanonical(payload, result.candidateId());
+        appendCanonical(payload, result.symbol());
+        appendCanonical(payload, result.verdict().name());
+        appendCanonical(payload, result.deploymentTier().name());
+        appendCanonical(payload, Double.toString(result.score()));
+
+        appendCanonical(payload, Integer.toString(result.reasonCodes().size()));
+        result.reasonCodes().forEach(code -> appendCanonical(payload, code.name()));
+
+        appendCanonical(payload, Integer.toString(result.explanations().size()));
+        result.explanations().forEach(explanation -> appendCanonical(payload, explanation));
+
+        appendCanonical(payload, Integer.toString(result.factors().size()));
+        result.factors().forEach(factor -> {
+            appendCanonical(payload, factor.stage().name());
+            appendCanonical(payload, Double.toString(factor.score()));
+            appendCanonical(payload, Double.toString(factor.weight()));
+            appendCanonical(payload, factor.reasonCode().name());
+            appendCanonical(payload, factor.explanation());
+        });
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(payload.toString().getBytes(StandardCharsets.UTF_8));
+            return "vv:" + HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 digest is unavailable", e);
+        }
+    }
+
+    private void appendCanonical(StringBuilder payload, String value) {
+        String normalized = value == null ? "" : value;
+        payload.append(normalized.length())
+                .append(':')
+                .append(normalized);
     }
 
     /**

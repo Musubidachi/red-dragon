@@ -146,6 +146,7 @@ create table if not exists validation_verdict (
     verdict         varchar(32)      not null,
     deployment_tier varchar(32)      not null,
     score           double precision not null,
+    idempotency_key varchar(128),
     reason_codes    varchar(4000),
     explanations    varchar(8000),
     created_at      timestamp        not null,
@@ -159,6 +160,9 @@ create index if not exists idx_validation_symbol_created_at
 
 create index if not exists idx_validation_verdict_candidate_id
     on validation_verdict (candidate_id);
+
+create unique index if not exists uk_validation_verdict_idempotency_key
+    on validation_verdict (idempotency_key);
 
 -- -----------------------------------------------------------------------------
 -- 6. VERDICT_OVERRIDE (trader manual override of a verdict — L5 audit trail)
