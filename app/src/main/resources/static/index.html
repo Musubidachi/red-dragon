@@ -187,16 +187,22 @@
     }
     .exit-form .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 0.7rem;
       margin: 0.75rem 0 1rem;
     }
+    .exit-form .grid > div {
+      display: flex;
+      flex-direction: column;
+    }
     .exit-form label {
       display: block;
+      min-height: 2rem;
       font-size: 0.75rem;
       color: var(--fg-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      line-height: 1.25;
     }
     .exit-form input, .exit-form select {
       width: 100%;
@@ -207,6 +213,14 @@
       padding: 0.4rem 0.5rem;
       border-radius: 4px;
       font-size: 0.9rem;
+    }
+    @media (max-width: 640px) {
+      .exit-form .grid {
+        grid-template-columns: 1fr;
+      }
+      .exit-form label {
+        min-height: 0;
+      }
     }
     .exit-form button {
       background: var(--accent);
