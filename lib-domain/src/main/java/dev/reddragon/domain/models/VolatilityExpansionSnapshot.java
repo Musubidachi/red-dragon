@@ -5,7 +5,10 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Normalized volatility expansion inputs supplied by market-data adapters.
+ * Normalized volatility expansion inputs — <b>score-only</b>, no symbol
+ * context. Consumed by L4 scorers ({@code VolatilityExpansionScorer});
+ * derived from {@link MarketVolatilityExpansionSnapshot} before being passed
+ * to pure-function scorers in {@code lib-analytics}.
  */
 @Value
 @Accessors(fluent = true)

@@ -2,6 +2,7 @@ package dev.reddragon.analytics.services.exit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import dev.reddragon.domain.models.PhaseLabel;
@@ -171,7 +172,12 @@ public class EquilibriumCompressionScorer {
         return ExitRecommendation.HOLD;
     }
 
+    /**
+     * Locale-stable formatter for the compression-score notes so the output
+     * is identical across deployment locales (some locales render the decimal
+     * separator as ",", which would break consumers of the note text).
+     */
     private String format(double value) {
-        return String.format("%.2f", value);
+        return String.format(Locale.ROOT, "%.2f", value);
     }
 }

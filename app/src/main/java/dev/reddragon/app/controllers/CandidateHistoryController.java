@@ -1,9 +1,10 @@
 package dev.reddragon.app.controllers;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import dev.reddragon.persistence.domains.ValidationVerdictReasonEntity;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -109,20 +110,38 @@ public class CandidateHistoryController {
                 entity.getVerdict(),
                 entity.getDeploymentTier(),
                 entity.getScore(),
-                split(entity.getReasonCodes(), ","),
-                split(entity.getExplanations(), "\\|"),
+                reasonCodes(entity),
+                explanations(entity),
                 null,
                 entity.getCreatedAt()
         );
     }
 
-    private List<String> split(String raw, String delimiter) {
-        if (raw == null || raw.isBlank()) {
+    /**
+     * Reason codes from the normalized {@code validation_verdict_reason}
+     * child table (post-V12 schema). Reads from {@code entity.getReasons()}
+     * rather than splitting the legacy comma-separated blob.
+     */
+    private List<String> reasonCodes(ValidationVerdictEntity entity) {
+        if (entity.getReasons() == null || entity.getReasons().isEmpty()) {
             return List.of();
         }
-        return Arrays.stream(raw.split(delimiter))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
+        return entity.getReasons().stream()
+                .map(ValidationVerdictReasonEntity::getReasonCode)
+                .toList();
+    }
+
+    /**
+     * Explanations from the normalized child table, in the same order as
+     * the reason codes. {@code null}/blank entries are filtered out.
+     */
+    private List<String> explanations(ValidationVerdictEntity entity) {
+        if (entity.getReasons() == null || entity.getReasons().isEmpty()) {
+            return List.of();
+        }
+        return entity.getReasons().stream()
+                .map(ValidationVerdictReasonEntity::getExplanation)
+                .filter(e -> e != null && !e.isBlank())
                 .toList();
     }
 

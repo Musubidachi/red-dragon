@@ -5,9 +5,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -25,6 +29,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class VerdictOverrideEntity {
 
     @Id
@@ -55,4 +60,45 @@ public class VerdictOverrideEntity {
 
     @Column(name = "author", length = 128)
     private String author;
+
+    /** DB-managed insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Last mutation timestamp (V13) — refreshed by {@link #touchUpdatedAt()}. */
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    /** Optimistic-lock version (V13). */
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
+    /** Backwards-compatible pre-V13 9-arg constructor. */
+    public VerdictOverrideEntity(
+            Long id,
+            Long verdictId,
+            String candidateId,
+            String symbol,
+            String originalVerdict,
+            String overrideVerdict,
+            String reason,
+            Instant overriddenAt,
+            String author
+    ) {
+        this(id, verdictId, candidateId, symbol, originalVerdict, overrideVerdict,
+                reason, overriddenAt, author, null, null, 0L);
+    }
+
+    @PrePersist
+    void onInsert() {
+        if (updatedAt == null) {
+            updatedAt = Instant.now();
+        }
+    }
+
+    @PreUpdate
+    void touchUpdatedAt() {
+        updatedAt = Instant.now();
+    }
 }

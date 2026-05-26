@@ -1,5 +1,6 @@
 package dev.reddragon.validation.services.engine;
 
+import dev.reddragon.math.ValidationScoreUtils;
 import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.domain.models.CandidateValidationInput;
 import dev.reddragon.domain.models.DeploymentTier;
@@ -28,6 +29,7 @@ public class DeploymentResolver {
     ) {
         Objects.requireNonNull(verdict, "verdict is required");
         Objects.requireNonNull(input, "input is required");
+        ValidationScoreUtils.requireNormalized("score", score);
 
         if (verdict == Verdict.REJECT) {
             return DeploymentTier.NONE;
@@ -45,7 +47,12 @@ public class DeploymentResolver {
             return DeploymentTier.PROBE;
         }
 
-        return DeploymentTier.OBSERVE;
+        if (observe(score)) {
+            return DeploymentTier.OBSERVE;
+        }
+
+        // Below the OBSERVE floor and not REJECT: fall back to NONE.
+        return DeploymentTier.NONE;
     }
 
     private boolean concentrated(
@@ -65,5 +72,9 @@ public class DeploymentResolver {
 
     private boolean probe(double score) {
         return score >= thresholds.probeDeploymentThreshold();
+    }
+
+    private boolean observe(double score) {
+        return score >= thresholds.observeDeploymentThreshold();
     }
 }

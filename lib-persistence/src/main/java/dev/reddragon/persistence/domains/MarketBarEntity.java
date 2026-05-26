@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -45,4 +46,13 @@ public class MarketBarEntity {
 
     @Column(name = "volume", nullable = false)
     private long volume;
+
+    /**
+     * Wall-clock instant the row landed in the database. Populated by the
+     * column default in V11 ({@code default current_timestamp}). Provides
+     * provenance separate from {@link #barDate} (the trading-day the bar
+     * represents).
+     */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
 }

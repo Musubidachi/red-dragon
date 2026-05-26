@@ -14,13 +14,19 @@
     <artifactId>lib-math</artifactId>
     <packaging>jar</packaging>
     <name>red-dragon-lib-math</name>
-    <description>Small shared numeric helpers for normalization, clamping, and weighted scores.</description>
+    <description>Shared numeric helpers for clamping, normalized-score validation, weighted averages, and percent-change math.</description>
 
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -12,8 +12,10 @@ import dev.reddragon.ingestion.models.sec.SubmissionsResponse;
  * Fetches the submissions JSON document for one company.
  *
  * <p>The submissions endpoint returns the most recent (~1000) filings for
- * a given CIK. The CIK is supplied unpadded; this class zero-pads it to
- * the 10 characters the SEC URL expects.
+ * a given CIK. The CIK arrives in whichever form the caller has on hand
+ * (bare digits, zero-padded, or {@code CIK0000…} prefix); {@link
+ * CikFormats#padCik(String)} normalises it before the URL is built, so
+ * downstream wiring doesn't need to know which form upstream emits.
  */
 public class SubmissionsClient {
 
@@ -33,6 +35,9 @@ public class SubmissionsClient {
 
     /**
      * Fetch and deserialise the submissions document for {@code cik}.
+     *
+     * @throws IllegalArgumentException if {@code cik} is null/blank/malformed
+     *         (delegated to {@link CikFormats#padCik(String)}).
      */
     public SubmissionsResponse process(String cik) {
         Objects.requireNonNull(cik, "cik is required");
@@ -42,13 +47,8 @@ public class SubmissionsClient {
     }
 
     private URI buildSubmissionsUri(String cik) {
-        String padded = zeroPadCik(cik);
+        String padded = CikFormats.padCik(cik);
         return URI.create(properties.getSubmissionsBaseUrl() + "/CIK" + padded + ".json");
-    }
-
-    private String zeroPadCik(String cik) {
-        long numeric = Long.parseLong(cik.trim());
-        return String.format("%010d", numeric);
     }
 
     private SubmissionsResponse deserialise(String json) {

@@ -21,7 +21,17 @@ import java.util.Objects;
 public class AdversarialValidationAnalyzer {
 
     /**
-     * Main processing flow.
+     * Run every adversarial check that has data available. Callers that only
+     * have a {@link TradeCandidate} and {@link MarketDataSnapshot} (e.g. the
+     * candidate-pipeline orchestrator) may pass {@code null} for the snapshots
+     * they don't have; every check guards its dependencies and silently
+     * skips when any of its required snapshots is missing.
+     *
+     * <p>This null-tolerant contract is essential: passing synthetic-zero
+     * snapshots is not safe because some checks (notably
+     * {@code STRONG_CATALYST_ISOLATED_PROPAGATION}) trigger on a {@code <}
+     * comparison against a propagation score, and a zero would falsely fire
+     * the flag.
      */
     public List<AdversarialFinding> process(
             TradeCandidate candidate,
@@ -34,19 +44,30 @@ public class AdversarialValidationAnalyzer {
             OptionsFlowSnapshot optionsFlow
     ) {
         Objects.requireNonNull(candidate, "candidate is required");
+        Objects.requireNonNull(marketData, "marketData is required");
 
         List<AdversarialFinding> findings = new ArrayList<>();
 
-        hypeWithoutStructure(candidate, propagation, findings);
-        lateNarrativeAfterRepricing(candidate, marketData, propagation, findings);
-        optionsChaseWithoutReality(candidate, optionsFlow, findings);
-        volatilityWithLiquidityDeterioration(liquidity, volatility, findings);
-        materialityWithoutResponse(candidate, propagation, impact, findings);
-        sectorSympathyWithoutCatalyst(candidate, propagation, findings);
-        strongCatalystIsolated(candidate, propagation, findings);
-        vwapReclaimWeakEquilibrium(intraday, marketData, findings);
-        highMentionLowCoherence(propagation, findings);
-        asymmetryCompressedByExtension(marketData, intraday, findings);
+        if (propagation != null) {
+            hypeWithoutStructure(candidate, propagation, findings);
+            lateNarrativeAfterRepricing(candidate, marketData, propagation, findings);
+            sectorSympathyWithoutCatalyst(candidate, propagation, findings);
+            strongCatalystIsolated(candidate, propagation, findings);
+            highMentionLowCoherence(propagation, findings);
+        }
+        if (optionsFlow != null) {
+            optionsChaseWithoutReality(candidate, optionsFlow, findings);
+        }
+        if (liquidity != null && volatility != null) {
+            volatilityWithLiquidityDeterioration(liquidity, volatility, findings);
+        }
+        if (propagation != null && impact != null) {
+            materialityWithoutResponse(candidate, propagation, impact, findings);
+        }
+        if (intraday != null) {
+            vwapReclaimWeakEquilibrium(intraday, marketData, findings);
+            asymmetryCompressedByExtension(marketData, intraday, findings);
+        }
 
         return List.copyOf(findings);
     }

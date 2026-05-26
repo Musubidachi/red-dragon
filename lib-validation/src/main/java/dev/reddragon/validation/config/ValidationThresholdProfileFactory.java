@@ -19,11 +19,12 @@ public final class ValidationThresholdProfileFactory {
 
     private static ValidationThresholds conservative() {
         return new ValidationThresholds(
-                0.84,
-                0.64,
-                0.92,
-                0.84,
-                0.64,
+                0.84,   // passThreshold
+                0.64,   // watchThreshold
+                0.92,   // concentrationThreshold
+                0.84,   // standardDeploymentThreshold
+                0.64,   // probeDeploymentThreshold
+                0.64,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
                 0.72,
                 0.62,
                 0.55,
@@ -43,11 +44,12 @@ public final class ValidationThresholdProfileFactory {
 
     private static ValidationThresholds aggressive() {
         return new ValidationThresholds(
-                0.72,
-                0.50,
-                0.84,
-                0.72,
-                0.50,
+                0.72,   // passThreshold
+                0.50,   // watchThreshold
+                0.84,   // concentrationThreshold
+                0.72,   // standardDeploymentThreshold
+                0.50,   // probeDeploymentThreshold
+                0.50,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
                 0.58,
                 0.48,
                 0.38,
@@ -67,11 +69,12 @@ public final class ValidationThresholdProfileFactory {
 
     private static ValidationThresholds concentrationReview() {
         return new ValidationThresholds(
-                0.88,
-                0.66,
-                0.93,
-                0.88,
-                0.66,
+                0.88,   // passThreshold
+                0.66,   // watchThreshold
+                0.93,   // concentrationThreshold
+                0.88,   // standardDeploymentThreshold
+                0.66,   // probeDeploymentThreshold
+                0.66,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
                 0.75,
                 0.68,
                 0.60,

@@ -7,7 +7,7 @@ import java.time.Instant;
 
 @Value
 @Accessors(fluent = true)
-public class IntradayBar {
+public class IntradayBar implements OhlcBar {
     String symbol;
     Instant startTime;
     double open;

@@ -77,30 +77,37 @@ public class CandidateReviewController {
                 entity.getVerdict(),
                 entity.getDeploymentTier(),
                 entity.getScore(),
-                splitReasonCodes(entity.getReasonCodes()),
-                splitExplanations(entity.getExplanations()),
+                reasonCodes(entity),
+                explanations(entity),
                 regimeLabel,
                 entity.getCreatedAt()
         );
     }
 
-    private List<String> splitReasonCodes(String raw) {
-        if (raw == null || raw.isBlank()) {
+    /**
+     * Reason codes from the normalized {@code validation_verdict_reason}
+     * child table (post-V12 schema).
+     */
+    private List<String> reasonCodes(ValidationVerdictEntity entity) {
+        if (entity.getReasons() == null || entity.getReasons().isEmpty()) {
             return List.of();
         }
-        return Arrays.stream(raw.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
+        return entity.getReasons().stream()
+                .map(r -> r.getReasonCode())
                 .toList();
     }
 
-    private List<String> splitExplanations(String raw) {
-        if (raw == null || raw.isBlank()) {
+    /**
+     * Explanations from the normalized child table, in the same order as
+     * the reason codes. {@code null}/blank entries are filtered out.
+     */
+    private List<String> explanations(ValidationVerdictEntity entity) {
+        if (entity.getReasons() == null || entity.getReasons().isEmpty()) {
             return List.of();
         }
-        return Arrays.stream(raw.split("\\|"))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
+        return entity.getReasons().stream()
+                .map(r -> r.getExplanation())
+                .filter(e -> e != null && !e.isBlank())
                 .toList();
     }
 }

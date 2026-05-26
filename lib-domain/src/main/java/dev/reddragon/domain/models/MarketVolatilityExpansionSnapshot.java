@@ -5,7 +5,11 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Derived volatility expansion metrics produced by marketdata calculators.
+ * Derived volatility expansion metrics <b>with provider context</b>: symbol
+ * plus raw and normalized ATR fields. Output of {@code lib-marketdata}'s
+ * {@code VolatilityExpansionSnapshotBuilder}. See
+ * {@link VolatilityExpansionSnapshot} for the trimmed score-only shape that
+ * lib-analytics scorers consume.
  */
 @Value
 @Accessors(fluent = true)

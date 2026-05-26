@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.reddragon.domain.models.AnalyticsSnapshot;
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
+import dev.reddragon.analytics.services.marketscoring.MarketDataSnapshotScorer;
 import dev.reddragon.app.models.PipelineRunResult;
 import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.domain.models.MarketBar;
@@ -19,10 +20,10 @@ import dev.reddragon.persistence.services.repositories.MarketBarRepository;
 import dev.reddragon.persistence.services.repositories.MarketSnapshotRepository;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
 import dev.reddragon.validation.config.ValidationProfile;
-import dev.reddragon.domain.models.CandidateValidationInput;
 import dev.reddragon.domain.models.ValidationAudit;
 import dev.reddragon.domain.models.ValidationResult;
 import dev.reddragon.validation.services.ValidationService;
+import dev.reddragon.validation.services.engine.CandidateValidationInputFactory;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +32,9 @@ import lombok.RequiredArgsConstructor;
 public class CandidatePipelineOrchestrator {
 
     private final MarketFeatureCalculator marketFeatureCalculator;
+    private final MarketDataSnapshotScorer marketDataSnapshotScorer;
     private final DeterministicAnalyticsService analyticsService;
+    private final CandidateValidationInputFactory validationInputFactory;
     private final ValidationServiceFactory validationServiceFactory;
     private final CandidateRepository candidateRepository;
     private final ValidationVerdictRepository validationVerdictRepository;
@@ -67,11 +70,15 @@ public class CandidatePipelineOrchestrator {
 
         ValidationService validationService = validationServiceFactory.forProfile(profile);
 
-        MarketDataSnapshot marketData = marketFeatureCalculator.process(candidate.symbol(), bars);
+        // Feature extraction (L2) produces a raw snapshot with score=0
+        // placeholders; the scoring step (L4) enriches it. See
+        // lib-marketdata REVIEW.md Finding #8 for the architectural rationale.
+        MarketDataSnapshot rawSnapshot = marketFeatureCalculator.process(candidate.symbol(), bars);
+        MarketDataSnapshot marketData = marketDataSnapshotScorer.process(rawSnapshot);
         AnalyticsSnapshot analytics = analyticsService.process(candidate, marketData);
 
-        CandidateValidationInput validationInput = validationInput(candidate, marketData, analytics);
-        ValidationAudit audit = validationService.process(validationInput);
+        ValidationAudit audit = validationService.process(
+                validationInputFactory.process(candidate, marketData, analytics));
         ValidationResult validation = audit.validationResult();
 
         candidateRepository.save(persistenceMapper.toCandidateEntity(candidate));
@@ -90,28 +97,4 @@ public class CandidatePipelineOrchestrator {
         marketBarRepository.saveAll(persistenceMapper.toMarketBarEntities(newBars));
     }
 
-    private CandidateValidationInput validationInput(
-            TradeCandidate candidate,
-            MarketDataSnapshot marketData,
-            AnalyticsSnapshot analytics
-    ) {
-        return new CandidateValidationInput(
-                candidate.candidateId(),
-                candidate.symbol(),
-                candidate.structuralRealityScore(),
-                candidate.materialSignificanceScore(),
-                candidate.earlynessScore(),
-                analytics.equilibriumQualityScore(),
-                analytics.reflexivityPotentialScore(),
-                analytics.asymmetryScore(),
-                analytics.regimeCompatibilityScore(),
-                analytics.deploymentConfidenceScore(),
-                candidate.hasCredibleStructuralCatalyst(),
-                marketData.complete(),
-                candidate.earlynessScore() < 0.45,
-                marketData.liquidityScore() < 0.35 || marketData.volatilityStabilityScore() < 0.35,
-                marketData.rangePosition() > 0.90,
-                candidate.summary()
-        );
-    }
 }

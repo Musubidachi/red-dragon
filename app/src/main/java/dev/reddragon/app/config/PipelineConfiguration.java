@@ -30,11 +30,16 @@ import dev.reddragon.marketdata.services.provider.schwab.SchwabMarketDataProvide
 import dev.reddragon.marketdata.config.SchwabOAuthProperties;
 import dev.reddragon.marketdata.services.provider.schwab.StaticSchwabAccessTokenSupplier;
 import dev.reddragon.marketdata.services.provider.yahoo.YahooMarketDataProvider;
+import dev.reddragon.analytics.config.MarketScoringProperties;
+import dev.reddragon.analytics.services.marketscoring.LiquidityScorer;
+import dev.reddragon.analytics.services.marketscoring.MarketDataSnapshotScorer;
+import dev.reddragon.analytics.services.marketscoring.VolatilityStabilityScorer;
 import dev.reddragon.marketdata.services.MarketFeatureCalculator;
 import dev.reddragon.persistence.services.PersistenceMapper;
 import dev.reddragon.persistence.services.repositories.SchwabTokenRepository;
 import dev.reddragon.validation.config.ValidationThresholds;
 import dev.reddragon.validation.services.engine.DisequilibriumValidationEngine;
+import dev.reddragon.validation.services.engine.CandidateValidationInputFactory;
 import dev.reddragon.validation.services.ValidationService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,8 +66,32 @@ public class PipelineConfiguration {
         return new ManualCandidateIngestionService();
     }
 
+    /**
+     * Default liquidity / volatility scoring thresholds (lib-marketdata
+     * REVIEW.md Finding #8 architectural fix). Now lives in
+     * {@code lib-analytics.config} — scoring policy belongs at L4, not
+     * L2. Replace this bean to retune; defaults match the historical
+     * baked-in values so an unconfigured deployment is a no-op.
+     */
+    @Bean
+    public MarketScoringProperties marketScoringProperties() {
+        return MarketScoringProperties.defaults();
+    }
+
+    @Bean
+    public MarketDataSnapshotScorer marketDataSnapshotScorer(
+            MarketScoringProperties marketScoringProperties
+    ) {
+        return new MarketDataSnapshotScorer(
+                new LiquidityScorer(marketScoringProperties),
+                new VolatilityStabilityScorer(marketScoringProperties));
+    }
+
     @Bean
     public MarketFeatureCalculator marketFeatureCalculator() {
+        // Scoring is no longer the marketdata layer's job. The
+        // calculator emits a raw snapshot (score=0 placeholders);
+        // MarketDataSnapshotScorer enriches it downstream.
         return new MarketFeatureCalculator();
     }
 
@@ -89,6 +118,11 @@ public class PipelineConfiguration {
     }
 
     @Bean
+    public CandidateValidationInputFactory candidateValidationInputFactory() {
+        return new CandidateValidationInputFactory();
+    }
+
+    @Bean
     public LongHorizonCalibrationAnalyzer longHorizonCalibrationAnalyzer() {
         return new LongHorizonCalibrationAnalyzer();
     }
@@ -106,26 +140,57 @@ public class PipelineConfiguration {
     @Bean
     public BacktestReplayEngine backtestReplayEngine(
             MarketFeatureCalculator marketFeatureCalculator,
+            MarketDataSnapshotScorer marketDataSnapshotScorer,
             DeterministicAnalyticsService analyticsService,
-            DisequilibriumValidationEngine validationEngine
+            DisequilibriumValidationEngine validationEngine,
+            CandidateValidationInputFactory validationInputFactory
     ) {
-        return new BacktestReplayEngine(marketFeatureCalculator, analyticsService, validationEngine);
+        return new BacktestReplayEngine(
+                marketFeatureCalculator, marketDataSnapshotScorer,
+                analyticsService, validationEngine, validationInputFactory);
     }
 
     @Bean
     public SecApiProperties secApiProperties(
             @Value("${red-dragon.sec.user-agent}") String userAgent,
             @Value("${red-dragon.sec.submissions-base-url}") String submissionsBaseUrl,
-            @Value("${red-dragon.sec.requests-per-second}") int requestsPerSecond
+            @Value("${red-dragon.sec.company-tickers-url:" + SecApiProperties.DEFAULT_COMPANY_TICKERS_URL + "}") String companyTickersUrl,
+            @Value("${red-dragon.sec.requests-per-second}") int requestsPerSecond,
+            @Value("${red-dragon.sec.connect-timeout-millis:" + SecApiProperties.DEFAULT_CONNECT_TIMEOUT_MILLIS + "}") int connectTimeoutMillis,
+            @Value("${red-dragon.sec.read-timeout-millis:" + SecApiProperties.DEFAULT_READ_TIMEOUT_MILLIS + "}") int readTimeoutMillis,
+            @Value("${red-dragon.sec.max-retries:" + SecApiProperties.DEFAULT_MAX_RETRIES + "}") int maxRetries,
+            @Value("${red-dragon.sec.backoff-base-millis:" + SecApiProperties.DEFAULT_BACKOFF_BASE_MILLIS + "}") long backoffBaseMillis,
+            @Value("${red-dragon.sec.max-backoff-millis:" + SecApiProperties.DEFAULT_MAX_BACKOFF_MILLIS + "}") long maxBackoffMillis
     ) {
-        return new SecApiProperties(userAgent, submissionsBaseUrl, requestsPerSecond);
+        return new SecApiProperties(
+                userAgent, submissionsBaseUrl, companyTickersUrl, requestsPerSecond,
+                connectTimeoutMillis, readTimeoutMillis,
+                maxRetries, backoffBaseMillis, maxBackoffMillis);
+    }
+
+    @Bean(destroyMethod = "close")
+    public SimpleRateLimiter secRateLimiter(SecApiProperties properties) {
+        return new SimpleRateLimiter(properties.getRequestsPerSecond());
     }
 
     @Bean
-    public SecIngestionService secIngestionService(SecApiProperties properties) {
-        SimpleRateLimiter limiter = new SimpleRateLimiter(properties.getRequestsPerSecond());
-        SecHttpClient http = new SecHttpClient(properties, limiter);
-        SubmissionsClient submissions = new SubmissionsClient(properties, http);
+    public SecHttpClient secHttpClient(
+            SecApiProperties properties,
+            SimpleRateLimiter secRateLimiter
+    ) {
+        return new SecHttpClient(properties, secRateLimiter);
+    }
+
+    @Bean
+    public SubmissionsClient submissionsClient(
+            SecApiProperties properties,
+            SecHttpClient secHttpClient
+    ) {
+        return new SubmissionsClient(properties, secHttpClient);
+    }
+
+    @Bean
+    public SecIngestionService secIngestionService(SubmissionsClient submissions) {
         return new SecIngestionService(
                 submissions,
                 new SubmissionsFilingExtractor(),
@@ -134,10 +199,11 @@ public class PipelineConfiguration {
     }
 
     @Bean
-    public CikLookupService cikLookupService(SecApiProperties properties) {
-        SimpleRateLimiter limiter = new SimpleRateLimiter(properties.getRequestsPerSecond());
-        SecHttpClient http = new SecHttpClient(properties, limiter);
-        return new CikLookupService(http);
+    public CikLookupService cikLookupService(
+            SecApiProperties properties,
+            SecHttpClient secHttpClient
+    ) {
+        return new CikLookupService(properties, secHttpClient);
     }
 
     @Bean

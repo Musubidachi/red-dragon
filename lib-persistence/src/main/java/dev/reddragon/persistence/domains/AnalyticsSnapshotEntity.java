@@ -54,4 +54,28 @@ public class AnalyticsSnapshotEntity {
 
     @Column(name = "reason_notes", length = 4000)
     private String reasonNotes;
+
+    /** DB-populated insertion timestamp (V13). */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public AnalyticsSnapshotEntity(
+            Long id,
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            String regimeLabel,
+            double regimeCompatibilityScore,
+            double asymmetryScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double deploymentConfidenceScore,
+            String reasonNotes
+    ) {
+        this(id, candidateId, symbol, observedAt, regimeLabel,
+                regimeCompatibilityScore, asymmetryScore, equilibriumQualityScore,
+                reflexivityPotentialScore, deploymentConfidenceScore, reasonNotes,
+                null);
+    }
 }

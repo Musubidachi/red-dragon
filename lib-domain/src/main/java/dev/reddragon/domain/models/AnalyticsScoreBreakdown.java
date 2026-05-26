@@ -46,7 +46,13 @@ public class AnalyticsScoreBreakdown {
                 + asymmetryScore + regimeCompatibilityScore + deploymentConfidenceScore) / 8.0;
     }
 
-    /** Name of the dimension with the lowest score — the weakest signal. */
+    /**
+     * Name of the dimension with the lowest score — the weakest signal.
+     *
+     * <p>Every comparison updates both {@code min} and {@code name} for
+     * symmetry; adding a new dimension at the end of the chain does not
+     * require remembering to special-case the previous last line.
+     */
     public String weakestDimension() {
         double min = structuralRealityScore;
         String name = "structuralReality";
@@ -56,11 +62,16 @@ public class AnalyticsScoreBreakdown {
         if (reflexivityPotentialScore < min)  { min = reflexivityPotentialScore;  name = "reflexivityPotential"; }
         if (asymmetryScore < min)             { min = asymmetryScore;             name = "asymmetry"; }
         if (regimeCompatibilityScore < min)   { min = regimeCompatibilityScore;   name = "regimeCompatibility"; }
-        if (deploymentConfidenceScore < min)  {                                    name = "deploymentConfidence"; }
+        if (deploymentConfidenceScore < min)  { min = deploymentConfidenceScore;  name = "deploymentConfidence"; }
         return name;
     }
 
-    /** Name of the dimension with the highest score — the strongest signal. */
+    /**
+     * Name of the dimension with the highest score — the strongest signal.
+     *
+     * <p>Every comparison updates both {@code max} and {@code name} for
+     * symmetry; see {@link #weakestDimension()} for the rationale.
+     */
     public String strongestDimension() {
         double max = structuralRealityScore;
         String name = "structuralReality";
@@ -70,7 +81,7 @@ public class AnalyticsScoreBreakdown {
         if (reflexivityPotentialScore > max)  { max = reflexivityPotentialScore;  name = "reflexivityPotential"; }
         if (asymmetryScore > max)             { max = asymmetryScore;             name = "asymmetry"; }
         if (regimeCompatibilityScore > max)   { max = regimeCompatibilityScore;   name = "regimeCompatibility"; }
-        if (deploymentConfidenceScore > max)  {                                    name = "deploymentConfidence"; }
+        if (deploymentConfidenceScore > max)  { max = deploymentConfidenceScore;  name = "deploymentConfidence"; }
         return name;
     }
 }

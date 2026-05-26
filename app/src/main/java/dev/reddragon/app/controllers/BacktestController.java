@@ -131,16 +131,15 @@ public class BacktestController {
             BacktestOutcome outcome,
             Instant testedAt
     ) {
-        return new BacktestResultEntity(
-                null,
-                runId,
-                strategyName,
-                outcome.candidate().symbol(),
-                outcome.candidate().candidateId(),
-                outcome.validation().verdict().name(),
-                outcome.validation().score(),
-                testedAt
-        );
+        return BacktestResultEntity.builder()
+                .runId(runId)
+                .strategyName(strategyName)
+                .symbol(outcome.candidate().symbol())
+                .candidateId(outcome.candidate().candidateId())
+                .verdict(outcome.validation().verdict().name())
+                .score(outcome.validation().score())
+                .testedAt(testedAt)
+                .build();
     }
 
     private CandidateCatalystType parseCatalystType(String raw) {

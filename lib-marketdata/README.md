@@ -44,14 +44,21 @@ account balances, track positions, or place orders.
 
 ```text
 lib-marketdata/src/main/java/dev/reddragon/marketdata
-    models/      bars, snapshots, feature records, quality enum
-    services/    feature calculators and aggregation services
-    services/provider/ provider interface, noop provider, and composite fallback
-    services/provider/schwab/ Schwab price-history adapter and DTOs
-    services/provider/yahoo/ Yahoo chart fallback adapter
-    config/      Schwab market-data and OAuth properties
-    utilities/   math helpers
+    services/                   feature calculators and snapshot builders
+    services/provider/          provider interface, noop, composite fallback
+    services/provider/schwab/   Schwab price-history adapter (package-private DTOs)
+    services/provider/yahoo/    Yahoo chart fallback adapter
+    services/replay/            deterministic replay helpers
+    services/stream/            market-data stream processing
+    config/                     Schwab market-data, Schwab OAuth, and Yahoo properties
 ```
+
+Bars (`MarketBar`, `IntradayBar`), snapshots (`MarketDataSnapshot`,
+`IntradayStructureSnapshot`, `LiquidityTextureSnapshot`,
+`VolatilityExpansionSnapshot`), and the `MarketDataQuality` enum live in
+`lib-domain` so they can flow across modules. Numeric helpers live in
+`lib-math`. This module owns the calculators and adapters that produce
+those shared types, not the types themselves.
 
 ## Testing Expectations
 

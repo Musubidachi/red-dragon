@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class BacktestResultEntity {
 
     @Id
@@ -45,4 +47,22 @@ public class BacktestResultEntity {
 
     @Column(name = "tested_at", nullable = false)
     private Instant testedAt;
+
+    /** DB-populated insertion timestamp (V13); distinct from {@link #testedAt}. */
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Backwards-compatible pre-V13 constructor. */
+    public BacktestResultEntity(
+            Long id,
+            String runId,
+            String strategyName,
+            String symbol,
+            String candidateId,
+            String verdict,
+            double score,
+            Instant testedAt
+    ) {
+        this(id, runId, strategyName, symbol, candidateId, verdict, score, testedAt, null);
+    }
 }

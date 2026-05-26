@@ -5,7 +5,15 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Derived intraday structure metrics produced by marketdata calculators.
+ * Derived intraday structure metrics <b>with provider context</b>: symbol,
+ * raw sessionVwap and latestClose, plus the normalized scores.
+ *
+ * <p>This is the <i>output</i> of {@code lib-marketdata}'s
+ * {@code IntradayStructureSnapshotBuilder} and lives inside
+ * {@link MarketDataSnapshot} or alongside it for persistence/review.
+ *
+ * <p>For the trimmed score-only shape consumed by L4 scorers in
+ * {@code lib-analytics}, see {@link IntradayStructureSnapshot}.
  */
 @Value
 @Accessors(fluent = true)

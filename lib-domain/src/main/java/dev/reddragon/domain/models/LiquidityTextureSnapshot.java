@@ -5,7 +5,10 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Normalized liquidity texture inputs.
+ * Normalized liquidity texture inputs — <b>score-only</b>, no symbol context.
+ * Consumed by L4 scorers ({@code LiquidityTextureScorer}); derived from
+ * {@link MarketLiquidityTextureSnapshot} before being passed to pure-function
+ * scorers in {@code lib-analytics}.
  */
 @Value
 @Accessors(fluent = true)

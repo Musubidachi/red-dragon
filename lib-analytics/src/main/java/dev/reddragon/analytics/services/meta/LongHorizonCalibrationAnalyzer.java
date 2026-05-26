@@ -13,6 +13,18 @@ import java.util.Objects;
  */
 public class LongHorizonCalibrationAnalyzer {
 
+    // ---- Drift-level thresholds --------------------------------------------
+    // Win-rate floors for each drift level. Lifted out of inline literals so
+    // the calibration mapping is reviewable without parsing conditionals.
+    // Note: these are not yet wired through ValidationThresholds — moving them
+    // there is tracked separately in lib-analytics/REVIEW.md (Finding #10).
+    private static final double STABLE_WIN_RATE_MIN          = 0.65;
+    private static final double STABLE_AVG_RETURN_MIN        = 0.0;   // exclusive
+    private static final double STABLE_AVG_DRAWDOWN_MAX      = 0.15;  // exclusive
+    private static final double MINOR_DRIFT_WIN_RATE_MIN     = 0.55;
+    private static final double MINOR_DRIFT_AVG_RETURN_MIN   = 0.0;
+    private static final double MODERATE_DRIFT_WIN_RATE_MIN  = 0.45;
+
     /**
      * Main processing flow.
      */
@@ -88,18 +100,21 @@ public class LongHorizonCalibrationAnalyzer {
             List<String> findings,
             List<String> recommendations
     ) {
-        if (winRate >= 0.65 && averageReturn > 0.0 && averageDrawdown < 0.15) {
+        if (winRate >= STABLE_WIN_RATE_MIN
+                && averageReturn > STABLE_AVG_RETURN_MIN
+                && averageDrawdown < STABLE_AVG_DRAWDOWN_MAX) {
             findings.add("Framework performance remains historically stable.");
             return CalibrationDriftLevel.STABLE;
         }
 
-        if (winRate >= 0.55 && averageReturn >= 0.0) {
+        if (winRate >= MINOR_DRIFT_WIN_RATE_MIN
+                && averageReturn >= MINOR_DRIFT_AVG_RETURN_MIN) {
             findings.add("Minor degradation detected in framework performance.");
             recommendations.add("Review adversarial thresholds for saturation conditions.");
             return CalibrationDriftLevel.MINOR_DRIFT;
         }
 
-        if (winRate >= 0.45) {
+        if (winRate >= MODERATE_DRIFT_WIN_RATE_MIN) {
             findings.add("Moderate framework drift detected.");
             recommendations.add("Reevaluate propagation and asymmetry assumptions.");
             recommendations.add("Tighten deployment concentration thresholds.");
