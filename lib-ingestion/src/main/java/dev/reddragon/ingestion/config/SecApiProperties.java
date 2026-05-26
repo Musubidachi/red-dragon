@@ -1,32 +1,37 @@
 package dev.reddragon.ingestion.config;
 
+import java.time.Duration;
+
 /**
  * Configuration values needed to talk to the SEC EDGAR HTTP API.
  *
  * <p>Why this class exists: every SEC request must carry a real
  * {@code User-Agent} with a contact email, must stay under 10 requests per
- * second per IP, and must point at the right base host. Centralising those
+ * second per IP, and must point at the right base host. Centralizing those
  * values here means every SEC class reads from one place and the operator
  * sets them once.
  */
 public class SecApiProperties {
 
-    /** Default TCP connect timeout — keeps SEC connection attempts bounded. */
+    /** Default TCP connect timeout; keeps SEC connection attempts bounded. */
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5_000;
 
-    /** Default response read timeout — covers slow SEC responses without wedging the poller. */
+    /** Default response read timeout; covers slow SEC responses without wedging the poller. */
     public static final int DEFAULT_READ_TIMEOUT_MILLIS = 30_000;
 
-    /** Default URL of the SEC company ticker → CIK map (live `www.sec.gov`). */
+    /** Default URL of the SEC company ticker to CIK map, hosted by www.sec.gov. */
     public static final String DEFAULT_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
+
+    /** Default refresh interval for the SEC company ticker map. */
+    public static final long DEFAULT_COMPANY_TICKERS_TTL_MILLIS = 604_800_000L;
 
     /** Default 429/5xx retry-loop ceiling. */
     public static final int DEFAULT_MAX_RETRIES = 5;
 
-    /** Default base backoff between retries (millis); doubled each attempt with jitter, capped at {@link #DEFAULT_MAX_BACKOFF_MILLIS}. */
+    /** Default base backoff between retries, doubled each attempt with jitter. */
     public static final long DEFAULT_BACKOFF_BASE_MILLIS = 500L;
 
-    /** Default backoff ceiling — single retry never sleeps longer than this. */
+    /** Default backoff ceiling; a single retry never sleeps longer than this. */
     public static final long DEFAULT_MAX_BACKOFF_MILLIS = 30_000L;
 
     /** The exact string sent in the {@code User-Agent} HTTP header. */
@@ -38,11 +43,13 @@ public class SecApiProperties {
     /**
      * Full URL of the SEC company-tickers JSON document used by
      * {@code CikLookupService}. Lives on {@code www.sec.gov}, not the
-     * submissions host — configurable so integration tests can stub it
-     * and so a future deployment can point at a mirror or local cache.
-     * See lib-ingestion REVIEW.md Finding #10.
+     * submissions host. It is configurable so integration tests can stub it
+     * and future deployments can point at a mirror or local cache.
      */
     private final String companyTickersUrl;
+
+    /** Cache TTL for {@code company_tickers.json}. */
+    private final long companyTickersTtlMillis;
 
     /** Maximum HTTP requests per second to send to {@code *.sec.gov}. */
     private final int requestsPerSecond;
@@ -56,22 +63,22 @@ public class SecApiProperties {
     /** Maximum number of retry attempts on 429/5xx before giving up. */
     private final int maxRetries;
 
-    /** Base sleep (millis) for the exponential backoff applied between retries. */
+    /** Base sleep in milliseconds for exponential backoff between retries. */
     private final long backoffBaseMillis;
 
-    /** Upper bound (millis) on any individual retry sleep. */
+    /** Upper bound in milliseconds on any individual retry sleep. */
     private final long maxBackoffMillis;
 
     /**
      * Three-arg constructor preserved for backwards-compatible wiring. Uses
-     * the {@code DEFAULT_*} constants for the transport, retry, and
-     * companion-URL knobs; operators who want to override them should use
-     * the all-args constructor.
+     * the {@code DEFAULT_*} constants for the transport, retry, companion URL,
+     * and companion cache knobs.
      */
     public SecApiProperties(String userAgent, String submissionsBaseUrl, int requestsPerSecond) {
         this(userAgent, submissionsBaseUrl, DEFAULT_COMPANY_TICKERS_URL, requestsPerSecond,
                 DEFAULT_CONNECT_TIMEOUT_MILLIS, DEFAULT_READ_TIMEOUT_MILLIS,
-                DEFAULT_MAX_RETRIES, DEFAULT_BACKOFF_BASE_MILLIS, DEFAULT_MAX_BACKOFF_MILLIS);
+                DEFAULT_MAX_RETRIES, DEFAULT_BACKOFF_BASE_MILLIS, DEFAULT_MAX_BACKOFF_MILLIS,
+                DEFAULT_COMPANY_TICKERS_TTL_MILLIS);
     }
 
     public SecApiProperties(
@@ -85,13 +92,30 @@ public class SecApiProperties {
             long backoffBaseMillis,
             long maxBackoffMillis
     ) {
+        this(userAgent, submissionsBaseUrl, companyTickersUrl, requestsPerSecond,
+                connectTimeoutMillis, readTimeoutMillis, maxRetries,
+                backoffBaseMillis, maxBackoffMillis, DEFAULT_COMPANY_TICKERS_TTL_MILLIS);
+    }
+
+    public SecApiProperties(
+            String userAgent,
+            String submissionsBaseUrl,
+            String companyTickersUrl,
+            int requestsPerSecond,
+            int connectTimeoutMillis,
+            int readTimeoutMillis,
+            int maxRetries,
+            long backoffBaseMillis,
+            long maxBackoffMillis,
+            long companyTickersTtlMillis
+    ) {
         if (userAgent == null || userAgent.isBlank()) {
             throw new IllegalArgumentException("userAgent is required");
         }
         if (looksLikePlaceholder(userAgent)) {
             throw new IllegalArgumentException(
                     "userAgent appears to be a placeholder (\"" + userAgent + "\"). "
-                            + "SEC fair-access policy requires a real contact email — set "
+                            + "SEC fair-access policy requires a real contact email; set "
                             + "red-dragon.sec.user-agent to something like "
                             + "\"red-dragon (you@example-real.com)\" before starting the service.");
         }
@@ -127,9 +151,15 @@ public class SecApiProperties {
                     "maxBackoffMillis (" + maxBackoffMillis + ") cannot be less than backoffBaseMillis ("
                             + backoffBaseMillis + ")");
         }
+        if (companyTickersTtlMillis <= 0 || companyTickersTtlMillis > Duration.ofDays(30).toMillis()) {
+            throw new IllegalArgumentException(
+                    "companyTickersTtlMillis must be between 1 and 2592000000, was: "
+                            + companyTickersTtlMillis);
+        }
         this.userAgent = userAgent;
         this.submissionsBaseUrl = submissionsBaseUrl;
         this.companyTickersUrl = companyTickersUrl;
+        this.companyTickersTtlMillis = companyTickersTtlMillis;
         this.requestsPerSecond = requestsPerSecond;
         this.connectTimeoutMillis = connectTimeoutMillis;
         this.readTimeoutMillis = readTimeoutMillis;
@@ -148,6 +178,10 @@ public class SecApiProperties {
 
     public String getCompanyTickersUrl() {
         return companyTickersUrl;
+    }
+
+    public long getCompanyTickersTtlMillis() {
+        return companyTickersTtlMillis;
     }
 
     public int getRequestsPerSecond() {
@@ -176,9 +210,8 @@ public class SecApiProperties {
 
     /**
      * Heuristic detector for placeholder User-Agent strings. SEC fair-access
-     * policy explicitly forbids generic UAs ({@code example.com},
-     * {@code noreply@}, fake emails, etc.) and will block the IP for repeat
-     * offenders.
+     * policy forbids generic UAs such as fake example domains or no-reply
+     * addresses and may block repeat offenders.
      */
     private static boolean looksLikePlaceholder(String userAgent) {
         String lower = userAgent.toLowerCase();

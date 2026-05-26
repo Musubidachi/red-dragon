@@ -160,12 +160,13 @@ public class PipelineConfiguration {
             @Value("${red-dragon.sec.read-timeout-millis:" + SecApiProperties.DEFAULT_READ_TIMEOUT_MILLIS + "}") int readTimeoutMillis,
             @Value("${red-dragon.sec.max-retries:" + SecApiProperties.DEFAULT_MAX_RETRIES + "}") int maxRetries,
             @Value("${red-dragon.sec.backoff-base-millis:" + SecApiProperties.DEFAULT_BACKOFF_BASE_MILLIS + "}") long backoffBaseMillis,
-            @Value("${red-dragon.sec.max-backoff-millis:" + SecApiProperties.DEFAULT_MAX_BACKOFF_MILLIS + "}") long maxBackoffMillis
+            @Value("${red-dragon.sec.max-backoff-millis:" + SecApiProperties.DEFAULT_MAX_BACKOFF_MILLIS + "}") long maxBackoffMillis,
+            @Value("${red-dragon.sec.company-tickers-ttl-millis:" + SecApiProperties.DEFAULT_COMPANY_TICKERS_TTL_MILLIS + "}") long companyTickersTtlMillis
     ) {
         return new SecApiProperties(
                 userAgent, submissionsBaseUrl, companyTickersUrl, requestsPerSecond,
                 connectTimeoutMillis, readTimeoutMillis,
-                maxRetries, backoffBaseMillis, maxBackoffMillis);
+                maxRetries, backoffBaseMillis, maxBackoffMillis, companyTickersTtlMillis);
     }
 
     @Bean(destroyMethod = "close")
@@ -190,11 +191,15 @@ public class PipelineConfiguration {
     }
 
     @Bean
-    public SecIngestionService secIngestionService(SubmissionsClient submissions) {
+    public SecIngestionService secIngestionService(
+            SubmissionsClient submissions,
+            CikLookupService cikLookupService
+    ) {
         return new SecIngestionService(
                 submissions,
                 new SubmissionsFilingExtractor(),
-                new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics())
+                new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics()),
+                cikLookupService
         );
     }
 
