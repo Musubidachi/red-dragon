@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.propagation;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.math.AnalyticsScoreUtils;
 import dev.reddragon.domain.models.TradeCandidate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,21 +16,18 @@ public class ReflexivityScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            TradeCandidate candidate,
-            List<String> notes
-    ) {
+    public ScoreResult process(TradeCandidate candidate) {
         Objects.requireNonNull(candidate, "candidate is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
                 candidate.reflexivityPotentialScore() * 0.60
                         + candidate.earlynessScore() * 0.40
         );
 
+        List<String> notes = new ArrayList<>();
         addNotes(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNotes(double score, List<String> notes) {

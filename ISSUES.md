@@ -1,17 +1,13 @@
 # red-dragon Issue Index
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 This index tracks current actionable documentation-known work. Fixed historical
 findings are intentionally omitted unless they leave a follow-up.
 
 ## High Priority
 
-| ID | Title | Module | Status | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-H2 | Replace mutable scorer note side effects | `lib-analytics` | Open | Scorers mutate caller-owned lists, weakening the pure-function contract and note provenance. | [lib-analytics/REVIEW.md](lib-analytics/REVIEW.md) |
-| RD-H3 | Share validation-input construction between production and backtest | `lib-backtest` | Open | Backtest and live pipeline can drift because risk-threshold literals are duplicated. | [lib-backtest/REVIEW.md](lib-backtest/REVIEW.md) |
-| RD-H4 | Protect persisted Schwab tokens | `lib-persistence` | Open | Plain database token storage can expose brokerage credentials to anyone with DB read access. | [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
+No open high-priority issues are currently tracked.
 
 ## Medium Priority
 

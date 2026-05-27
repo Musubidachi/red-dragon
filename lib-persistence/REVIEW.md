@@ -10,7 +10,6 @@ remain the schema source of truth.
 
 | Priority | Issue | Status | Impact | Next action |
 | --- | --- | --- | --- | --- |
-| High | Schwab token plaintext storage | Open | Persisted bearer/refresh tokens can expose brokerage credentials to anyone with DB read access. | Add field-level encryption, DB/filesystem encryption documentation, or another explicit secret-storage design. |
 | Medium | Repository/migration integration tests | Open | Entity mapping, Flyway migration validity, relationships, and constraints are only lightly covered. | Add `@DataJpaTest` or equivalent migration-backed integration tests for major entities. |
 | Medium | Truncation-prone text columns | Open | Long notes, explanations, quote notes, or import warnings can exceed fixed varchar limits. | Move unbounded text to `TEXT`/`CLOB` or normalize structures where queryability matters. |
 | Low | Generated-id positional constructors | Open | Remaining generated-id entities still expose `id` through all-args construction. | Finish builder migration or add construction factories that omit generated IDs. |
@@ -43,6 +42,7 @@ Implemented today:
 | Market bar audit | `market_bar.created_at` was added to match newer intraday-bar audit behavior. |
 | Idempotency | Validation verdicts and backtest results gained uniqueness protection; V14 uses deterministic fingerprints. |
 | SQL correctness | V12 recursive split migration is PostgreSQL-correct with `WITH RECURSIVE`. |
+| Schwab token storage | Access/refresh token fields now use AES-GCM encryption via a JPA converter. Set `red-dragon.persistence.schwab-token-encryption-key` or `RED_DRAGON_PERSISTENCE_SCHWAB_TOKEN_ENCRYPTION_KEY` to `base64:<32-byte AES key>`. Legacy plaintext rows remain readable; new or updated rows are encrypted, and old audit rows must be re-saved or purged for retroactive cleanup. |
 
 ## Design-Only Work
 

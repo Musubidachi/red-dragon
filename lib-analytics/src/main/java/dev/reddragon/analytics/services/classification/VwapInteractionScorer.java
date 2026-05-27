@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.classification;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.IntradayStructureSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class VwapInteractionScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            IntradayStructureSnapshot intraday,
-            List<String> notes
-    ) {
+    public ScoreResult process(IntradayStructureSnapshot intraday) {
         Objects.requireNonNull(intraday, "intraday is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double distanceScore = distanceScore(intraday.vwapDistancePercent());
         double reclaimScore = intraday.vwapReclaimStrength();
@@ -31,9 +29,10 @@ public class VwapInteractionScorer {
                         + locationScore * 0.20
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, intraday, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private double distanceScore(double vwapDistancePercent) {

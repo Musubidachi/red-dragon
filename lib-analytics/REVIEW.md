@@ -1,6 +1,6 @@
 # lib-analytics Review
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 This review summarizes the current analytics module after the orchestrator was
 converted to use the documented scorer classes. Older audit detail is
@@ -10,7 +10,6 @@ compressed so current risks are visible first.
 
 | Priority | Issue | Status | Impact | Next action |
 | --- | --- | --- | --- | --- |
-| High | Mutable note-list side effects | Open | Many scorers still append to caller-owned `List<String>` instances, which weakens the pure-function contract and hides note provenance. | Return explicit score/result objects that include notes, then compose notes at the orchestrator boundary. |
 | Medium | Orchestrator/scorer integration tests | Open | Boundary tests can pass even if future orchestrator wiring drifts from scorer behavior. | Add equivalence tests for orchestrator output versus standalone scorers and classifier output. |
 | Medium | Calibration threshold configurability | Follow-up | Calibration drift thresholds are named constants, but cross-module/profile configuration remains a design question. | Decide whether these belong in `ValidationThresholds` or a new analytics/calibration config object. |
 
@@ -39,6 +38,7 @@ Implemented today:
 | Exhaustive enums | Regime score mapping no longer hides future enum additions behind a default branch. |
 | Adversarial duplication | The orchestrator now calls the richer analyzer and keeps only clearly named lightweight pipeline-only checks. |
 | L7 design | Architecture docs explain why exit recommendations are advisory and do not use the L5 resolver split. |
+| Scorer note side effects | Note-emitting scorers return immutable score/regime result objects with scorer-owned notes, and the orchestrator composes those notes locally. |
 
 ## Deferred Design Notes
 

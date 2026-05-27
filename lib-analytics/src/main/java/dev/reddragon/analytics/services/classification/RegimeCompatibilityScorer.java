@@ -60,45 +60,55 @@ public class RegimeCompatibilityScorer {
      * over rotational because tight, healthy structure deserves its own
      * label for selective breakout monitoring.
      */
-    public RegimeLabel process(
-            MarketDataSnapshot marketData,
-            List<String> notes
-    ) {
+    public RegimeCompatibilityResult process(MarketDataSnapshot marketData) {
         Objects.requireNonNull(marketData, "marketData is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         if (newsDriven(marketData)) {
-            notes.add("Large opening displacement with unstable volatility; treating environment as news-driven and hostile to equilibrium assumptions.");
-            return RegimeLabel.HOSTILE_NEWS_DRIVEN;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.HOSTILE_NEWS_DRIVEN,
+                    List.of("Large opening displacement with unstable volatility; treating environment as news-driven and hostile to equilibrium assumptions.")
+            );
         }
 
         if (hostileLiquidity(marketData)) {
-            notes.add("Liquidity is weak; regime is hostile to concentration.");
-            return RegimeLabel.HOSTILE_LIQUIDITY;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.HOSTILE_LIQUIDITY,
+                    List.of("Liquidity is weak; regime is hostile to concentration.")
+            );
         }
 
         if (hostileVolatility(marketData)) {
-            notes.add("Volatility is unstable; equilibrium behavior is degraded.");
-            return RegimeLabel.HOSTILE_VOLATILITY;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.HOSTILE_VOLATILITY,
+                    List.of("Volatility is unstable; equilibrium behavior is degraded.")
+            );
         }
 
         if (supportiveCompression(marketData)) {
-            notes.add("Structure is tightly balanced with stable volatility and healthy liquidity; compression regime favorable for selective breakout monitoring.");
-            return RegimeLabel.SUPPORTIVE_COMPRESSION;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.SUPPORTIVE_COMPRESSION,
+                    List.of("Structure is tightly balanced with stable volatility and healthy liquidity; compression regime favorable for selective breakout monitoring.")
+            );
         }
 
         if (supportiveRotation(marketData)) {
-            notes.add("Range position is balanced enough for rotational/restoration behavior.");
-            return RegimeLabel.SUPPORTIVE_ROTATIONAL;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.SUPPORTIVE_ROTATIONAL,
+                    List.of("Range position is balanced enough for rotational/restoration behavior.")
+            );
         }
 
         if (supportiveTrend(marketData)) {
-            notes.add("Trend pressure is present but volatility remains controlled.");
-            return RegimeLabel.SUPPORTIVE_TREND;
+            return new RegimeCompatibilityResult(
+                    RegimeLabel.SUPPORTIVE_TREND,
+                    List.of("Trend pressure is present but volatility remains controlled.")
+            );
         }
 
-        notes.add("Market regime is mixed; no hard support or rejection from market structure alone.");
-        return RegimeLabel.MIXED;
+        return new RegimeCompatibilityResult(
+                RegimeLabel.MIXED,
+                List.of("Market regime is mixed; no hard support or rejection from market structure alone.")
+        );
     }
 
     /**

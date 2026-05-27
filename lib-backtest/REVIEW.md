@@ -3,16 +3,14 @@
 Last updated: 2026-05-26
 
 This review summarizes the backtest module after the local cleanup pass. The
-main remaining risk is production/backtest drift at the validation-input
-boundary.
+highest-priority production/backtest drift risk at the validation-input
+boundary is now guarded by the shared validation-input factory.
 
 ## Current Open Work
 
 | Priority | Issue | Status | Impact | Next action |
 | --- | --- | --- | --- | --- |
-| High | Shared validation-input factory | Open | `BacktestReplayEngine` and the production orchestrator duplicate `CandidateValidationInput` construction and risk-threshold literals. | Extract a shared factory in `lib-validation` or `lib-domain` and make both callers use it. |
 | Medium | Determinism and metric tests | Open | README promises deterministic replay and metric correctness, but tests do not fully pin those guarantees. | Add direct-engine equivalence, verdict-distribution, average-score, and repeated-run equality tests. |
-| Medium | Builder migration for validation input | Open | The engine still relies on positional `CandidateValidationInput` construction. | Use the builder added in `lib-domain` or a named shared factory. |
 | Low | App wiring verification | Open | Local module construction is fixed, but the app consumption path should be checked. | Verify `BacktestReplayEngine` bean creation and controller wiring in `app`. |
 
 ## Implemented Surface
@@ -36,6 +34,7 @@ Implemented today:
 | Null guards | `BacktestOutcome`, `BacktestReport`, and strategy-name inputs reject nulls. |
 | Package docs | `package-info.java` files were added. |
 | Dead branches | Summary/pass-rate logic assumes non-null metrics after constructor validation. |
+| Shared validation input | `BacktestReplayEngine` and the production orchestrator both use `CandidateValidationInputFactory`; backtest tests assert replay validation consumes the injected factory output. |
 
 ## Non-Responsibilities
 

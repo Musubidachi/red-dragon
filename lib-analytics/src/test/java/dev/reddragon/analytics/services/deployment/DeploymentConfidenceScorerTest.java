@@ -1,13 +1,12 @@
 package dev.reddragon.analytics.services.deployment;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.CandidateCatalystType;
 import dev.reddragon.domain.models.SourceType;
 import dev.reddragon.domain.models.TradeCandidate;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,41 +21,38 @@ class DeploymentConfidenceScorerTest {
 
     @Test
     void allInputsAtMaxHitsUpperBound() {
-        double score = scorer.process(candidate(1.0, 1.0, 1.0), 1.0, 1.0, 1.0, 1.0, new ArrayList<>());
+        double score = scorer.process(candidate(1.0, 1.0, 1.0), 1.0, 1.0, 1.0, 1.0).score();
         assertEquals(1.0, score, 1e-9);
     }
 
     @Test
     void allInputsAtZeroHitsLowerBound() {
-        double score = scorer.process(candidate(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0, new ArrayList<>());
+        double score = scorer.process(candidate(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0).score();
         assertEquals(0.0, score, 1e-9);
     }
 
     @Test
     void emitsConcentratedNoteWhenStrong() {
-        List<String> notes = new ArrayList<>();
-        scorer.process(candidate(0.95, 0.9, 0.9), 0.95, 0.9, 0.9, 0.9, notes);
-        assertTrue(notes.stream().anyMatch(n -> n.contains("concentrated review")),
+        ScoreResult result = scorer.process(candidate(0.95, 0.9, 0.9), 0.95, 0.9, 0.9, 0.9);
+        assertTrue(result.notes().stream().anyMatch(n -> n.contains("concentrated review")),
                 "strong inputs should produce a concentrated-review note");
     }
 
     @Test
     void emitsLimitedProbingNoteInMidRange() {
-        List<String> notes = new ArrayList<>();
-        scorer.process(candidate(0.50, 0.50, 0.50), 0.50, 0.50, 0.50, 0.50, notes);
+        ScoreResult result = scorer.process(candidate(0.50, 0.50, 0.50), 0.50, 0.50, 0.50, 0.50);
         // 0.50 score lands in 0.45–0.65 (limited probing) or just above (standard).
         assertTrue(
-                notes.stream().anyMatch(n -> n.contains("limited probing"))
-                        || notes.stream().anyMatch(n -> n.contains("standard participation")),
+                result.notes().stream().anyMatch(n -> n.contains("limited probing"))
+                        || result.notes().stream().anyMatch(n -> n.contains("standard participation")),
                 "mid-range inputs should produce probing or standard note"
         );
     }
 
     @Test
     void emitsWeakNoteWhenBelowProbeThreshold() {
-        List<String> notes = new ArrayList<>();
-        scorer.process(candidate(0.10, 0.10, 0.10), 0.10, 0.10, 0.10, 0.10, notes);
-        assertTrue(notes.stream().anyMatch(n -> n.contains("weak relative to risk")),
+        ScoreResult result = scorer.process(candidate(0.10, 0.10, 0.10), 0.10, 0.10, 0.10, 0.10);
+        assertTrue(result.notes().stream().anyMatch(n -> n.contains("weak relative to risk")),
                 "low inputs should produce a weak note");
     }
 

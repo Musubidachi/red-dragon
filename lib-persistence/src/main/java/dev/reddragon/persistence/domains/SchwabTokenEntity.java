@@ -1,6 +1,7 @@
 package dev.reddragon.persistence.domains;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,10 +36,12 @@ public class SchwabTokenEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "access_token", nullable = false, length = 4000)
+    @Convert(converter = SchwabTokenEncryptingConverter.class)
+    @Column(name = "access_token", nullable = false, length = 8192)
     private String accessToken;
 
-    @Column(name = "refresh_token", nullable = false, length = 4000)
+    @Convert(converter = SchwabTokenEncryptingConverter.class)
+    @Column(name = "refresh_token", nullable = false, length = 8192)
     private String refreshToken;
 
     @Column(name = "issued_at", nullable = false)

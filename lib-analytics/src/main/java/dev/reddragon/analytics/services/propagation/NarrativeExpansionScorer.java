@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.propagation;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.PropagationSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class NarrativeExpansionScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            PropagationSnapshot propagation,
-            List<String> notes
-    ) {
+    public ScoreResult process(PropagationSnapshot propagation) {
         Objects.requireNonNull(propagation, "propagation is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
                 propagation.mentionVelocityScore() * 0.25
@@ -28,9 +26,10 @@ public class NarrativeExpansionScorer {
                         + propagation.narrativeCoherenceScore() * 0.20
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNote(double score, List<String> notes) {

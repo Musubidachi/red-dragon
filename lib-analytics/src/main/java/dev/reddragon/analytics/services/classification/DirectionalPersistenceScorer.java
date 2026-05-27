@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.classification;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.IntradayStructureSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class DirectionalPersistenceScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            IntradayStructureSnapshot intraday,
-            List<String> notes
-    ) {
+    public ScoreResult process(IntradayStructureSnapshot intraday) {
         Objects.requireNonNull(intraday, "intraday is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double persistence = intraday.directionalPersistenceScore();
         double rotational = intraday.rotationalQualityScore();
@@ -29,9 +27,10 @@ public class DirectionalPersistenceScorer {
                         + (1.0 - persistence) * 0.35
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNote(double score, List<String> notes) {
