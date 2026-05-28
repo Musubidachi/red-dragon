@@ -1,6 +1,6 @@
 # lib-validation Review
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 This review summarizes the current validation module after the local fix pass.
 Current design decisions and test gaps are listed before compressed historical
@@ -8,15 +8,19 @@ fixes.
 
 ## Current Open Work
 
-| Priority | Issue | Status | Impact | Next action |
-| --- | --- | --- | --- | --- |
-| High | Gate/scoring order | Open | The engine still computes factors and aggregate score before hard-gate results, while docs describe gates as preceding scoring. | Decide whether to short-circuit on gates or update docs to say score and gates are computed for audit and gates dominate the verdict. |
-| High | Concentration input thresholds reuse `passThreshold` | Open | Raising the aggregate pass threshold also tightens asymmetry and earlyness requirements for concentrated tier. | Add dedicated concentration input thresholds. |
-| High | Deployment confidence for STANDARD/PROBE | Open | `deploymentConfidenceScore` only constrains concentrated tier; weak confidence can still receive STANDARD when aggregate score passes. | Decide whether confidence gates every capital tier or is intentionally top-tier only. |
-| Medium | Engine subservice injection | Open | `DisequilibriumValidationEngine` still constructs subservices manually from thresholds. | Switch to constructor-injected subservices if profile wiring needs shared beans or easier tests. |
-| Medium | Threshold configuration binding | Open | Profile docs imply YAML-driven tuning, but local profiles still use hardcoded factory defaults. | Add `@ConfigurationProperties` binding or clarify that app-level beans own overrides. |
-| Low | `HARD_GATE_FAILED` marker fragility | Open | Marker logic depends on every entry in the shared list being a failure. | Track failures separately or have checks return booleans. |
-| Low | Threshold-profile tests | Open | Named profiles lack direct iteration tests for invariants and total weights. | Add a `ValidationThresholdProfileFactoryTest`. |
+No module-local open work remains for RD-M7, RD-M8, RD-M9, RD-M10, RD-L4, or
+RD-L5. Root tracking is intentionally left to the root issue index.
+
+## Resolved In This Pass
+
+| Issue | Status | Decision / fixed outcome |
+| --- | --- | --- |
+| RD-M7 Gate/scoring order | Fixed | Hard gates now run before factor scoring and dominate the final verdict. Factor scoring still runs after gates so rejected candidates keep audit context. |
+| RD-M8 Concentration input thresholds | Fixed | Concentration no longer reuses aggregate `passThreshold` for input gates; it has dedicated deployment-confidence, asymmetry, and earlyness thresholds. |
+| RD-M9 STANDARD/PROBE deployment confidence | Fixed | Deployment confidence gates every actionable tier. If aggregate score qualifies but confidence misses the tier floor, the resolver downgrades to the next non-blocked posture. |
+| RD-M10 Threshold configuration binding | Fixed | `ValidationThresholdProperties` in `lib-validation` binds `red-dragon.validation.*`; the app wrapper delegates to it only to expose the Spring bean. |
+| RD-L4 Hard-gate marker and subservice construction | Fixed | `HARD_GATE_FAILED` is based on explicit gate outcomes, and `DisequilibriumValidationEngine` supports direct subservice injection. |
+| RD-L5 Validation profile tests | Fixed | Profile, binding, and deployment boundary tests now cover threshold ordering, weights, and confidence-gate semantics. |
 
 ## Implemented Surface
 

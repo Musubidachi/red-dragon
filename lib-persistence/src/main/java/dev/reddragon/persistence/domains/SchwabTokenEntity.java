@@ -10,7 +10,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,8 +30,8 @@ import java.time.Instant;
 @Table(name = "schwab_token")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SchwabTokenEntity {
 
     @Id
@@ -66,8 +68,21 @@ public class SchwabTokenEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    /** Backwards-compatible pre-V13 6-arg constructor. */
+    /** Builder constructor for new rows; generated IDs and audit metadata are persistence-managed. */
+    @Builder
     public SchwabTokenEntity(
+            String accessToken,
+            String refreshToken,
+            Instant issuedAt,
+            Instant expiresAt,
+            String tokenType
+    ) {
+        this(null, accessToken, refreshToken, issuedAt, expiresAt, tokenType,
+                null, null, 0L);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    SchwabTokenEntity(
             Long id,
             String accessToken,
             String refreshToken,

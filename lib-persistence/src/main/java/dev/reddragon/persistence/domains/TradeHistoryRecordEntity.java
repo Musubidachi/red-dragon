@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "trade_history_record")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TradeHistoryRecordEntity {
 
     @Id
@@ -66,8 +67,28 @@ public class TradeHistoryRecordEntity {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public TradeHistoryRecordEntity(
+            Long importBatchId,
+            TradeHistoryImportBatchEntity importBatch,
+            Instant tradeTimestamp,
+            String ticker,
+            String side,
+            double quantity,
+            double price,
+            Double realizedPnl,
+            String account,
+            String strategyType,
+            String marketState
+    ) {
+        this(null, importBatchId, importBatch, tradeTimestamp, ticker, side,
+                quantity, price, realizedPnl, account, strategyType, marketState,
+                null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    TradeHistoryRecordEntity(
             Long id,
             Long importBatchId,
             TradeHistoryImportBatchEntity importBatch,

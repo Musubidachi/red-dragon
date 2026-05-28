@@ -75,6 +75,7 @@ class DeterministicAnalyticsServiceTest {
                 .companyName("Acme Inc")
                 .catalystType(CandidateCatalystType.GOVERNMENT_GRANT)
                 .sourceType(SourceType.SEC_EDGAR)
+                .observedAt(Instant.parse("2026-05-13T00:00:00Z"))
                 .structuralRealityScore(0.80)
                 .materialSignificanceScore(0.70)
                 .earlynessScore(0.75)

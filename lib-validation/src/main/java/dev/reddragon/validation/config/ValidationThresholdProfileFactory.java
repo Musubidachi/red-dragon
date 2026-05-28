@@ -24,7 +24,12 @@ public final class ValidationThresholdProfileFactory {
                 0.92,   // concentrationThreshold
                 0.84,   // standardDeploymentThreshold
                 0.64,   // probeDeploymentThreshold
-                0.64,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
+                0.64,   // observeDeploymentThreshold
+                0.85,   // concentrationDeploymentConfidenceThreshold
+                0.84,   // concentrationAsymmetryThreshold
+                0.84,   // concentrationEarlynessThreshold
+                0.70,   // standardDeploymentConfidenceThreshold
+                0.50,   // probeDeploymentConfidenceThreshold
                 0.72,
                 0.62,
                 0.55,
@@ -49,7 +54,12 @@ public final class ValidationThresholdProfileFactory {
                 0.84,   // concentrationThreshold
                 0.72,   // standardDeploymentThreshold
                 0.50,   // probeDeploymentThreshold
-                0.50,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
+                0.50,   // observeDeploymentThreshold
+                0.75,   // concentrationDeploymentConfidenceThreshold
+                0.72,   // concentrationAsymmetryThreshold
+                0.72,   // concentrationEarlynessThreshold
+                0.60,   // standardDeploymentConfidenceThreshold
+                0.40,   // probeDeploymentConfidenceThreshold
                 0.58,
                 0.48,
                 0.38,
@@ -74,7 +84,12 @@ public final class ValidationThresholdProfileFactory {
                 0.93,   // concentrationThreshold
                 0.88,   // standardDeploymentThreshold
                 0.66,   // probeDeploymentThreshold
-                0.66,   // observeDeploymentThreshold (= probe; OBSERVE unreachable by default)
+                0.66,   // observeDeploymentThreshold
+                0.88,   // concentrationDeploymentConfidenceThreshold
+                0.88,   // concentrationAsymmetryThreshold
+                0.88,   // concentrationEarlynessThreshold
+                0.75,   // standardDeploymentConfidenceThreshold
+                0.55,   // probeDeploymentConfidenceThreshold
                 0.75,
                 0.68,
                 0.60,

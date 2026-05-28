@@ -3,6 +3,7 @@ package dev.reddragon.app.controllers;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,7 +39,7 @@ public class PipelineReviewController {
      * in the request body to override the default STANDARD thresholds.
      */
     @PostMapping("/manual")
-    public PipelineRunResult reviewManual(@RequestBody PipelineReviewRequest request) {
+    public PipelineRunResult reviewManual(@Valid @RequestBody PipelineReviewRequest request) {
         TradeCandidate candidate = manualIngestionService.process(
                 request.getSymbol(),
                 request.getCompanyName(),

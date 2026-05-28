@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models;
 
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import dev.reddragon.domain.models.DeploymentTier;
 import dev.reddragon.domain.models.RiskFlag;
 import dev.reddragon.domain.models.Verdict;
@@ -40,8 +41,9 @@ public class ValidationSummary {
         this.symbol = Objects.requireNonNull(symbol, "symbol is required");
         this.verdict = Objects.requireNonNull(verdict, "verdict is required");
         this.deploymentTier = Objects.requireNonNull(deploymentTier, "deploymentTier is required");
-        this.score = score;
-        this.validationConfidenceScore = validationConfidenceScore;
+        this.score = DomainScorePolicy.requireInputScore("score", score);
+        this.validationConfidenceScore = DomainScorePolicy.requireInputScore(
+                "validationConfidenceScore", validationConfidenceScore);
         this.riskFlags = List.copyOf(riskFlags == null ? List.of() : riskFlags);
         this.headline = headline == null ? "" : headline;
         this.summaryText = summaryText == null ? "" : summaryText;

@@ -81,7 +81,7 @@ class ValidationScoreUtilsTest {
     }
 
     @Test
-    void weightedAverageReturnsZeroForZeroWeight() {
+    void weightedAverageReturnsNoSignalSentinelForZeroWeight() {
         assertEquals(0.0, ValidationScoreUtils.weightedAverage(10.0, 0.0), EPS);
     }
 

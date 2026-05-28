@@ -8,10 +8,7 @@ compressed so current risks are visible first.
 
 ## Current Open Work
 
-| Priority | Issue | Status | Impact | Next action |
-| --- | --- | --- | --- | --- |
-| Medium | Orchestrator/scorer integration tests | Open | Boundary tests can pass even if future orchestrator wiring drifts from scorer behavior. | Add equivalence tests for orchestrator output versus standalone scorers and classifier output. |
-| Medium | Calibration threshold configurability | Follow-up | Calibration drift thresholds are named constants, but cross-module/profile configuration remains a design question. | Decide whether these belong in `ValidationThresholds` or a new analytics/calibration config object. |
+No open module-local issues are currently tracked.
 
 ## Implemented Surface
 
@@ -31,6 +28,7 @@ Implemented today:
 | Area | Fixed outcome |
 | --- | --- |
 | Orchestrator/scorer drift | `DeterministicAnalyticsService` delegates to scorer classes instead of duplicating most scoring inline. |
+| Orchestrator/scorer test coverage | `DeterministicAnalyticsServiceEquivalenceTest` verifies snapshot scores and scorer notes against the production scorer pipeline, plus shared-label alignment with the standalone classifier. |
 | Regime coverage | Standalone classifier and orchestrator use the same regime labels, including hostile-news and supportive-compression cases. |
 | Deterministic timestamp | Analytics snapshots use market-data observation time instead of wall-clock time. |
 | Dependency wiring | Scorers are constructor-provided instead of being hidden `new` fields in the orchestrator. |
@@ -39,6 +37,7 @@ Implemented today:
 | Adversarial duplication | The orchestrator now calls the richer analyzer and keeps only clearly named lightweight pipeline-only checks. |
 | L7 design | Architecture docs explain why exit recommendations are advisory and do not use the L5 resolver split. |
 | Scorer note side effects | Note-emitting scorers return immutable score/regime result objects with scorer-owned notes, and the orchestrator composes those notes locally. |
+| Calibration threshold ownership | Calibration drift thresholds are analytics-owned in `CalibrationDriftThresholds`; app wiring binds them from `red-dragon.analytics.calibration.*`. Validation thresholds remain limited to candidate admission and deployment-tier decisions. |
 
 ## Deferred Design Notes
 

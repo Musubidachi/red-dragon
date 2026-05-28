@@ -1,7 +1,7 @@
 package dev.reddragon.domain.models.exit;
 
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import dev.reddragon.domain.models.PhaseLabel;
-import dev.reddragon.math.AnalyticsScoreUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -49,9 +49,9 @@ public class ExitSignalInput {
     ) {
         this.equilibriumPhase = Objects.requireNonNull(equilibriumPhase, "equilibriumPhase is required");
         this.propagationPhase = Objects.requireNonNull(propagationPhase, "propagationPhase is required");
-        this.currentAsymmetry = AnalyticsScoreUtils.clamp(currentAsymmetry);
-        this.entryAsymmetry = AnalyticsScoreUtils.clamp(entryAsymmetry);
-        this.rangePosition = AnalyticsScoreUtils.clamp(rangePosition);
+        this.currentAsymmetry = DomainScorePolicy.clampDerivedScore(currentAsymmetry);
+        this.entryAsymmetry = DomainScorePolicy.clampDerivedScore(entryAsymmetry);
+        this.rangePosition = DomainScorePolicy.clampDerivedScore(rangePosition);
         this.nearRecentHigh = nearRecentHigh;
     }
 }

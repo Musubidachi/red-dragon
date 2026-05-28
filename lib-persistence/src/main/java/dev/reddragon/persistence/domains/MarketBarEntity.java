@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +19,7 @@ import java.time.LocalDate;
 @Table(name = "market_bar")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MarketBarEntity {
 
     @Id
@@ -55,4 +56,18 @@ public class MarketBarEntity {
      */
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
+
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
+    public MarketBarEntity(
+            String symbol,
+            LocalDate barDate,
+            double openPrice,
+            double highPrice,
+            double lowPrice,
+            double closePrice,
+            long volume
+    ) {
+        this(null, symbol, barDate, openPrice, highPrice, lowPrice, closePrice, volume, null);
+    }
 }

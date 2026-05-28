@@ -21,6 +21,7 @@ import dev.reddragon.validation.services.engine.CandidateValidationInputFactory;
 import dev.reddragon.validation.services.engine.DisequilibriumValidationEngine;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -136,6 +137,7 @@ class BacktestReplayEngineTest {
                 .companyName("Acme Inc")
                 .catalystType(CandidateCatalystType.GOVERNMENT_GRANT)
                 .sourceType(SourceType.SEC_EDGAR)
+                .observedAt(Instant.parse("2026-04-01T14:30:00Z"))
                 .structuralRealityScore(0.80)
                 .materialSignificanceScore(0.70)
                 .earlynessScore(0.70)

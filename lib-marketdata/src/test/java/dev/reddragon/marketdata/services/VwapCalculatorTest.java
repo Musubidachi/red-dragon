@@ -4,6 +4,7 @@ import dev.reddragon.domain.models.IntradayBar;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,5 +49,52 @@ class VwapCalculatorTest {
         IntradayBar b = new IntradayBar("X", Instant.parse("2026-05-13T13:31:00Z"),
                 110, 112, 108, 110, 3_000L, 110.0);
         assertEquals(107.5, calculator.process(List.of(a, b)), 1e-9);
+    }
+
+    @Test
+    void cumulativeVwapIncludesEverySuppliedSession() {
+        IntradayBar firstSession = bar("2026-05-13T13:30:00Z", 200, 202, 198, 200, 1_000L);
+        IntradayBar secondSession = bar("2026-05-14T13:30:00Z", 100, 102, 98, 100, 1_000L);
+
+        assertEquals(150.0, calculator.processCumulative(List.of(firstSession, secondSession)), 1e-9);
+    }
+
+    @Test
+    void explicitSessionVwapUsesOnlyRequestedSession() {
+        IntradayBar previousSession = bar("2026-05-13T13:30:00Z", 200, 202, 198, 200, 1_000L);
+        IntradayBar currentSessionA = bar("2026-05-14T13:30:00Z", 100, 102, 98, 100, 1_000L);
+        IntradayBar currentSessionB = bar("2026-05-14T13:31:00Z", 110, 112, 108, 110, 3_000L);
+
+        double vwap = calculator.processSession(
+                List.of(previousSession, currentSessionA, currentSessionB),
+                LocalDate.parse("2026-05-14"),
+                VwapCalculator.DEFAULT_SESSION_ZONE
+        );
+
+        assertEquals(107.5, vwap, 1e-9);
+    }
+
+    @Test
+    void singleSessionVwapRejectsMultiSessionInput() {
+        IntradayBar firstSession = bar("2026-05-13T13:30:00Z", 100, 102, 98, 100, 1_000L);
+        IntradayBar secondSession = bar("2026-05-14T13:30:00Z", 100, 102, 98, 100, 1_000L);
+
+        assertThrows(IllegalArgumentException.class, () -> calculator.processSingleSession(
+                List.of(firstSession, secondSession),
+                VwapCalculator.DEFAULT_SESSION_ZONE
+        ));
+    }
+
+    private IntradayBar bar(String startTime, double open, double high, double low, double close, long volume) {
+        return new IntradayBar(
+                "X",
+                Instant.parse(startTime),
+                open,
+                high,
+                low,
+                close,
+                volume,
+                (high + low + close) / 3.0
+        );
     }
 }

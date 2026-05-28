@@ -12,12 +12,21 @@ Implemented sources:
 
 * Manual candidate ingestion through `ManualCandidateIngestionService`.
 * SEC EDGAR submissions ingestion through `services/sec/SecIngestionService`.
-* SEC ticker-to-CIK lookup through `services/sec/CikLookupService`, including
-  TTL refresh and fail-stale cache behavior.
+* SEC ticker-to-CIK and CIK-to-tickers lookup through
+  `services/sec/CikLookupService`, including TTL refresh, fail-stale cache
+  behavior, and multi-share-class ticker emission.
+* SEC primary-document body fetches through `services/sec/SecFilingBodyClient`
+  for explicit callers that already have a `SecFiling`.
+* Form 4 ownership XML parsing through `services/sec/Form4OwnershipXmlParser`
+  for issuer, reporting-owner, and non-derivative transaction fields.
+* Opt-in Form 4 body-derived candidate creation through
+  `services/sec/SecForm4BodySignalService`.
 
 The SEC implementation currently fetches recent company submissions by CIK or
 ticker, filters in-scope forms, flattens filing metadata, maps 8-K item codes,
-and builds scored `TradeCandidate` records.
+and builds scored metadata-level `TradeCandidate` records. Explicit callers can
+use the filing-body client, Form 4 parser, and body-signal service to emit a
+separate Form 4 body-derived candidate with stable source semantics.
 
 ## Responsibilities
 
@@ -38,7 +47,7 @@ candidates directly, place orders, or know anything about portfolio state.
 lib-ingestion/src/main/java/dev/reddragon/ingestion
     models/       TradeCandidate, SourceType, CandidateCatalystType, SEC models
     services/     manual ingestion service
-    services/sec/ SEC submissions client, rate limiter, filing extractor, candidate builder
+    services/sec/ SEC submissions client, rate limiter, filing extractor, body client, parsers, signal service, candidate builder
     config/       SecApiProperties
     utilities/    text helpers
 ```
@@ -48,8 +57,11 @@ lib-ingestion/src/main/java/dev/reddragon/ingestion
 * Generic source SPI.
 * News/RSS, scanner, and macro adapters.
 * SEC RSS firehose polling.
-* CIK-to-tickers reverse map for future firehose ingestion.
-* Full Form 4, 13D/G, offering body, and XBRL parsing.
+* Default app-pipeline storage and deduplication policy for optional Form 4
+  body-derived signals.
+* Form 4 derivative tables, holdings-only rows, footnotes, and final signal
+  semantics.
+* Full 13D/G, offering body, and XBRL parsing.
 
 ## Testing Expectations
 

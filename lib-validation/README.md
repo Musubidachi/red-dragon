@@ -46,8 +46,8 @@ positions, or replace trader judgment.
 ```text
 candidate + market-data snapshot + analytics snapshot
     -> CandidateValidationInput
-    -> ValidationFactorFactory
     -> HardGateEvaluator
+    -> ValidationFactorFactory
     -> weighted score
     -> VerdictResolver
     -> DeploymentResolver
@@ -83,6 +83,34 @@ module owns only the validation engine and its configuration.
 * `ValidationSummaryFormatter`
 * Threshold profiles: `STANDARD`, `CONSERVATIVE`, `AGGRESSIVE`,
   `CONCENTRATION_REVIEW`
+* Bindable STANDARD threshold overrides via `ValidationThresholdProperties`
+
+## Threshold Semantics
+
+`ValidationThresholdProperties` binds `red-dragon.validation.*` overrides and
+falls back to the STANDARD defaults when keys are omitted.
+
+Aggregate thresholds decide the verdict and score tier:
+
+* `watch-threshold`
+* `pass-threshold`
+* `observe-deployment-threshold`
+* `probe-deployment-threshold`
+* `standard-deployment-threshold`
+* `concentration-threshold`
+
+Input thresholds gate deployment posture after the aggregate score qualifies:
+
+* `concentration-deployment-confidence-threshold`
+* `concentration-asymmetry-threshold`
+* `concentration-earlyness-threshold`
+* `standard-deployment-confidence-threshold`
+* `probe-deployment-confidence-threshold`
+
+This keeps aggregate pass tuning from accidentally tightening concentration
+earlyness/asymmetry gates. STANDARD and PROBE are actionable only when
+`deploymentConfidenceScore` clears the matching confidence floor; otherwise a
+qualified score downgrades to OBSERVE or NONE.
 
 ## Still Missing Compared To The Design Doc
 

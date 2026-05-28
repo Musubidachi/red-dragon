@@ -15,6 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TradeCandidateTest {
 
+    private static final Instant OBSERVED_AT = Instant.parse("2026-05-13T00:00:00Z");
+
     @Test
     void builderProducesNormalizedCandidate() {
         TradeCandidate c = TradeCandidate.builder()
@@ -23,7 +25,7 @@ class TradeCandidateTest {
                 .companyName("NVIDIA Corp")
                 .catalystType(CandidateCatalystType.GOVERNMENT_GRANT)
                 .sourceType(SourceType.SEC_EDGAR)
-                .observedAt(Instant.parse("2026-05-13T00:00:00Z"))
+                .observedAt(OBSERVED_AT)
                 .headline("Headline")
                 .summary("Summary")
                 .structuralRealityScore(0.80)
@@ -53,6 +55,7 @@ class TradeCandidateTest {
                 .symbol("X")
                 .catalystType(CandidateCatalystType.MANUAL_THESIS)
                 .sourceType(null)
+                .observedAt(OBSERVED_AT)
                 .structuralRealityScore(0.5)
                 .materialSignificanceScore(0.5)
                 .earlynessScore(0.5)
@@ -73,6 +76,7 @@ class TradeCandidateTest {
                 .candidateId("   ")
                 .symbol("X")
                 .catalystType(CandidateCatalystType.MANUAL_THESIS)
+                .observedAt(OBSERVED_AT)
                 .structuralRealityScore(0.5)
                 .materialSignificanceScore(0.5)
                 .earlynessScore(0.5)
@@ -86,6 +90,20 @@ class TradeCandidateTest {
                 .candidateId("x")
                 .symbol("X")
                 .catalystType(null)
+                .observedAt(OBSERVED_AT)
+                .structuralRealityScore(0.5)
+                .materialSignificanceScore(0.5)
+                .earlynessScore(0.5)
+                .reflexivityPotentialScore(0.5)
+                .build());
+    }
+
+    @Test
+    void observedAtIsRequired() {
+        assertThrows(NullPointerException.class, () -> TradeCandidate.builder()
+                .candidateId("x")
+                .symbol("X")
+                .catalystType(CandidateCatalystType.MANUAL_THESIS)
                 .structuralRealityScore(0.5)
                 .materialSignificanceScore(0.5)
                 .earlynessScore(0.5)
@@ -98,6 +116,7 @@ class TradeCandidateTest {
                 .candidateId("x")
                 .symbol("X")
                 .catalystType(CandidateCatalystType.FILING_EVENT)
+                .observedAt(OBSERVED_AT)
                 .structuralRealityScore(structural)
                 .materialSignificanceScore(0.5)
                 .earlynessScore(0.5)

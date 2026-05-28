@@ -20,7 +20,6 @@ import java.util.Set;
  */
 public class DisequilibriumValidationEngine {
 
-    private final ValidationThresholds thresholds;
     private final ValidationFactorFactory validationFactorFactory;
     private final HardGateEvaluator hardGateEvaluator;
     private final VerdictResolver verdictResolver;
@@ -31,11 +30,25 @@ public class DisequilibriumValidationEngine {
     }
 
     public DisequilibriumValidationEngine(ValidationThresholds thresholds) {
-        this.thresholds = Objects.requireNonNull(thresholds, "thresholds is required");
+        Objects.requireNonNull(thresholds, "thresholds is required");
         this.validationFactorFactory = new ValidationFactorFactory(thresholds);
         this.hardGateEvaluator = new HardGateEvaluator(thresholds);
         this.verdictResolver = new VerdictResolver(thresholds);
         this.deploymentResolver = new DeploymentResolver(thresholds);
+    }
+
+    public DisequilibriumValidationEngine(
+            ValidationFactorFactory validationFactorFactory,
+            HardGateEvaluator hardGateEvaluator,
+            VerdictResolver verdictResolver,
+            DeploymentResolver deploymentResolver
+    ) {
+        this.validationFactorFactory = Objects.requireNonNull(
+                validationFactorFactory,
+                "validationFactorFactory is required");
+        this.hardGateEvaluator = Objects.requireNonNull(hardGateEvaluator, "hardGateEvaluator is required");
+        this.verdictResolver = Objects.requireNonNull(verdictResolver, "verdictResolver is required");
+        this.deploymentResolver = Objects.requireNonNull(deploymentResolver, "deploymentResolver is required");
     }
 
     /**
@@ -44,13 +57,13 @@ public class DisequilibriumValidationEngine {
     public ValidationResult process(CandidateValidationInput input) {
         Objects.requireNonNull(input, "input is required");
 
+        List<ReasonCode> hardGateFailures = hardGateEvaluator.process(input);
         List<ValidationFactor> factors = validationFactorFactory.process(input);
         double score = score(factors);
 
         List<ReasonCode> reasons = reasons(factors);
         List<String> explanations = explanations(factors);
 
-        List<ReasonCode> hardGateFailures = hardGateEvaluator.process(input);
         VerdictDecision verdictDecision = verdictResolver.process(score, hardGateFailures);
 
         reasons.addAll(verdictDecision.reasonCodes());

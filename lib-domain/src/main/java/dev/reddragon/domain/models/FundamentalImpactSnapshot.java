@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -23,10 +23,10 @@ public class FundamentalImpactSnapshot {
             double dilutionRiskScore,
             double insiderAlignmentScore
     ) {
-        this.revenueImpactScore = AnalyticsScoreUtils.clamp(revenueImpactScore);
-        this.marketCapRelativeImpactScore = AnalyticsScoreUtils.clamp(marketCapRelativeImpactScore);
-        this.structuralDemandShiftScore = AnalyticsScoreUtils.clamp(structuralDemandShiftScore);
-        this.dilutionRiskScore = AnalyticsScoreUtils.clamp(dilutionRiskScore);
-        this.insiderAlignmentScore = AnalyticsScoreUtils.clamp(insiderAlignmentScore);
+        this.revenueImpactScore = DomainScorePolicy.clampDerivedScore(revenueImpactScore);
+        this.marketCapRelativeImpactScore = DomainScorePolicy.clampDerivedScore(marketCapRelativeImpactScore);
+        this.structuralDemandShiftScore = DomainScorePolicy.clampDerivedScore(structuralDemandShiftScore);
+        this.dilutionRiskScore = DomainScorePolicy.clampDerivedScore(dilutionRiskScore);
+        this.insiderAlignmentScore = DomainScorePolicy.clampDerivedScore(insiderAlignmentScore);
     }
 }

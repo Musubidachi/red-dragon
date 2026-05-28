@@ -26,8 +26,9 @@
         lib-validation  - hard rules engine + orchestrates analytics into a single verdict
         lib-persistence - JPA entities, repositories, Flyway migrations
         lib-backtest    - deterministic replay harness for historical candidates and bars
+        lib-execution   - dry-run broker execution contracts and lifecycle modeling
       The libraries are plain jars with no Spring Boot main; only `app` boots.
-      No portfolio state is tracked here; that arrives only if/when an execution layer is added.
+      Live broker integration must stay opt-in; dry-run execution is the default.
     -->
 
     <parent>
@@ -60,6 +61,7 @@
         <module>lib-validation</module>
         <module>lib-persistence</module>
         <module>lib-backtest</module>
+        <module>lib-execution</module>
         <module>app</module>
     </modules>
 
@@ -106,6 +108,11 @@
                 <artifactId>lib-backtest</artifactId>
                 <version>${red-dragon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>dev.reddragon</groupId>
+                <artifactId>lib-execution</artifactId>
+                <version>${red-dragon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -128,6 +135,15 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
+                        </systemPropertyVariables>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

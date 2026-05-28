@@ -50,7 +50,7 @@ public class CandidateEntity {
     @Column(name = "headline", length = 512)
     private String headline;
 
-    @Column(name = "summary", length = 4000)
+    @Column(name = "summary", columnDefinition = "text")
     private String summary;
 
     /**

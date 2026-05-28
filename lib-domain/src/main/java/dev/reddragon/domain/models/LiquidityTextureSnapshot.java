@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -26,10 +26,10 @@ public class LiquidityTextureSnapshot {
             double slippageRiskScore,
             double relativeVolumeScore
     ) {
-        this.spreadQualityScore = AnalyticsScoreUtils.clamp(spreadQualityScore);
-        this.orderBookDepthScore = AnalyticsScoreUtils.clamp(orderBookDepthScore);
-        this.liquidityConsistencyScore = AnalyticsScoreUtils.clamp(liquidityConsistencyScore);
-        this.slippageRiskScore = AnalyticsScoreUtils.clamp(slippageRiskScore);
-        this.relativeVolumeScore = AnalyticsScoreUtils.clamp(relativeVolumeScore);
+        this.spreadQualityScore = DomainScorePolicy.clampDerivedScore(spreadQualityScore);
+        this.orderBookDepthScore = DomainScorePolicy.clampDerivedScore(orderBookDepthScore);
+        this.liquidityConsistencyScore = DomainScorePolicy.clampDerivedScore(liquidityConsistencyScore);
+        this.slippageRiskScore = DomainScorePolicy.clampDerivedScore(slippageRiskScore);
+        this.relativeVolumeScore = DomainScorePolicy.clampDerivedScore(relativeVolumeScore);
     }
 }

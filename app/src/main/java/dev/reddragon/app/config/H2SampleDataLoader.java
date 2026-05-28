@@ -241,12 +241,24 @@ public class H2SampleDataLoader implements ApplicationRunner {
             double directionalPersistence,
             String notes
     ) {
-        return new MarketSnapshotEntity(
-                null, candidateId, symbol, observedAt,
-                latestClose, previousClose, gapPercent, averageTrueRange,
-                rangePosition, averageVolume, liquidityScore, volatilityStabilityScore,
-                MarketDataQuality.COMPLETE.name(), notes,
-                relativeVolume, vwapDeviation, directionalPersistence);
+        return MarketSnapshotEntity.builder()
+                .candidateId(candidateId)
+                .symbol(symbol)
+                .observedAt(observedAt)
+                .latestClose(latestClose)
+                .previousClose(previousClose)
+                .gapPercent(gapPercent)
+                .averageTrueRange(averageTrueRange)
+                .rangePosition(rangePosition)
+                .averageVolume(averageVolume)
+                .liquidityScore(liquidityScore)
+                .volatilityStabilityScore(volatilityStabilityScore)
+                .quality(MarketDataQuality.COMPLETE.name())
+                .notes(notes)
+                .relativeVolume(relativeVolume)
+                .vwapDeviation(vwapDeviation)
+                .directionalPersistence(directionalPersistence)
+                .build();
     }
 
     private AnalyticsSnapshotEntity analytics(
@@ -261,10 +273,18 @@ public class H2SampleDataLoader implements ApplicationRunner {
             double deploymentConfidenceScore,
             String reasonNotes
     ) {
-        return new AnalyticsSnapshotEntity(
-                null, candidateId, symbol, observedAt, regimeLabel.name(),
-                regimeCompatibilityScore, asymmetryScore, equilibriumQualityScore,
-                reflexivityPotentialScore, deploymentConfidenceScore, reasonNotes);
+        return AnalyticsSnapshotEntity.builder()
+                .candidateId(candidateId)
+                .symbol(symbol)
+                .observedAt(observedAt)
+                .regimeLabel(regimeLabel.name())
+                .regimeCompatibilityScore(regimeCompatibilityScore)
+                .asymmetryScore(asymmetryScore)
+                .equilibriumQualityScore(equilibriumQualityScore)
+                .reflexivityPotentialScore(reflexivityPotentialScore)
+                .deploymentConfidenceScore(deploymentConfidenceScore)
+                .reasonNotes(reasonNotes)
+                .build();
     }
 
     private ValidationVerdictEntity verdict(
@@ -291,13 +311,12 @@ public class H2SampleDataLoader implements ApplicationRunner {
                 .build();
 
         for (int i = 0; i < reasonCodes.size(); i++) {
-            entity.getReasons().add(new ValidationVerdictReasonEntity(
-                    null,
-                    entity,
-                    reasonCodes.get(i).name(),
-                    i < explanations.size() ? explanations.get(i) : null,
-                    (short) i
-            ));
+            entity.getReasons().add(ValidationVerdictReasonEntity.builder()
+                    .verdict(entity)
+                    .reasonCode(reasonCodes.get(i).name())
+                    .explanation(i < explanations.size() ? explanations.get(i) : null)
+                    .sortOrder((short) i)
+                    .build());
         }
         return entity;
     }
@@ -321,11 +340,23 @@ public class H2SampleDataLoader implements ApplicationRunner {
             int daysHeld,
             boolean thesisWorked
     ) {
-        return new CalibrationOutcomeEntity(
-                null, candidateId, symbol, observedAt,
-                0.82, 0.74, 0.69, 0.71,
-                0.67, 0.73, 0.66, 0.76,
-                realizedReturn, maxDrawdown, daysHeld, thesisWorked);
+        return CalibrationOutcomeEntity.builder()
+                .candidateId(candidateId)
+                .symbol(symbol)
+                .observedAt(observedAt)
+                .structuralRealityScore(0.82)
+                .materialSignificanceScore(0.74)
+                .earlynessScore(0.69)
+                .equilibriumQualityScore(0.71)
+                .reflexivityPotentialScore(0.67)
+                .asymmetryScore(0.73)
+                .regimeCompatibilityScore(0.66)
+                .deploymentConfidenceScore(0.76)
+                .realizedReturn(realizedReturn)
+                .maxDrawdown(maxDrawdown)
+                .daysHeld(daysHeld)
+                .thesisWorked(thesisWorked)
+                .build();
     }
 
     private BacktestResultEntity backtest(
@@ -354,17 +385,15 @@ public class H2SampleDataLoader implements ApplicationRunner {
         for (int i = 19; i >= 0; i--) {
             double close = base + (19 - i) * 0.55;
             double open = close - 0.25;
-            bars.add(new MarketBarEntity(
-                    null,
-                    symbol,
-                    end.minusDays(i),
-                    open,
-                    close + 0.80,
-                    open - 0.70,
-                    close,
-                    1_000_000L + (19 - i) * 45_000L,
-                    null
-            ));
+            bars.add(MarketBarEntity.builder()
+                    .symbol(symbol)
+                    .barDate(end.minusDays(i))
+                    .openPrice(open)
+                    .highPrice(close + 0.80)
+                    .lowPrice(open - 0.70)
+                    .closePrice(close)
+                    .volume(1_000_000L + (19 - i) * 45_000L)
+                    .build());
         }
         return bars;
     }

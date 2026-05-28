@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import java.time.Instant;
 @Table(name = "analytics_snapshot")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AnalyticsSnapshotEntity {
 
     @Id
@@ -52,15 +53,35 @@ public class AnalyticsSnapshotEntity {
     @Column(name = "deployment_confidence_score", nullable = false)
     private double deploymentConfidenceScore;
 
-    @Column(name = "reason_notes", length = 4000)
+    @Column(name = "reason_notes", columnDefinition = "text")
     private String reasonNotes;
 
     /** DB-populated insertion timestamp (V13). */
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public AnalyticsSnapshotEntity(
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            String regimeLabel,
+            double regimeCompatibilityScore,
+            double asymmetryScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double deploymentConfidenceScore,
+            String reasonNotes
+    ) {
+        this(null, candidateId, symbol, observedAt, regimeLabel,
+                regimeCompatibilityScore, asymmetryScore, equilibriumQualityScore,
+                reflexivityPotentialScore, deploymentConfidenceScore, reasonNotes,
+                null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    AnalyticsSnapshotEntity(
             Long id,
             String candidateId,
             String symbol,

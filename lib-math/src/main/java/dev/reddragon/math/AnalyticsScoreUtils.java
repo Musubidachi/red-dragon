@@ -20,23 +20,20 @@ public class AnalyticsScoreUtils {
      * @throws IllegalArgumentException if {@code value} is {@code NaN}
      */
     public double clamp(double value) {
-        if (Double.isNaN(value)) {
-            throw new IllegalArgumentException("clamp: value must not be NaN");
-        }
-        if (value < 0.0) {
-            return 0.0;
-        }
-        if (value > 1.0) {
-            return 1.0;
-        }
-        return value;
+        return CoreMathUtils.clamp(value);
     }
 
     public double average(double left, double right) {
-        return (left + right) / 2.0;
+        return CoreMathUtils.average(left, right);
     }
 
+    /**
+     * Weighted average with {@code 0.0} as the zero-weight "no signal" sentinel.
+     *
+     * <p>Callers that need to distinguish "no weighted inputs" from a real zero
+     * score must inspect {@code totalWeight} before calling this helper.
+     */
     public double weightedAverage(double weightedTotal, double totalWeight) {
-        return totalWeight == 0.0 ? 0.0 : weightedTotal / totalWeight;
+        return CoreMathUtils.weightedAverage(weightedTotal, totalWeight);
     }
 }

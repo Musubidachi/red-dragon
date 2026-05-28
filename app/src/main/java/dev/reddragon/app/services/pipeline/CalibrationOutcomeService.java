@@ -331,9 +331,6 @@ public class CalibrationOutcomeService {
         return new CalibrationSummary(samples.size(), wins / (double) samples.size(), avgReturn, avgDrawdown);
     }
 
-    public record CalibrationSummary(int sampleSize, double winRate, double averageReturn, double averageDrawdown) {}
-
-
     public synchronized String exportRecentOutcomesCsvForSymbol(String symbol, int limit) {
         List<OutcomeSample> outcomes = recentOutcomesForSymbol(symbol, limit);
         StringBuilder csv = new StringBuilder();
@@ -384,17 +381,44 @@ public class CalibrationOutcomeService {
         double regime = outcome.analytics() == null ? 0.5 : outcome.analytics().regimeCompatibilityScore();
         double deploy = outcome.analytics() == null ? 0.5 : outcome.analytics().deploymentConfidenceScore();
         double proxyDrawdown = Math.max(0.0, 1.0 - eq);
-        return new CalibrationOutcomeEntity(null, outcome.candidate().candidateId(), outcome.candidate().symbol(), Instant.now(),
-                outcome.candidate().structuralRealityScore(), outcome.candidate().materialSignificanceScore(), outcome.candidate().earlynessScore(),
-                eq, refl, asym, regime, deploy, proxyReturn, proxyDrawdown, 1, thesisWorked);
+        return CalibrationOutcomeEntity.builder()
+                .candidateId(outcome.candidate().candidateId())
+                .symbol(outcome.candidate().symbol())
+                .observedAt(Instant.now())
+                .structuralRealityScore(outcome.candidate().structuralRealityScore())
+                .materialSignificanceScore(outcome.candidate().materialSignificanceScore())
+                .earlynessScore(outcome.candidate().earlynessScore())
+                .equilibriumQualityScore(eq)
+                .reflexivityPotentialScore(refl)
+                .asymmetryScore(asym)
+                .regimeCompatibilityScore(regime)
+                .deploymentConfidenceScore(deploy)
+                .realizedReturn(proxyReturn)
+                .maxDrawdown(proxyDrawdown)
+                .daysHeld(1)
+                .thesisWorked(thesisWorked)
+                .build();
     }
 
     private CalibrationOutcomeEntity toEntity(OutcomeSample s) {
         AnalyticsScoreBreakdown b = s.scoreBreakdown();
-        return new CalibrationOutcomeEntity(null, s.candidateId(), s.symbol(), s.observedAt(),
-                b.structuralRealityScore(), b.materialSignificanceScore(), b.earlynessScore(), b.equilibriumQualityScore(),
-                b.reflexivityPotentialScore(), b.asymmetryScore(), b.regimeCompatibilityScore(), b.deploymentConfidenceScore(),
-                s.realizedReturn(), s.maxDrawdown(), s.daysHeld(), s.thesisWorked());
+        return CalibrationOutcomeEntity.builder()
+                .candidateId(s.candidateId())
+                .symbol(s.symbol())
+                .observedAt(s.observedAt())
+                .structuralRealityScore(b.structuralRealityScore())
+                .materialSignificanceScore(b.materialSignificanceScore())
+                .earlynessScore(b.earlynessScore())
+                .equilibriumQualityScore(b.equilibriumQualityScore())
+                .reflexivityPotentialScore(b.reflexivityPotentialScore())
+                .asymmetryScore(b.asymmetryScore())
+                .regimeCompatibilityScore(b.regimeCompatibilityScore())
+                .deploymentConfidenceScore(b.deploymentConfidenceScore())
+                .realizedReturn(s.realizedReturn())
+                .maxDrawdown(s.maxDrawdown())
+                .daysHeld(s.daysHeld())
+                .thesisWorked(s.thesisWorked())
+                .build();
     }
 
     private OutcomeSample toSample(CalibrationOutcomeEntity e) {

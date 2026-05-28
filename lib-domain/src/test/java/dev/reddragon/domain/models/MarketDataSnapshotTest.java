@@ -52,10 +52,21 @@ class MarketDataSnapshotTest {
 
     @Test
     void liquidityTierBucketsByAverageVolume() {
-        assertEquals("HIGH",      snapshot("X", 1_500_000, 0.5, 0.5).liquidityTier());
-        assertEquals("MODERATE",  snapshot("X",   500_000, 0.5, 0.5).liquidityTier());
-        assertEquals("ADEQUATE",  snapshot("X",   100_000, 0.5, 0.5).liquidityTier());
-        assertEquals("THIN",      snapshot("X",    10_000, 0.5, 0.5).liquidityTier());
+        assertEquals(LiquidityTier.HIGH,      snapshot("X", 1_500_000, 0.5, 0.5).liquidityTier());
+        assertEquals(LiquidityTier.MODERATE,  snapshot("X",   500_000, 0.5, 0.5).liquidityTier());
+        assertEquals(LiquidityTier.ADEQUATE,  snapshot("X",   100_000, 0.5, 0.5).liquidityTier());
+        assertEquals(LiquidityTier.THIN,      snapshot("X",    10_000, 0.5, 0.5).liquidityTier());
+    }
+
+    @Test
+    void observedAtIsRequired() {
+        assertThrows(NullPointerException.class, () -> new MarketDataSnapshot(
+                "ABC",
+                null,
+                10.0, 9.8, 0.02, 0.20, 0.5,
+                1_000_000, 0.5, 0.5, 1.2, 0.0, 0.5,
+                MarketDataQuality.COMPLETE, List.of()
+        ));
     }
 
     private MarketDataSnapshot snapshot(String symbol, double avgVol, double liquidity, double vol) {

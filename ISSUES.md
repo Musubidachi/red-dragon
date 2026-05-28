@@ -2,89 +2,75 @@
 
 Last updated: 2026-05-27
 
-This index tracks current actionable documentation-known work. Fixed historical
-findings are intentionally omitted unless they leave a follow-up.
+This index tracks current actionable issues that still remain after the latest
+code and dashboard cleanup pass. Fixed historical findings are intentionally
+omitted unless they leave a follow-up.
+
+---
 
 ## High Priority
 
-No open high-priority issues are currently tracked.
+### ISS-002 - No authentication or authorization on any endpoint
+**Module:** `app` · **Scope:** all controllers
 
-## Remaining Issues By Fix Location
+There is still no Spring Security configuration. Every endpoint, including
+destructive routes such as `DELETE /api/calibration/outcomes`,
+`POST /api/verdicts/{id}/override`, and `POST /api/calibration`, is publicly
+reachable. Schwab OAuth routes are also unauthenticated.
 
-Use this section to pick work by the area that would receive the primary code
-or documentation change. Priority is retained for sequencing.
+**Why it remains:** This was explicitly deferred while addressing the non-security
+Sonnet issue set.
 
-### `lib-ingestion`
+**Fix:** Add a minimal Spring Security configuration, at minimum requiring a
+static API key via `Authorization: Bearer <token>` and wiring it so CORS
+pre-flight requests continue to work.
 
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M1 | Medium | Open | Build CIK-to-tickers support for future firehose ingestion | Future CIK-first paths need share-class-aware ticker emission. | [lib-ingestion/REVIEW.md](lib-ingestion/REVIEW.md) |
-| RD-M2 | Medium | Deferred | Implement deferred SEC body and feed parsing | Form 4, 13D/G, offerings, XBRL, RSS firehose, and LLM scheduler docs remain design-forward. | [lib-ingestion/REVIEW.md](lib-ingestion/REVIEW.md) |
-| RD-L1 | Low | Open | Inject shared Jackson `ObjectMapper` in SEC services | Local mapper construction makes global Jackson config harder to apply. | [lib-ingestion/REVIEW.md](lib-ingestion/REVIEW.md) |
+---
 
-### `lib-marketdata`
+## Medium Priority
 
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M3 | Medium | Open | Harden Schwab retry/backoff | Current retry behavior can retry non-retryable errors and lacks jittered exponential backoff. | [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
-| RD-M4 | Medium | Open | Define VWAP session boundary API | Passing multi-session intraday bars can silently produce cumulative VWAP. | [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
-| RD-M5 | Medium | Open | Finish marketdata provider and snapshot-builder coverage | Yahoo and several builders remain weakly covered; math changes need calibration validation. | [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
-| RD-L3 | Low | Open | Decide calculator service versus utility style | Stateless calculators still read as services; this is mostly consistency work. | [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
+### ISS-019 - Controller-layer integration coverage is still incomplete
+**Module:** `app` · **Directory:** `src/test/java/dev/reddragon/app/`
 
-### `lib-analytics`
+The recent pass added focused controller tests for candidate listing,
+calibration summaries, and manual-review validation, but the controller test
+surface is still incomplete. In particular, dedicated coverage is still thin or
+missing for the candidate review history/detail flows, trade-history import,
+ticker analysis, and duplicate-skip behavior around pipeline orchestration.
 
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M6 | Medium | Open | Add analytics orchestrator/scorer equivalence tests | Future scorer/orchestrator drift could pass boundary-only tests. | [lib-analytics/REVIEW.md](lib-analytics/REVIEW.md) |
+**What was completed already:**
+- `CandidateControllerTest`
+- `CalibrationControllerTest`
+- `ManualReviewControllerValidationTest`
+- existing app context and backtest wiring coverage
 
-### `lib-validation`
+**Fix:** Continue adding `@WebMvcTest` or `@SpringBootTest` coverage by
+production ownership area instead of one broad catch-all pass. Prioritize:
+candidate history/detail, trade-history import, ticker analysis, and any
+controller path that now depends on the new validation/error envelope.
 
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M7 | Medium | Open | Decide validation gate/scoring order | Current engine computes factor scores even when hard gates already reject; docs imply gates come first. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| RD-M8 | Medium | Open | Split concentration input thresholds from aggregate pass threshold | Tuning pass threshold also changes concentration asymmetry/earlyness requirements unintentionally. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| RD-M9 | Medium | Open | Define deployment confidence role for STANDARD and PROBE | A low deployment-confidence candidate can still receive STANDARD if the aggregate score passes. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| RD-M10 | Medium | Open | Add threshold configuration binding | Profile docs imply YAML-driven tuning, but hardcoded defaults remain the local factory source. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| RD-L4 | Low | Open | Refactor hard-gate marker and subservice construction | Current marker logic and manual subservice construction are brittle but not urgent. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| RD-L5 | Low | Open | Add validation profile tests | New profiles could violate ordering invariants without direct coverage. | [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
+---
 
-### `lib-domain`
+## Notes
 
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M11 | Medium | Open | Remove constructor-time `Instant.now()` defaults | Identical logical inputs can construct non-equal value objects, weakening backtest determinism. | [lib-domain/REVIEW.md](lib-domain/REVIEW.md) |
-| RD-M12 | Medium | Open | Replace stringly typed dimensions and tiers with enums | Runtime string comparisons can silently miss typos in closed sets. | [lib-domain/REVIEW.md](lib-domain/REVIEW.md) |
-| RD-L6 | Low | Open | Rename or document cross-module `IngestionTextUtils` | The name suggests module ownership even though the helper is shared. | [lib-domain/REVIEW.md](lib-domain/REVIEW.md) |
+The following Sonnet items were completed and are no longer tracked as open
+issue debt in this file:
 
-### `lib-math`
-
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M13 | Medium | Open | Consolidate duplicated numeric helpers | Future fixes to clamp/average/weighted-average behavior must be repeated across classes. | [lib-math/REVIEW.md](lib-math/REVIEW.md) |
-| RD-L7 | Low | Open | Decide `lib-math` package layout and zero-weight docs | The module does not follow the `utilities/` convention and `weightedAverage` zero behavior is ambiguous. | [lib-math/REVIEW.md](lib-math/REVIEW.md) |
-
-### `lib-persistence`
-
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M14 | Medium | Open | Expand persistence integration tests | Entity, repository, migration, and constraint behavior are under-tested. | [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
-| RD-M15 | Medium | Open | Address truncation-prone text storage | Long notes, explanations, or import warnings can be rejected or truncated depending on DB behavior. | [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
-| RD-L8 | Low | Open | Finish builder migration for generated-id entities | Positional constructors still expose generated IDs on less-used entities. | [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
-
-### `lib-backtest`
-
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M16 | Medium | Open | Add backtest determinism and metric tests | The module's main guarantee is not fully pinned by tests. | [lib-backtest/REVIEW.md](lib-backtest/REVIEW.md) |
-
-### `app`
-
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-L9 | Low | Open | Verify app-side backtest bean wiring | The module is fixed locally, but app wiring should be confirmed where it is consumed. | [lib-backtest/REVIEW.md](lib-backtest/REVIEW.md) |
-
-### New `lib-execution` Module
-
-| ID | Priority | Status | Title | Impact | Source |
-| --- | --- | --- | --- | --- | --- |
-| RD-M17 | Medium | Deferred | Promote broker execution from design to module when ready | No broker account, position, order, cancellation, or fill lifecycle exists in the Maven reactor. | [lib-execution/SCHWAB_EXECUTION.md](lib-execution/SCHWAB_EXECUTION.md) |
+- `ISS-001` CORS property wiring
+- `ISS-003` backtest transactional boundary
+- `ISS-004` bounded regime-history query
+- `ISS-005` `/api/market-structure` path fix
+- `ISS-006` deprecated verdict blob fields hidden from JSON
+- `ISS-007` honest candidate history limit handling
+- `ISS-008` injected market-structure dependencies
+- `ISS-009` dedicated scalar calibration response types
+- `ISS-010` bean validation on key request models
+- `ISS-011` `CandidateController` response DTOs
+- `ISS-012` structured validation-error handling
+- `ISS-013` duplicate-skip metric and logging
+- `ISS-014` removal of misleading trade-history heuristics
+- `ISS-015` duplicate V1 `.bak` migration cleanup
+- `ISS-016` SEC scheduler empty-CIK startup warning
+- `ISS-017` calibration controller field-order cleanup
+- `ISS-018` lazy-loaded verdict reasons with targeted fetches
+- `ISS-020` `SERVER_ADDRESS` requirement documented in the root README

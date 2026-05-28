@@ -34,24 +34,19 @@ public class RegimeHistoryController {
 
     @GetMapping
     public List<AnalyticsSnapshotEntity> history(
-            @RequestParam(required = false)                              String regime,
-            @RequestParam(defaultValue = "" + DEFAULT_LOOKBACK_HOURS)   int lookbackHours
+            @RequestParam(required = false) String regime,
+            @RequestParam(defaultValue = "" + DEFAULT_LOOKBACK_HOURS) int lookbackHours
     ) {
         Instant since = Instant.now().minus(lookbackHours, ChronoUnit.HOURS);
 
         if (regime != null && !regime.isBlank()) {
-            // Validate the regime label
-            RegimeLabel.valueOf(regime.trim().toUpperCase()); // throws if invalid
+            RegimeLabel.valueOf(regime.trim().toUpperCase());
             return analyticsSnapshotRepository
                     .findByRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
-                            regime.trim().toUpperCase(), since);
+                            regime.trim().toUpperCase(),
+                            since);
         }
 
-        // No filter — return all snapshots in window, newest-first, capped at 50
-        return analyticsSnapshotRepository.findAll().stream()
-                .filter(s -> s.getObservedAt().isAfter(since))
-                .sorted((a, b) -> b.getObservedAt().compareTo(a.getObservedAt()))
-                .limit(50)
-                .toList();
+        return analyticsSnapshotRepository.findTop50ByObservedAtAfterOrderByObservedAtDesc(since);
     }
 }

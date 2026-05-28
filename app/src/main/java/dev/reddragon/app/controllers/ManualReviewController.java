@@ -2,6 +2,7 @@ package dev.reddragon.app.controllers;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,7 @@ public class ManualReviewController {
     private final DisequilibriumValidationEngine validationEngine;
 
     @PostMapping("/manual")
-    public ManualReviewResponse reviewManualCandidate(@RequestBody ManualReviewRequest request) {
+    public ManualReviewResponse reviewManualCandidate(@Valid @RequestBody ManualReviewRequest request) {
         TradeCandidate candidate = ingestionService.process(
                 request.getSymbol(),
                 request.getCompanyName(),

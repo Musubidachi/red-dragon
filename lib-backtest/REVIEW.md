@@ -1,6 +1,6 @@
 # lib-backtest Review
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 This review summarizes the backtest module after the local cleanup pass. The
 highest-priority production/backtest drift risk at the validation-input
@@ -8,10 +8,7 @@ boundary is now guarded by the shared validation-input factory.
 
 ## Current Open Work
 
-| Priority | Issue | Status | Impact | Next action |
-| --- | --- | --- | --- | --- |
-| Medium | Determinism and metric tests | Open | README promises deterministic replay and metric correctness, but tests do not fully pin those guarantees. | Add direct-engine equivalence, verdict-distribution, average-score, and repeated-run equality tests. |
-| Low | App wiring verification | Open | Local module construction is fixed, but the app consumption path should be checked. | Verify `BacktestReplayEngine` bean creation and controller wiring in `app`. |
+No open module-local issues are currently tracked.
 
 ## Implemented Surface
 
@@ -23,6 +20,8 @@ Implemented today:
 * `BacktestReport` for named strategy results and summary text.
 * Stateless `BacktestReplayEngine` that runs marketdata -> analytics ->
   validation without persistence or live-data fetching.
+* Historical-style calibration fixtures that drive deterministic OHLCV bars
+  through marketdata, analytics, validation, backtest, and calibration seams.
 
 ## Historical Fixes
 
@@ -35,6 +34,9 @@ Implemented today:
 | Package docs | `package-info.java` files were added. |
 | Dead branches | Summary/pass-rate logic assumes non-null metrics after constructor validation. |
 | Shared validation input | `BacktestReplayEngine` and the production orchestrator both use `CandidateValidationInputFactory`; backtest tests assert replay validation consumes the injected factory output. |
+| Determinism and metrics | Backtest tests now assert repeated-run equality, manual direct-service equivalence, verdict distribution, and average score aggregation. |
+| Historical calibration fixture | `HistoricalMarketDataCalibrationFixtureTest` pins Wilder ATR, session VWAP, realized volatility, validation output, backtest replay, and calibration drift behavior against deterministic offline bars. |
+| App wiring verification | `BacktestControllerWiringTest` verifies the app `BacktestReplayEngine` uses the configured pipeline beans and that the controller persists a smoke replay through candidate, backtest-result, and calibration repositories. |
 
 ## Non-Responsibilities
 

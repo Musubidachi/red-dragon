@@ -172,14 +172,13 @@ public class SchwabOAuthService implements SchwabAccessTokenSupplier {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(response.expiresInSeconds(), ChronoUnit.SECONDS);
         String tokenType = response.tokenType() == null ? "Bearer" : response.tokenType();
-        SchwabTokenEntity entity = new SchwabTokenEntity(
-                null,
-                response.accessToken(),
-                response.refreshToken(),
-                issuedAt,
-                expiresAt,
-                tokenType
-        );
+        SchwabTokenEntity entity = SchwabTokenEntity.builder()
+                .accessToken(response.accessToken())
+                .refreshToken(response.refreshToken())
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .tokenType(tokenType)
+                .build();
         return tokenRepository.save(entity);
     }
 

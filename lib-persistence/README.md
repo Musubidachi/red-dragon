@@ -76,6 +76,7 @@ lib-persistence/src/main/resources/db/migration   (runtime source of truth)
     V13__version_and_audit_columns.sql             optimistic locking and audit columns
     V14__idempotency_keys.sql                      deterministic validation idempotency and backtest uniqueness
     V15__protect_schwab_tokens.sql                 widens Schwab token columns for encrypted values
+    V16__freeform_text_columns.sql                 moves narrative/import text fields to TEXT
 
 lib-persistence/src/main/resources/db/drafts      pre-migration design notes; NOT applied at runtime
 ```
@@ -98,3 +99,8 @@ exist yet.
 Tests should cover entity mapping, repository behavior, migration validity,
 required fields and constraints, relationship integrity, and storage of reason
 codes and source metadata.
+
+`PersistenceRepositoryIntegrationTest` boots lib-persistence with H2 in
+PostgreSQL mode, applies Flyway migrations, validates the schema with
+Hibernate, and checks repository behavior for long text, relationship cascade,
+uniqueness constraints, and Schwab token encryption.

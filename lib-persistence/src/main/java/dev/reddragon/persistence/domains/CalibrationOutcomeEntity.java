@@ -9,8 +9,8 @@ import java.time.Instant;
 @Table(name = "calibration_outcome")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CalibrationOutcomeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,8 +41,35 @@ public class CalibrationOutcomeEntity {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public CalibrationOutcomeEntity(
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double asymmetryScore,
+            double regimeCompatibilityScore,
+            double deploymentConfidenceScore,
+            double realizedReturn,
+            double maxDrawdown,
+            int daysHeld,
+            boolean thesisWorked
+    ) {
+        this(null, candidateId, symbol, observedAt,
+                structuralRealityScore, materialSignificanceScore, earlynessScore,
+                equilibriumQualityScore, reflexivityPotentialScore, asymmetryScore,
+                regimeCompatibilityScore, deploymentConfidenceScore,
+                realizedReturn, maxDrawdown, daysHeld, thesisWorked,
+                null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    CalibrationOutcomeEntity(
             Long id,
             String candidateId,
             String symbol,

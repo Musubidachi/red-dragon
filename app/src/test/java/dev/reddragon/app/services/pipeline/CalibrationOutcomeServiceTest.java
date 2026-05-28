@@ -39,12 +39,51 @@ class CalibrationOutcomeServiceTest {
                 realizedReturn, 0.1, 5, worked);
     }
 
+    private CalibrationOutcomeEntity outcomeEntity(
+            Long id,
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            double structuralRealityScore,
+            double materialSignificanceScore,
+            double earlynessScore,
+            double equilibriumQualityScore,
+            double reflexivityPotentialScore,
+            double asymmetryScore,
+            double regimeCompatibilityScore,
+            double deploymentConfidenceScore,
+            double realizedReturn,
+            double maxDrawdown,
+            int daysHeld,
+            boolean thesisWorked
+    ) {
+        CalibrationOutcomeEntity entity = CalibrationOutcomeEntity.builder()
+                .candidateId(candidateId)
+                .symbol(symbol)
+                .observedAt(observedAt)
+                .structuralRealityScore(structuralRealityScore)
+                .materialSignificanceScore(materialSignificanceScore)
+                .earlynessScore(earlynessScore)
+                .equilibriumQualityScore(equilibriumQualityScore)
+                .reflexivityPotentialScore(reflexivityPotentialScore)
+                .asymmetryScore(asymmetryScore)
+                .regimeCompatibilityScore(regimeCompatibilityScore)
+                .deploymentConfidenceScore(deploymentConfidenceScore)
+                .realizedReturn(realizedReturn)
+                .maxDrawdown(maxDrawdown)
+                .daysHeld(daysHeld)
+                .thesisWorked(thesisWorked)
+                .build();
+        entity.setId(id);
+        return entity;
+    }
+
     @Test
     void recentOutcomesRespectsLimit() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.3,5,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true),
+                outcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.3,5,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -58,8 +97,8 @@ class CalibrationOutcomeServiceTest {
     void recentOutcomesForSymbolRespectsLimit() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.3,5,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.3,5,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -73,7 +112,7 @@ class CalibrationOutcomeServiceTest {
     void exportRecentOutcomesCsvIncludesHeader() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -88,12 +127,12 @@ class CalibrationOutcomeServiceTest {
     void summaryUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.10,0.2,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.05,0.1,5,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.10,0.2,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.05,0.1,5,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
-        CalibrationOutcomeService.CalibrationSummary summary = service.summary(100);
+        CalibrationSummary summary = service.summary(100);
 
         assertEquals(2, summary.sampleSize());
         assertEquals(0.5, summary.winRate());
@@ -116,12 +155,12 @@ class CalibrationOutcomeServiceTest {
     void summaryForSymbolUsesFilteredOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.10,0.2,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.30,0.1,5,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.10,0.2,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.30,0.1,5,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
-        CalibrationOutcomeService.CalibrationSummary summary = service.summaryForSymbol("aaa", 100);
+        CalibrationSummary summary = service.summaryForSymbol("aaa", 100);
 
         assertEquals(2, summary.sampleSize());
         assertEquals(1.0, summary.winRate());
@@ -157,7 +196,7 @@ class CalibrationOutcomeServiceTest {
     void latestObservedAtReturnsIsoString() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTopByOrderByObservedAtDesc()).thenReturn(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
         );
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -171,7 +210,7 @@ class CalibrationOutcomeServiceTest {
     void recentOutcomesPageUsesRepositoryPagination() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
         )));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -208,7 +247,7 @@ class CalibrationOutcomeServiceTest {
     void exportRecentOutcomesCsvForSymbolIncludesRows() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.parse("2026-05-13T00:00:00Z"),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.2,4,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -222,8 +261,8 @@ class CalibrationOutcomeServiceTest {
     void topOutcomesByReturnUsesRepository() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByRealizedReturnDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.1,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.1,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.1,4,true),
+                outcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.1,4,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -238,8 +277,8 @@ class CalibrationOutcomeServiceTest {
     void worstOutcomesByReturnUsesRepository() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByRealizedReturnAsc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c9", "ZZZ", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.4,0.2,4,false),
-                new CalibrationOutcomeEntity(2L, "c8", "YYY", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.2,0.2,4,false)
+                outcomeEntity(1L, "c9", "ZZZ", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.4,0.2,4,false),
+                outcomeEntity(2L, "c8", "YYY", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.2,0.2,4,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -254,9 +293,9 @@ class CalibrationOutcomeServiceTest {
     void medianReturnComputesMiddleValue() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.1,4,true),
-                new CalibrationOutcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.1,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.1,4,true),
+                outcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.1,4,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -270,8 +309,8 @@ class CalibrationOutcomeServiceTest {
     void highDrawdownOutcomesFiltersByThreshold() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByMaxDrawdownDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.30,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.05,4,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.30,4,true),
+                outcomeEntity(2L, "c2", "BBB", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.05,4,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -286,8 +325,8 @@ class CalibrationOutcomeServiceTest {
     void averageDaysHeldUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.1,6,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.1,6,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -301,8 +340,8 @@ class CalibrationOutcomeServiceTest {
     void maxReturnUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.6,0.1,6,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.6,0.1,6,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -316,8 +355,8 @@ class CalibrationOutcomeServiceTest {
     void minReturnUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.1,6,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.1,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.1,6,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -331,8 +370,8 @@ class CalibrationOutcomeServiceTest {
     void maxDrawdownValueUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -346,8 +385,8 @@ class CalibrationOutcomeServiceTest {
     void minDrawdownValueUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -361,8 +400,8 @@ class CalibrationOutcomeServiceTest {
     void winRateUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.12,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.6,0.44,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -376,8 +415,8 @@ class CalibrationOutcomeServiceTest {
     void averageReturnForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.12,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.44,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.12,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.44,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -391,8 +430,8 @@ class CalibrationOutcomeServiceTest {
     void winRateForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.12,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.44,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.12,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.44,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -406,8 +445,8 @@ class CalibrationOutcomeServiceTest {
     void averageDrawdownForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -421,8 +460,8 @@ class CalibrationOutcomeServiceTest {
     void maxDrawdownForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -435,8 +474,8 @@ class CalibrationOutcomeServiceTest {
     void minDrawdownForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -449,8 +488,8 @@ class CalibrationOutcomeServiceTest {
     void minReturnForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -463,8 +502,8 @@ class CalibrationOutcomeServiceTest {
     void maxReturnForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -477,9 +516,9 @@ class CalibrationOutcomeServiceTest {
     void medianReturnForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false),
-                new CalibrationOutcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.20,5,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false),
+                outcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.20,5,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -492,8 +531,8 @@ class CalibrationOutcomeServiceTest {
     void averageDaysHeldForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -529,9 +568,9 @@ class CalibrationOutcomeServiceTest {
     void medianDrawdownForSymbolUsesFilteredSet() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100BySymbolOrderByObservedAtDesc("AAA")).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false),
-                new CalibrationOutcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.20,5,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,-0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.4,0.30,6,false),
+                outcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.20,5,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 
@@ -544,9 +583,9 @@ class CalibrationOutcomeServiceTest {
     void medianDrawdownUsesRecentOutcomes() {
         CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
         when(repository.findTop100ByOrderByObservedAtDesc()).thenReturn(List.of(
-                new CalibrationOutcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.10,4,true),
-                new CalibrationOutcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.30,6,false),
-                new CalibrationOutcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.20,5,true)
+                outcomeEntity(1L, "c1", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.1,0.10,4,true),
+                outcomeEntity(2L, "c2", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.2,0.30,6,false),
+                outcomeEntity(3L, "c3", "AAA", Instant.now(),0.8,0.7,0.6,0.7,0.6,0.7,0.6,0.8,0.3,0.20,5,true)
         ));
         CalibrationOutcomeService service = new CalibrationOutcomeService(new LongHorizonCalibrationAnalyzer(), repository);
 

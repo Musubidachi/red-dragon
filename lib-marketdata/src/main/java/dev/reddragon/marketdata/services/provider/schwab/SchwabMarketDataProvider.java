@@ -10,10 +10,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,6 +30,8 @@ import dev.reddragon.domain.models.MarketQuote;
 import dev.reddragon.marketdata.services.provider.MarketDataProvider;
 
 public class SchwabMarketDataProvider implements MarketDataProvider {
+
+    private static final long MAX_RETRY_BACKOFF_MILLIS = Duration.ofSeconds(30).toMillis();
 
     private final SchwabMarketDataProperties properties;
     private final RestClient restClient;
@@ -86,7 +93,10 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
         if (!properties.configured()) {
             return List.of();
         }
-        List<SchwabCandle> candles = fetchPriceHistory(buildIntradayUri(symbol, from, to, interval));
+        List<SchwabCandle> candles = executeWithRetry(
+                "retrieve Schwab intraday market data for " + symbol,
+                () -> fetchPriceHistory(buildIntradayUri(symbol, from, to, interval))
+        );
         return candles.stream()
                 .map(candle -> new IntradayBar(
                         symbol,
@@ -108,8 +118,12 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
         if (!properties.configured()) {
             return MarketQuote.unavailable(symbol, "Schwab market data is not configured.");
         }
+        String normalized = symbol.trim().toUpperCase();
+        return executeWithRetry("retrieve Schwab quote for " + normalized, () -> fetchQuote(normalized));
+    }
+
+    private MarketQuote fetchQuote(String normalized) {
         try {
-            String normalized = symbol.trim().toUpperCase();
             String json = restClient.get()
                     .uri(properties.getBaseUrl() + "/quotes?symbols=" + normalized)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenSupplier.currentAccessToken())
@@ -141,7 +155,7 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
                     List.of("Provider: Schwab")
             );
         } catch (Exception error) {
-            throw new IllegalStateException("Failed to retrieve Schwab quote for " + symbol, error);
+            throw new IllegalStateException("Failed to retrieve Schwab quote for " + normalized, error);
         }
     }
 
@@ -174,29 +188,40 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
     }
 
     private List<MarketBar> fetchBarsWithRetry(String symbol, LocalDate from, LocalDate to) {
+        return executeWithRetry(
+                "retrieve Schwab market data for " + symbol,
+                () -> fetchBars(symbol, from, to)
+        );
+    }
+
+    private <T> T executeWithRetry(String operation, Supplier<T> supplier) {
         RuntimeException last = null;
         int attempts = Math.max(1, properties.getMaxRetries() + 1);
         for (int attempt = 1; attempt <= attempts; attempt++) {
             try {
-                return fetchBars(symbol, from, to);
+                return supplier.get();
             } catch (RuntimeException error) {
                 last = error;
-                if (attempt == attempts) {
+                if (!retryable(error)) {
+                    throw new IllegalStateException("Failed to " + operation, error);
+                }
+                if (attempt == attempts || !sleepBackoff(attempt)) {
                     break;
                 }
-                sleepBackoff(attempt);
             }
         }
-        throw new IllegalStateException("Failed to retrieve Schwab market data for " + symbol + " after retries", last);
+        throw new IllegalStateException("Failed to " + operation + " after retries", last);
     }
 
-    private void sleepBackoff(int attempt) {
-        long sleepMs = Math.max(0L, properties.getRetryBackoffMillis()) * attempt;
-        if (sleepMs == 0L) return;
+    private boolean sleepBackoff(int retryNumber) {
+        long sleepMs = jitteredBackoffMillis(retryNumber);
+        if (sleepMs == 0L) return true;
         try {
             Thread.sleep(sleepMs);
+            return true;
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
+            return false;
         }
     }
 
@@ -210,6 +235,46 @@ public class SchwabMarketDataProvider implements MarketDataProvider {
         } catch (Exception error) {
             throw new IllegalStateException("Failed to retrieve Schwab market data for " + symbol, error);
         }
+    }
+
+    private boolean retryable(RuntimeException error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof ResourceAccessException) {
+                return true;
+            }
+            if (current instanceof RestClientResponseException responseException) {
+                return retryableStatus(responseException.getStatusCode());
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean retryableStatus(HttpStatusCode statusCode) {
+        int value = statusCode.value();
+        return value == 429 || value >= 500;
+    }
+
+    private long jitteredBackoffMillis(int retryNumber) {
+        long maxDelay = exponentialBackoffCeilingMillis(retryNumber);
+        if (maxDelay <= 0L) {
+            return 0L;
+        }
+        return ThreadLocalRandom.current().nextLong(maxDelay + 1L);
+    }
+
+    private long exponentialBackoffCeilingMillis(int retryNumber) {
+        long baseDelay = Math.max(0L, properties.getRetryBackoffMillis());
+        if (baseDelay == 0L) {
+            return 0L;
+        }
+        int shift = Math.min(Math.max(0, retryNumber - 1), 30);
+        long multiplier = 1L << shift;
+        if (baseDelay > Long.MAX_VALUE / multiplier) {
+            return MAX_RETRY_BACKOFF_MILLIS;
+        }
+        return Math.min(baseDelay * multiplier, MAX_RETRY_BACKOFF_MILLIS);
     }
 
     private List<SchwabCandle> fetchPriceHistory(URI uri) {

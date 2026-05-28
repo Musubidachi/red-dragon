@@ -3,6 +3,7 @@ package dev.reddragon.app.config;
 import dev.reddragon.validation.config.ValidationThresholds;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,10 @@ import org.springframework.stereotype.Component;
 public class StartupValidator implements ApplicationRunner {
 
     private final ValidationThresholds thresholds;
+    @Value("${red-dragon.scheduler.sec.enabled:false}")
+    private boolean secSchedulerEnabled;
+    @Value("${red-dragon.scheduler.sec.ciks:}")
+    private String secSchedulerCiks;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -41,6 +46,10 @@ public class StartupValidator implements ApplicationRunner {
             log.info("StartupValidator: scoring weights sum to {}", weightSum);
         }
 
+        if (secSchedulerEnabled && configuredCikCount() == 0) {
+            log.warn("StartupValidator: red-dragon.scheduler.sec.enabled=true but red-dragon.scheduler.sec.ciks is empty; SEC watch-list runs will no-op");
+        }
+
         log.info("StartupValidator: configuration check complete");
     }
 
@@ -48,5 +57,12 @@ public class StartupValidator implements ApplicationRunner {
         if (value < min || value > max) {
             log.warn("StartupValidator: {} = {} is outside expected range [{}, {}]", name, value, min, max);
         }
+    }
+
+    private long configuredCikCount() {
+        return java.util.Arrays.stream(secSchedulerCiks.split(","))
+                .map(String::trim)
+                .filter(cik -> !cik.isBlank())
+                .count();
     }
 }

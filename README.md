@@ -10,15 +10,21 @@ against market regime and asymmetry signals, then filtered by a validation
 layer. What survives is presented to the trader with the reasoning chain
 attached.
 
-The system is candidate-in / verdict-out. It does not place orders or track a
-live portfolio. It stores candidate history, validation results, trader notes,
-calibration outcomes, imported trade-history samples, market observations, and
-Schwab OAuth state so decisions can be reviewed and calibrated later. It
-augments discretionary decisions; it does not replace them.
+The application workflow is candidate-in / verdict-out. It does not place live
+broker orders or track a live portfolio. It stores candidate history,
+validation results, trader notes, calibration outcomes, imported trade-history
+samples, market observations, and Schwab OAuth state so decisions can be
+reviewed and calibrated later. It augments discretionary decisions; it does not
+replace them.
 
 Only `app` produces a bootable Spring Boot artifact. All Maven reactor modules
-under `lib-*` are plain jars consumed by `app`. `lib-execution` is design-only
-and is not listed in the parent Maven reactor.
+under `lib-*` are plain jars consumed by `app` or by future wiring.
+`lib-execution` is a plain jar for provider-neutral dry-run broker execution;
+it does not place live broker orders.
+
+By default the app binds to `127.0.0.1` via `SERVER_ADDRESS`. Set
+`SERVER_ADDRESS=0.0.0.0` when you need Docker host networking, remote-machine
+access, or an external load balancer to reach the service.
 
 ## Pipeline
 
@@ -43,18 +49,19 @@ and is not listed in the parent Maven reactor.
 | Module | Current role | Implemented today | Still needed | Details |
 | --- | --- | --- | --- | --- |
 | `app` | Wires the platform and exposes HTTP endpoints. | Spring Boot main, controllers, pipeline orchestration, scheduler/status surfaces, calibration/history/backtest/review endpoints, Schwab OAuth controllers. It is the only bootable artifact. | Keep controller docs verified against source before expanding this README; continue to keep business logic in libraries. | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| `lib-math` | Shared numeric helper jar. | Clamping, normalized-score validation, non-negative guards, weighted averages, `safePercentChange`, `floorAtZero`, and tests for NaN/infinity handling. | Consolidate duplicate clamp/average/weighted-average helpers; decide whether to move helpers under a `utilities` package; document `weightedAverage` zero-weight behavior. | [lib-math/REVIEW.md](lib-math/REVIEW.md) |
-| `lib-domain` | Shared cross-module value objects and enums. | Candidates, market bars, market snapshots, analytics snapshots, validation inputs/results, verdicts, risk flags, calibration reports, exit DTOs, and builder support for `CandidateValidationInput`. | Remove constructor-time `Instant.now()` defaults, replace string dimension/tier names with enums, finish score-validation strategy cleanup, and broaden value-object tests. | [lib-domain/REVIEW.md](lib-domain/REVIEW.md) |
-| `lib-ingestion` | L1 opportunity discovery and candidate-side L2 ingestion. | Manual candidate ingestion; SEC submissions client by CIK or ticker; ticker-to-CIK lookup with TTL/fail-stale refresh; SEC HTTP timeouts/retry/rate limiting; 8-K item taxonomy; form variant handling; CIK format utilities; ticker filtering; deterministic manual IDs. | Build CIK-to-tickers support for future firehose paths and implement deferred Form 4 / 13D-G / offering / XBRL body parsing. | [lib-ingestion/README.md](lib-ingestion/README.md), [lib-ingestion/REVIEW.md](lib-ingestion/REVIEW.md) |
-| `lib-marketdata` | Market-data provider adapters and deterministic feature derivation. | Schwab, Yahoo, Noop, and composite providers; daily/intraday bars and quotes; ATR via shared OHLC contract; Wilder ATR; realized volatility; VWAP and feature calculators; replay/stream helpers; analytics-owned market score enrichment. | Harden Schwab retry selection/backoff, define VWAP session boundaries, finish Yahoo/snapshot-builder coverage, and revalidate calibration thresholds after ATR/volatility math changes. | [lib-marketdata/README.md](lib-marketdata/README.md), [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
-| `lib-analytics` | Pure deterministic scorers and analytics orchestration. | Layered L3-L8 scorers, `DeterministicAnalyticsService`, standalone market-state classifier, exit-signal scorer, calibration drift analyzer, and market-data snapshot scoring. The orchestrator delegates to scorer classes, and note-emitting scorers return immutable result objects. | Add orchestrator/scorer equivalence integration tests and decide whether calibration thresholds should become config-bound. | [lib-analytics/README.md](lib-analytics/README.md), [lib-analytics/REVIEW.md](lib-analytics/REVIEW.md) |
-| `lib-validation` | Hard gates, aggregate verdicts, and deployment tiers. | Validation service facade, gate evaluator, factor factory, confidence scorer, verdict resolver, deployment resolver, risk flags, summary formatter, threshold profiles, and OBSERVE-threshold support. | Decide gate/scoring order, split concentration input thresholds from aggregate pass thresholds, define how deployment confidence affects STANDARD/PROBE tiers, add configuration binding for thresholds, and add profile tests. | [lib-validation/README.md](lib-validation/README.md), [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
-| `lib-persistence` | JPA entities, repositories, mapper, and Flyway schema. | Runtime migrations through V15, 15 tables including normalized validation reasons, optimistic locking on mutable tables, audit timestamps, backtest FK, validation-verdict idempotency key, trade-history storage, and AES-GCM Schwab token conversion for new writes. | Expand repository/migration integration tests, address truncation-prone text columns, finish builder migration for generated-id entities, and re-save or purge historical plaintext Schwab token audit rows when retroactive cleanup is required. | [lib-persistence/README.md](lib-persistence/README.md), [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
-| `lib-backtest` | Deterministic replay harness supporting L8 calibration. | `BacktestFrame`, `BacktestOutcome`, `BacktestMetrics`, `BacktestReport`, and stateless `BacktestReplayEngine` running marketdata -> analytics -> validation through the shared `CandidateValidationInputFactory`. | Add determinism and metric tests and verify app bean wiring. | [lib-backtest/README.md](lib-backtest/README.md), [lib-backtest/REVIEW.md](lib-backtest/REVIEW.md) |
-| `lib-execution` | Planned broker execution layer. | Design documentation only. Schwab OAuth support exists in `app` and `lib-persistence`; Schwab market data exists in `lib-marketdata`. | Create a real Maven module only when broker account reads, position reads, order construction, order placement, cancellation, fill reconciliation, and dry-run/live controls are implemented. | [lib-execution/SCHWAB_EXECUTION.md](lib-execution/SCHWAB_EXECUTION.md) |
+| `lib-math` | Shared numeric helper jar. | Clamping, normalized-score validation, non-negative guards, weighted averages, `safePercentChange`, `floorAtZero`, and tests for NaN/infinity handling. | No open module-local issues are currently tracked; keep helper behavior pinned as new callers appear. | [lib-math/REVIEW.md](lib-math/REVIEW.md) |
+| `lib-domain` | Shared cross-module value objects and enums. | Candidates, market bars, market snapshots, analytics snapshots, validation inputs/results, verdicts, risk flags, calibration reports, exit DTOs, closed-set liquidity/score enums, centralized score policy, builder support for `CandidateValidationInput`, and focused tests for high-risk value-object validation. | No open module-local issues are currently tracked; add narrow tests as new shared models gain callers. | [lib-domain/REVIEW.md](lib-domain/REVIEW.md) |
+| `lib-ingestion` | L1 opportunity discovery and candidate-side L2 ingestion. | Manual candidate ingestion; SEC submissions client by CIK or ticker; ticker-to-CIK and CIK-to-tickers lookup with TTL/fail-stale refresh; SEC HTTP timeouts/retry/rate limiting; 8-K taxonomy; form variant handling; primary-document body fetches; Form 4 ownership XML parsing; opt-in Form 4 body-derived `TradeCandidate` creation; deterministic manual IDs. | No open module-local issues are currently tracked; deferred 13D/G, offering, XBRL, RSS firehose, and LLM scheduler work remains design-forward. | [lib-ingestion/README.md](lib-ingestion/README.md), [lib-ingestion/REVIEW.md](lib-ingestion/REVIEW.md) |
+| `lib-marketdata` | Market-data provider adapters and deterministic feature derivation. | Schwab, Yahoo, Noop, and composite providers; daily/intraday bars and quotes; status-aware Schwab retry/backoff; ATR via shared OHLC contract; Wilder ATR; session-bound VWAP; realized volatility; feature calculators; replay/stream helpers; analytics-owned market score enrichment; historical calibration fixtures through `lib-backtest`. | No open module-local issues are currently tracked; add further numeric branch tests only as new edge cases appear. | [lib-marketdata/README.md](lib-marketdata/README.md), [lib-marketdata/REVIEW.md](lib-marketdata/REVIEW.md) |
+| `lib-analytics` | Pure deterministic scorers and analytics orchestration. | Layered L3-L8 scorers, `DeterministicAnalyticsService`, standalone market-state classifier, exit-signal scorer, configurable analytics-owned calibration drift thresholds, and market-data snapshot scoring. The orchestrator delegates to scorer classes, and note-emitting scorers return immutable result objects. | No open module-local issues are currently tracked; keep analytics side-effect free and threshold changes explicit. | [lib-analytics/README.md](lib-analytics/README.md), [lib-analytics/REVIEW.md](lib-analytics/REVIEW.md) |
+| `lib-validation` | Hard gates, aggregate verdicts, and deployment tiers. | Validation service facade, gate evaluator, factor factory, confidence scorer, verdict resolver, deployment resolver, risk flags, summary formatter, bindable threshold properties, named threshold profiles, and OBSERVE-threshold support. | No open module-local issues are currently tracked; keep profile invariants and binding tests updated as thresholds evolve. | [lib-validation/README.md](lib-validation/README.md), [lib-validation/REVIEW.md](lib-validation/REVIEW.md) |
+| `lib-persistence` | JPA entities, repositories, mapper, and Flyway schema. | Runtime migrations through V16, 15 tables including normalized validation reasons, optimistic locking on mutable tables, audit timestamps, backtest FK, validation-verdict idempotency key, `TEXT` freeform columns, trade-history storage, id-free generated-id builders, and AES-GCM Schwab token conversion for new writes. | No open module-local issues are currently tracked; re-save or purge historical plaintext Schwab token rows if retroactive cleanup is required. | [lib-persistence/README.md](lib-persistence/README.md), [lib-persistence/REVIEW.md](lib-persistence/REVIEW.md) |
+| `lib-backtest` | Deterministic replay harness supporting L8 calibration. | `BacktestFrame`, `BacktestOutcome`, `BacktestMetrics`, `BacktestReport`, and stateless `BacktestReplayEngine` running marketdata -> analytics -> validation through the shared `CandidateValidationInputFactory`; tests cover determinism, metrics, direct-engine equivalence, historical calibration fixtures, and app wiring. | No open module-local issues are currently tracked; keep fixtures updated when upstream scoring contracts intentionally change. | [lib-backtest/README.md](lib-backtest/README.md), [lib-backtest/REVIEW.md](lib-backtest/REVIEW.md) |
+| `lib-execution` | Provider-neutral broker execution contracts and dry-run lifecycle modeling. | Maven reactor module with `BrokerClient`, account/position/order models, equity and single-leg option order requests, dry-run order placement/cancellation/fill recording/querying, idempotent client order IDs, and a fail-closed live placeholder. | Live Schwab account/order HTTP integration, persistent broker audit state, app confirmation gates, and real fill reconciliation remain deferred. | [lib-execution/SCHWAB_EXECUTION.md](lib-execution/SCHWAB_EXECUTION.md) |
 
 See [REVIEW.md](REVIEW.md) for the current repo-wide work-remains summary,
-[ISSUES.md](ISSUES.md) for the issue index, and
+[ISSUES.md](ISSUES.md) for current issue debt, [ENHANCEMENTS.md](ENHANCEMENTS.md)
+for the remaining product/UI backlog, and
 [MARKDOWN_CLEANUP_GUIDE.md](MARKDOWN_CLEANUP_GUIDE.md) for future doc cleanup
 rules.
 
@@ -123,7 +130,7 @@ truth.
 | GET | `/api/market-data/{symbol}/quote` | Latest quote from the configured provider chain. |
 | GET | `/api/market-data/{symbol}/quote/stored` | Stored quote observations for a symbol. |
 | POST | `/api/market-state/classify` | Classify a supplied market-state snapshot. |
-| POST | `/market-structure/intraday` | Derive an intraday structure snapshot from bars. |
+| POST | `/api/market-structure/intraday` | Derive an intraday structure snapshot from bars. |
 | POST | `/api/exit-signal` | L7 exit signal: HOLD / TIGHTEN / SCALE_OUT / EXIT_NOW. |
 | POST | `/api/calibration` | Append realized outcomes and return a drift report. |
 | GET | `/api/calibration` | Current calibration drift report. |

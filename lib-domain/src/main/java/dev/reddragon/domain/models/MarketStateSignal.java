@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -26,8 +26,8 @@ public class MarketStateSignal {
             List<String> notes
     ) {
         this.regimeLabel = regimeLabel == null ? RegimeLabel.MIXED : regimeLabel;
-        this.confidence = AnalyticsScoreUtils.clamp(confidence);
-        this.equilibriumRestorationProbability = AnalyticsScoreUtils.clamp(equilibriumRestorationProbability);
+        this.confidence = DomainScorePolicy.clampDerivedScore(confidence);
+        this.equilibriumRestorationProbability = DomainScorePolicy.clampDerivedScore(equilibriumRestorationProbability);
         this.deploymentSupported = deploymentSupported;
         this.notes = List.copyOf(notes == null ? List.of() : notes);
     }

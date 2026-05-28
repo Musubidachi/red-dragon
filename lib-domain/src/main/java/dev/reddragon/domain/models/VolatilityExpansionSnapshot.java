@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -28,8 +28,8 @@ public class VolatilityExpansionSnapshot {
     ) {
         this.currentAtrPercent = currentAtrPercent;
         this.baselineAtrPercent = baselineAtrPercent;
-        this.impliedVolatilityRankScore = AnalyticsScoreUtils.clamp(impliedVolatilityRankScore);
-        this.realizedVolatilityExpansionScore = AnalyticsScoreUtils.clamp(realizedVolatilityExpansionScore);
-        this.volatilityCompressionScore = AnalyticsScoreUtils.clamp(volatilityCompressionScore);
+        this.impliedVolatilityRankScore = DomainScorePolicy.clampDerivedScore(impliedVolatilityRankScore);
+        this.realizedVolatilityExpansionScore = DomainScorePolicy.clampDerivedScore(realizedVolatilityExpansionScore);
+        this.volatilityCompressionScore = DomainScorePolicy.clampDerivedScore(volatilityCompressionScore);
     }
 }

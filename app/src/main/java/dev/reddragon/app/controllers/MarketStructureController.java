@@ -3,6 +3,7 @@ package dev.reddragon.app.controllers;
 import dev.reddragon.domain.models.IntradayBar;
 import dev.reddragon.domain.models.MarketIntradayStructureSnapshot;
 import dev.reddragon.marketdata.services.IntradayStructureSnapshotBuilder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,14 +15,11 @@ import java.util.List;
  * Thin orchestration endpoint for market-structure generation.
  */
 @RestController
-@RequestMapping("/market-structure")
+@RequestMapping("/api/market-structure")
+@RequiredArgsConstructor
 public class MarketStructureController {
 
     private final IntradayStructureSnapshotBuilder snapshotBuilder;
-
-    public MarketStructureController() {
-        this.snapshotBuilder = new IntradayStructureSnapshotBuilder();
-    }
 
     @PostMapping("/intraday")
     public MarketIntradayStructureSnapshot process(

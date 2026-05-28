@@ -1,6 +1,8 @@
 package dev.reddragon.persistence.services.repositories;
 
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,8 +12,16 @@ import java.util.List;
 
 public interface ValidationVerdictRepository extends JpaRepository<ValidationVerdictEntity, Long> {
 
+    @EntityGraph(attributePaths = "reasons")
+    List<ValidationVerdictEntity> findByCandidateIdOrderByCreatedAtDesc(String candidateId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "reasons")
+    List<ValidationVerdictEntity> findBySymbolOrderByCreatedAtDesc(String symbol, Pageable pageable);
+
+    @EntityGraph(attributePaths = "reasons")
     List<ValidationVerdictEntity> findTop25ByCandidateIdOrderByCreatedAtDesc(String candidateId);
 
+    @EntityGraph(attributePaths = "reasons")
     List<ValidationVerdictEntity> findTop25BySymbolOrderByCreatedAtDesc(String symbol);
 
     /**
@@ -27,6 +37,7 @@ public interface ValidationVerdictRepository extends JpaRepository<ValidationVer
      * Most recent verdict per candidate since the given timestamp, ordered by score descending.
      * Deduplicates candidates that have been run through the pipeline more than once.
      */
+    @EntityGraph(attributePaths = "reasons")
     @Query("""
             SELECT v FROM ValidationVerdictEntity v
             WHERE v.verdict IN :verdicts
