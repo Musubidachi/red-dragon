@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "intraday_bar")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class IntradayBarEntity {
 
     @Id
@@ -51,4 +52,20 @@ public class IntradayBarEntity {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    /** Builder constructor for new rows; generated IDs are database-managed. */
+    @Builder
+    public IntradayBarEntity(
+            String symbol,
+            Instant startTime,
+            double openPrice,
+            double highPrice,
+            double lowPrice,
+            double closePrice,
+            long volume,
+            double vwap,
+            Instant createdAt
+    ) {
+        this(null, symbol, startTime, openPrice, highPrice, lowPrice, closePrice, volume, vwap, createdAt);
+    }
 }

@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.MarketMathUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -33,10 +33,10 @@ public class MarketLiquidityTextureSnapshot {
         }
 
         this.symbol = symbol.trim().toUpperCase();
-        this.spreadQualityScore = MarketMathUtils.clamp(spreadQualityScore);
-        this.orderBookDepthScore = MarketMathUtils.clamp(orderBookDepthScore);
-        this.liquidityConsistencyScore = MarketMathUtils.clamp(liquidityConsistencyScore);
-        this.slippageRiskScore = MarketMathUtils.clamp(slippageRiskScore);
-        this.relativeVolumeScore = MarketMathUtils.clamp(relativeVolumeScore);
+        this.spreadQualityScore = DomainScorePolicy.clampDerivedScore(spreadQualityScore);
+        this.orderBookDepthScore = DomainScorePolicy.clampDerivedScore(orderBookDepthScore);
+        this.liquidityConsistencyScore = DomainScorePolicy.clampDerivedScore(liquidityConsistencyScore);
+        this.slippageRiskScore = DomainScorePolicy.clampDerivedScore(slippageRiskScore);
+        this.relativeVolumeScore = DomainScorePolicy.clampDerivedScore(relativeVolumeScore);
     }
 }

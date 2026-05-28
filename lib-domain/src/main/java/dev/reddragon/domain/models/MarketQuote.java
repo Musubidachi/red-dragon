@@ -2,6 +2,7 @@ package dev.reddragon.domain.models;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -38,7 +39,7 @@ public class MarketQuote {
             throw new IllegalArgumentException("volume must be non-negative");
         }
         this.symbol = symbol.trim().toUpperCase();
-        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.observedAt = Objects.requireNonNull(observedAt, "observedAt is required");
         this.lastPrice = lastPrice;
         this.bidPrice = bidPrice;
         this.askPrice = askPrice;
@@ -48,11 +49,15 @@ public class MarketQuote {
     }
 
     public static MarketQuote unavailable(String symbol, String note) {
+        return unavailable(symbol, Instant.now(), note);
+    }
+
+    public static MarketQuote unavailable(String symbol, Instant observedAt, String note) {
         String safeSymbol = symbol == null || symbol.isBlank() ? "UNKNOWN" : symbol;
         String safeNote = note == null || note.isBlank() ? "Quote unavailable." : note;
         return new MarketQuote(
                 safeSymbol,
-                Instant.now(),
+                observedAt,
                 0.0,
                 0.0,
                 0.0,

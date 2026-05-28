@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -12,6 +13,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -99,6 +101,49 @@ class CikLookupServiceTest {
         CikLookupService service = service(httpClient, clock, 1_000L);
 
         assertThrows(IllegalStateException.class, () -> service.process("AAPL"));
+    }
+
+    @Test
+    void reverseLookupReturnsAllTickersForCikInSecOrder() {
+        SecHttpClient httpClient = mock(SecHttpClient.class);
+        when(httpClient.process(COMPANY_TICKERS_URI)).thenReturn("""
+                {
+                  "0": {
+                    "cik_str": 1067983,
+                    "ticker": "BRK-A",
+                    "title": "Berkshire Hathaway Inc."
+                  },
+                  "1": {
+                    "cik_str": 1067983,
+                    "ticker": "brk-b",
+                    "title": "Berkshire Hathaway Inc."
+                  },
+                  "2": {
+                    "cik_str": 320193,
+                    "ticker": "AAPL",
+                    "title": "Apple Inc."
+                  }
+                }
+                """);
+        MutableClock clock = new MutableClock(Instant.parse("2026-05-26T12:00:00Z"));
+        CikLookupService service = service(httpClient, clock, 1_000L);
+
+        assertEquals(List.of("BRK-A", "BRK-B"), service.tickersForCik("CIK0001067983"));
+        assertEquals(Optional.of("BRK-A"), service.preferredTickerForCik("1067983"));
+
+        verify(httpClient, times(1)).process(COMPANY_TICKERS_URI);
+    }
+
+    @Test
+    void reverseLookupReturnsEmptyForInvalidCikWithoutLoadingMap() {
+        SecHttpClient httpClient = mock(SecHttpClient.class);
+        MutableClock clock = new MutableClock(Instant.parse("2026-05-26T12:00:00Z"));
+        CikLookupService service = service(httpClient, clock, 1_000L);
+
+        assertEquals(List.of(), service.tickersForCik("not-a-cik"));
+        assertEquals(Optional.empty(), service.preferredTickerForCik("not-a-cik"));
+
+        verifyNoInteractions(httpClient);
     }
 
     private CikLookupService service(SecHttpClient httpClient, Clock clock, long ttlMillis) {

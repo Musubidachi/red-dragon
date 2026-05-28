@@ -1,9 +1,11 @@
 package dev.reddragon.analytics.services.structural;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.math.AnalyticsScoreUtils;
 import dev.reddragon.domain.models.TradeCandidate;
 import dev.reddragon.domain.models.MarketDataSnapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -15,20 +17,19 @@ public class AsymmetryScorer {
     /**
      * Main processing flow.
      */
-    public double process(
+    public ScoreResult process(
             TradeCandidate candidate,
             MarketDataSnapshot marketData,
-            double equilibriumQuality,
-            List<String> notes
+            double equilibriumQuality
     ) {
         Objects.requireNonNull(candidate, "candidate is required");
         Objects.requireNonNull(marketData, "marketData is required");
-        Objects.requireNonNull(notes, "notes is required");
 
+        List<String> notes = new ArrayList<>();
         double rangePenalty = rangePenalty(marketData, notes);
         double gapPenalty = gapPenalty(marketData, notes);
 
-        return AnalyticsScoreUtils.clamp(
+        double score = AnalyticsScoreUtils.clamp(
                 candidate.structuralRealityScore() * 0.25
                         + candidate.materialSignificanceScore() * 0.25
                         + candidate.earlynessScore() * 0.25
@@ -36,6 +37,7 @@ public class AsymmetryScorer {
                         - rangePenalty
                         - gapPenalty
         );
+        return new ScoreResult(score, notes);
     }
 
     private double rangePenalty(

@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.classification;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.VolatilityExpansionSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class VolatilityExpansionScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            VolatilityExpansionSnapshot volatility,
-            List<String> notes
-    ) {
+    public ScoreResult process(VolatilityExpansionSnapshot volatility) {
         Objects.requireNonNull(volatility, "volatility is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double atrRatio = atrRatio(volatility);
         double expansionBalance = expansionBalance(volatility);
@@ -31,9 +29,10 @@ public class VolatilityExpansionScorer {
                         + (1.0 - volatility.impliedVolatilityRankScore()) * 0.20
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private double atrRatio(VolatilityExpansionSnapshot volatility) {

@@ -1,19 +1,14 @@
 # lib-persistence Review
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
-This review summarizes the persistence module after the V10-V14 migration and
+This review summarizes the persistence module after the V10-V16 migration and
 mapper fix passes. Runtime Flyway files under `src/main/resources/db/migration`
 remain the schema source of truth.
 
 ## Current Open Work
 
-| Priority | Issue | Status | Impact | Next action |
-| --- | --- | --- | --- | --- |
-| High | Schwab token plaintext storage | Open | Persisted bearer/refresh tokens can expose brokerage credentials to anyone with DB read access. | Add field-level encryption, DB/filesystem encryption documentation, or another explicit secret-storage design. |
-| Medium | Repository/migration integration tests | Open | Entity mapping, Flyway migration validity, relationships, and constraints are only lightly covered. | Add `@DataJpaTest` or equivalent migration-backed integration tests for major entities. |
-| Medium | Truncation-prone text columns | Open | Long notes, explanations, quote notes, or import warnings can exceed fixed varchar limits. | Move unbounded text to `TEXT`/`CLOB` or normalize structures where queryability matters. |
-| Low | Generated-id positional constructors | Open | Remaining generated-id entities still expose `id` through all-args construction. | Finish builder migration or add construction factories that omit generated IDs. |
+No open module-local issues are currently tracked.
 
 ## Implemented Surface
 
@@ -25,7 +20,7 @@ Implemented today:
   results, calibration outcomes, Schwab tokens, and trade-history imports.
 * `PersistenceMapper` for converting pipeline domain objects to persistence
   entities.
-* Flyway migrations through V14.
+* Flyway migrations through V16.
 * Optimistic locking and audit timestamps on mutable tables.
 * Validation-verdict idempotency key based on an application-supplied
   deterministic fingerprint.
@@ -43,6 +38,15 @@ Implemented today:
 | Market bar audit | `market_bar.created_at` was added to match newer intraday-bar audit behavior. |
 | Idempotency | Validation verdicts and backtest results gained uniqueness protection; V14 uses deterministic fingerprints. |
 | SQL correctness | V12 recursive split migration is PostgreSQL-correct with `WITH RECURSIVE`. |
+| Schwab token storage | Access/refresh token fields now use AES-GCM encryption via a JPA converter. Set `red-dragon.persistence.schwab-token-encryption-key` or `RED_DRAGON_PERSISTENCE_SCHWAB_TOKEN_ENCRYPTION_KEY` to `base64:<32-byte AES key>`. Legacy plaintext rows remain readable; new or updated rows are encrypted, and old audit rows must be re-saved or purged for retroactive cleanup. |
+| Freeform text storage | V16 moves candidate summaries, analytics notes, market notes, verdict explanations, trader notes, override reasons, quote notes, and import warnings to `TEXT`. |
+| Integration coverage | `PersistenceRepositoryIntegrationTest` applies Flyway migrations in H2 PostgreSQL mode, validates JPA mappings, and exercises long-text round trips, cascaded verdict reasons, uniqueness constraints, and encrypted Schwab token persistence. |
+| Generated-id builders | All generated-id entities have id-free constructor builders for new-row construction; app and persistence callers use those builders, generated-id/all-field constructors are no longer public, and `GeneratedIdEntityBuilderTest` asserts builders do not expose generated IDs. |
+
+## Operational Follow-up
+
+Historical plaintext Schwab token audit rows remain readable for compatibility.
+Re-save or purge old rows if retroactive cleanup is required for a deployment.
 
 ## Design-Only Work
 

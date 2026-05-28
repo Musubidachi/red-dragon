@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -42,31 +42,31 @@ public class AnalyticsSnapshot {
         }
         this.candidateId = candidateId.trim();
         this.symbol = symbol.trim().toUpperCase();
-        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.observedAt = Objects.requireNonNull(observedAt, "observedAt is required");
         this.regimeLabel = Objects.requireNonNull(regimeLabel, "regimeLabel is required");
-        this.regimeCompatibilityScore = AnalyticsScoreUtils.clamp(regimeCompatibilityScore);
-        this.asymmetryScore = AnalyticsScoreUtils.clamp(asymmetryScore);
-        this.equilibriumQualityScore = AnalyticsScoreUtils.clamp(equilibriumQualityScore);
-        this.reflexivityPotentialScore = AnalyticsScoreUtils.clamp(reflexivityPotentialScore);
-        this.deploymentConfidenceScore = AnalyticsScoreUtils.clamp(deploymentConfidenceScore);
+        this.regimeCompatibilityScore = DomainScorePolicy.clampDerivedScore(regimeCompatibilityScore);
+        this.asymmetryScore = DomainScorePolicy.clampDerivedScore(asymmetryScore);
+        this.equilibriumQualityScore = DomainScorePolicy.clampDerivedScore(equilibriumQualityScore);
+        this.reflexivityPotentialScore = DomainScorePolicy.clampDerivedScore(reflexivityPotentialScore);
+        this.deploymentConfidenceScore = DomainScorePolicy.clampDerivedScore(deploymentConfidenceScore);
         this.reasonNotes = List.copyOf(reasonNotes == null ? List.of() : reasonNotes);
     }
 
     /**
-     * Returns the name of the dimension with the highest score, useful for
+     * Returns the dimension with the highest score, useful for
      * one-line summary logging and review display.
      *
      * <p>Each comparison updates both {@code maxScore} and {@code dominant}
      * consistently so that adding a new dimension at the end of the chain
      * does not require special-casing the previous last line.
      */
-    public String dominantScore() {
+    public ScoreDimension dominantScore() {
         double maxScore = regimeCompatibilityScore;
-        String dominant = "regimeCompatibility";
-        if (asymmetryScore > maxScore)            { maxScore = asymmetryScore;            dominant = "asymmetry"; }
-        if (equilibriumQualityScore > maxScore)   { maxScore = equilibriumQualityScore;   dominant = "equilibriumQuality"; }
-        if (reflexivityPotentialScore > maxScore) { maxScore = reflexivityPotentialScore; dominant = "reflexivityPotential"; }
-        if (deploymentConfidenceScore > maxScore) { maxScore = deploymentConfidenceScore; dominant = "deploymentConfidence"; }
+        ScoreDimension dominant = ScoreDimension.REGIME_COMPATIBILITY;
+        if (asymmetryScore > maxScore)            { maxScore = asymmetryScore;            dominant = ScoreDimension.ASYMMETRY; }
+        if (equilibriumQualityScore > maxScore)   { maxScore = equilibriumQualityScore;   dominant = ScoreDimension.EQUILIBRIUM_QUALITY; }
+        if (reflexivityPotentialScore > maxScore) { maxScore = reflexivityPotentialScore; dominant = ScoreDimension.REFLEXIVITY_POTENTIAL; }
+        if (deploymentConfidenceScore > maxScore) { maxScore = deploymentConfidenceScore; dominant = ScoreDimension.DEPLOYMENT_CONFIDENCE; }
         return dominant;
     }
 }

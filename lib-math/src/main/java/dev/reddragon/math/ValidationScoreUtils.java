@@ -50,7 +50,14 @@ public class ValidationScoreUtils {
         }
     }
 
+    /**
+     * Weighted average with {@code 0.0} as the zero-weight "no signal" sentinel.
+     *
+     * <p>Validation factors already reject negative and non-finite weights. If a
+     * caller needs to report that no weighted inputs were present, inspect
+     * {@code totalWeight} before calling this helper.
+     */
     public double weightedAverage(double weightedTotal, double totalWeight) {
-        return totalWeight == 0.0 ? 0.0 : weightedTotal / totalWeight;
+        return CoreMathUtils.weightedAverage(weightedTotal, totalWeight);
     }
 }

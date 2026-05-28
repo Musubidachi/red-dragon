@@ -1,15 +1,19 @@
 package dev.reddragon.domain.models;
 
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import dev.reddragon.math.MarketMathUtils;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @Value
 @Accessors(fluent = true)
 public class MarketDataSnapshot {
+    public static final double HOSTILE_VOLATILITY_STABILITY_MAX = 0.25;
+
     String symbol;
     Instant observedAt;
     double latestClose;
@@ -54,18 +58,18 @@ public class MarketDataSnapshot {
             throw new IllegalArgumentException("symbol is required");
         }
         this.symbol = symbol.trim().toUpperCase();
-        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.observedAt = Objects.requireNonNull(observedAt, "observedAt is required");
         this.latestClose = requireFiniteNonNegative("latestClose", latestClose);
         this.previousClose = requireFiniteNonNegative("previousClose", previousClose);
         this.gapPercent = requireFinite("gapPercent", gapPercent);
         this.averageTrueRange = requireFiniteNonNegative("averageTrueRange", averageTrueRange);
-        this.rangePosition = MarketMathUtils.clamp(rangePosition);
+        this.rangePosition = DomainScorePolicy.clampDerivedScore(rangePosition);
         this.averageVolume = requireFiniteNonNegative("averageVolume", averageVolume);
-        this.liquidityScore = MarketMathUtils.clamp(liquidityScore);
-        this.volatilityStabilityScore = MarketMathUtils.clamp(volatilityStabilityScore);
+        this.liquidityScore = DomainScorePolicy.clampDerivedScore(liquidityScore);
+        this.volatilityStabilityScore = DomainScorePolicy.clampDerivedScore(volatilityStabilityScore);
         this.relativeVolume = MarketMathUtils.floorAtZero(requireFinite("relativeVolume", relativeVolume));
         this.vwapDeviation = requireFinite("vwapDeviation", vwapDeviation);
-        this.directionalPersistence = MarketMathUtils.clamp(directionalPersistence);
+        this.directionalPersistence = DomainScorePolicy.clampDerivedScore(directionalPersistence);
         this.quality = quality == null ? MarketDataQuality.COMPLETE : quality;
         this.notes = List.copyOf(notes == null ? List.of() : notes);
     }
@@ -126,7 +130,7 @@ public class MarketDataSnapshot {
     public boolean isHostile() {
         return quality == MarketDataQuality.ILLIQUID
                 || quality == MarketDataQuality.STALE
-                || volatilityStabilityScore < 0.25;
+                || volatilityStabilityScore < HOSTILE_VOLATILITY_STABILITY_MAX;
     }
 
     /**
@@ -134,12 +138,9 @@ public class MarketDataSnapshot {
      * Thresholds are intentionally conservative — small-cap candidates require
      * careful sizing even in the ADEQUATE tier.
      *
-     * @return "HIGH" (&gt;1M), "MODERATE" (&gt;250k), "ADEQUATE" (&gt;50k), or "THIN"
+     * @return the matching closed-set liquidity tier
      */
-    public String liquidityTier() {
-        if (averageVolume >= 1_000_000) return "HIGH";
-        if (averageVolume >= 250_000)   return "MODERATE";
-        if (averageVolume >= 50_000)    return "ADEQUATE";
-        return "THIN";
+    public LiquidityTier liquidityTier() {
+        return LiquidityTier.fromAverageVolume(averageVolume);
     }
 }

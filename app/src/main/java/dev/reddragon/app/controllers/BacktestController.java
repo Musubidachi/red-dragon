@@ -4,7 +4,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,8 +29,9 @@ import dev.reddragon.domain.models.CandidateCatalystType;
 import dev.reddragon.ingestion.services.ManualCandidateIngestionService;
 import dev.reddragon.domain.models.MarketBar;
 import dev.reddragon.persistence.domains.BacktestResultEntity;
+import dev.reddragon.persistence.services.PersistenceMapper;
 import dev.reddragon.persistence.services.repositories.BacktestResultRepository;
-import lombok.RequiredArgsConstructor;
+import dev.reddragon.persistence.services.repositories.CandidateRepository;
 
 /**
  * Runs a deterministic backtest against a list of historical candidate frames
@@ -41,15 +47,37 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequestMapping("/api/backtest")
-@RequiredArgsConstructor
 public class BacktestController {
 
     private final BacktestReplayEngine backtestReplayEngine;
     private final ManualCandidateIngestionService ingestionService;
+    private final CandidateRepository candidateRepository;
     private final BacktestResultRepository backtestResultRepository;
     private final CalibrationOutcomeService calibrationOutcomeService;
+    private final PersistenceMapper persistenceMapper;
+    private final TransactionTemplate candidateInsertTransactionTemplate;
+
+    public BacktestController(
+            BacktestReplayEngine backtestReplayEngine,
+            ManualCandidateIngestionService ingestionService,
+            CandidateRepository candidateRepository,
+            BacktestResultRepository backtestResultRepository,
+            CalibrationOutcomeService calibrationOutcomeService,
+            PersistenceMapper persistenceMapper,
+            PlatformTransactionManager transactionManager
+    ) {
+        this.backtestReplayEngine = backtestReplayEngine;
+        this.ingestionService = ingestionService;
+        this.candidateRepository = candidateRepository;
+        this.backtestResultRepository = backtestResultRepository;
+        this.calibrationOutcomeService = calibrationOutcomeService;
+        this.persistenceMapper = persistenceMapper;
+        this.candidateInsertTransactionTemplate = new TransactionTemplate(transactionManager);
+        this.candidateInsertTransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
 
     @PostMapping
+    @Transactional
     public BacktestReport runBacktest(@RequestBody BacktestRequest request) {
         String strategyName = request.getStrategyName() == null ? "unnamed" : request.getStrategyName().trim();
         String runId = UUID.randomUUID().toString();
@@ -108,6 +136,7 @@ public class BacktestController {
                 req.getEarlynessScore(),
                 req.getReflexivityPotentialScore()
         );
+        persistCandidateIfAbsent(candidate);
 
         List<MarketBar> bars = (req.getBars() == null ? List.<BacktestBarRequest>of() : req.getBars())
                 .stream()
@@ -123,6 +152,21 @@ public class BacktestController {
                 .toList();
 
         return new BacktestFrame(candidate, bars);
+    }
+
+    private void persistCandidateIfAbsent(dev.reddragon.domain.models.TradeCandidate candidate) {
+        if (candidateRepository.existsById(candidate.candidateId())) {
+            return;
+        }
+
+        try {
+            candidateInsertTransactionTemplate.executeWithoutResult(status ->
+                    candidateRepository.saveAndFlush(persistenceMapper.toCandidateEntity(candidate)));
+        } catch (DataIntegrityViolationException ex) {
+            if (!candidateRepository.existsById(candidate.candidateId())) {
+                throw ex;
+            }
+        }
     }
 
     private BacktestResultEntity toResultEntity(

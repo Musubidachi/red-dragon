@@ -18,8 +18,7 @@ import java.time.Instant;
 @Table(name = "backtest_result")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class BacktestResultEntity {
 
     @Id
@@ -52,8 +51,22 @@ public class BacktestResultEntity {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public BacktestResultEntity(
+            String runId,
+            String strategyName,
+            String symbol,
+            String candidateId,
+            String verdict,
+            double score,
+            Instant testedAt
+    ) {
+        this(null, runId, strategyName, symbol, candidateId, verdict, score, testedAt, null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    BacktestResultEntity(
             Long id,
             String runId,
             String strategyName,

@@ -1,5 +1,5 @@
 /**
- * Validation thresholds and named profile factories
+ * Validation thresholds, bindable threshold properties, and named profile factories
  * (STANDARD / CONSERVATIVE / AGGRESSIVE / CONCENTRATION_REVIEW).
  *
  * <p>All score thresholds and per-dimension weights live here; the engine

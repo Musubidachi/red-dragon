@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models.exit;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -40,7 +40,7 @@ public class ExitSignal {
             List<String> notes
     ) {
         this.recommendation = Objects.requireNonNull(recommendation, "recommendation is required");
-        this.compressionScore = AnalyticsScoreUtils.clamp(compressionScore);
+        this.compressionScore = DomainScorePolicy.clampDerivedScore(compressionScore);
         this.notes = List.copyOf(notes == null ? List.of() : notes);
     }
 }

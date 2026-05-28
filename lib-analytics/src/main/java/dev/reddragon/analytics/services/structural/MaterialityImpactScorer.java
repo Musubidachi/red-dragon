@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.structural;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.FundamentalImpactSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class MaterialityImpactScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            FundamentalImpactSnapshot impact,
-            List<String> notes
-    ) {
+    public ScoreResult process(FundamentalImpactSnapshot impact) {
         Objects.requireNonNull(impact, "impact is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
                 impact.revenueImpactScore() * 0.30
@@ -28,9 +26,10 @@ public class MaterialityImpactScorer {
                         + impact.insiderAlignmentScore() * 0.10
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNote(double score, List<String> notes) {

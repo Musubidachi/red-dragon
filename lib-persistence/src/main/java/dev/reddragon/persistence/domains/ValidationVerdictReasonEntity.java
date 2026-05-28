@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,7 +41,7 @@ import lombok.Setter;
 @Table(name = "validation_verdict_reason")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ValidationVerdictReasonEntity {
 
     @Id
@@ -56,11 +57,22 @@ public class ValidationVerdictReasonEntity {
     @Column(name = "reason_code", nullable = false, length = 64)
     private String reasonCode;
 
-    @Column(name = "explanation", length = 2000)
+    @Column(name = "explanation", columnDefinition = "text")
     private String explanation;
 
     @Column(name = "sort_order", nullable = false)
     private short sortOrder;
+
+    /** Builder constructor for new rows; generated IDs are database-managed. */
+    @Builder
+    public ValidationVerdictReasonEntity(
+            ValidationVerdictEntity verdict,
+            String reasonCode,
+            String explanation,
+            short sortOrder
+    ) {
+        this(null, verdict, reasonCode, explanation, sortOrder);
+    }
 
     /**
      * Convenience: returns the parent verdict's id without forcing the caller

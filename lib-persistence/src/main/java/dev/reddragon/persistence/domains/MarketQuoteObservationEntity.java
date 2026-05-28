@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "market_quote_observation")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MarketQuoteObservationEntity {
 
     @Id
@@ -46,15 +47,31 @@ public class MarketQuoteObservationEntity {
     @Column(name = "quality", nullable = false, length = 64)
     private String quality;
 
-    @Column(name = "notes", length = 4000)
+    @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
     /** DB-populated insertion timestamp (V13). */
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public MarketQuoteObservationEntity(
+            String symbol,
+            Instant observedAt,
+            double lastPrice,
+            double bidPrice,
+            double askPrice,
+            long volume,
+            String quality,
+            String notes
+    ) {
+        this(null, symbol, observedAt, lastPrice, bidPrice, askPrice, volume,
+                quality, notes, null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    MarketQuoteObservationEntity(
             Long id,
             String symbol,
             Instant observedAt,

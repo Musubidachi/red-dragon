@@ -5,6 +5,7 @@ import dev.reddragon.analytics.services.MarketStateClassifier;
 import dev.reddragon.domain.models.IntradayBar;
 import dev.reddragon.domain.models.MarketIntradayStructureSnapshot;
 import dev.reddragon.marketdata.services.IntradayStructureSnapshotBuilder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,15 +18,11 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/market-state")
+@RequiredArgsConstructor
 public class MarketStateController {
 
     private final IntradayStructureSnapshotBuilder snapshotBuilder;
     private final MarketStateClassifier marketStateClassifier;
-
-    public MarketStateController() {
-        this.snapshotBuilder = new IntradayStructureSnapshotBuilder();
-        this.marketStateClassifier = new MarketStateClassifier();
-    }
 
     @PostMapping("/classify")
     public MarketStateSignal classify(@RequestBody List<IntradayBar> bars) {

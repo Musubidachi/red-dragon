@@ -29,6 +29,8 @@ Other modules primarily import:
 * `EquilibriumCompressionScorer` - L7 exit signal service exposed through
   `POST /api/exit-signal`.
 * `LongHorizonCalibrationAnalyzer` - L8 drift analysis from realized outcomes.
+* `CalibrationDriftThresholds` - analytics-owned drift-band thresholds. In the
+  app, these are bound from `red-dragon.analytics.calibration.*` properties.
 
 The per-layer scorers are implementation details even where they are public for
 testing and package-boundary simplicity.

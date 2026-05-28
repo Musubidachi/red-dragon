@@ -33,7 +33,7 @@ public class OutcomeSample {
     ) {
         this.candidateId = Objects.requireNonNull(candidateId, "candidateId is required");
         this.symbol = Objects.requireNonNull(symbol, "symbol is required");
-        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.observedAt = Objects.requireNonNull(observedAt, "observedAt is required");
         this.scoreBreakdown = Objects.requireNonNull(scoreBreakdown, "scoreBreakdown is required");
         this.realizedReturn = realizedReturn;
         this.maxDrawdown = maxDrawdown;

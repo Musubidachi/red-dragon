@@ -2,6 +2,7 @@ package dev.reddragon.analytics.services;
 
 import dev.reddragon.analytics.services.classification.EquilibriumQualityScorer;
 import dev.reddragon.analytics.services.classification.RegimeCompatibilityScorer;
+import dev.reddragon.analytics.services.classification.RegimeCompatibilityResult;
 import dev.reddragon.analytics.services.deployment.DeploymentConfidenceScorer;
 import dev.reddragon.analytics.services.propagation.PropagationPhaseAnalyzer;
 import dev.reddragon.analytics.services.propagation.ReflexivityScorer;
@@ -103,27 +104,36 @@ public class DeterministicAnalyticsService {
         List<String> notes = new ArrayList<>();
 
         // L4 — classify the regime and translate to a compatibility score
-        RegimeLabel regime = regimeCompatibilityScorer.process(marketData, notes);
+        RegimeCompatibilityResult regimeResult = regimeCompatibilityScorer.process(marketData);
+        notes.addAll(regimeResult.notes());
+        RegimeLabel regime = regimeResult.regimeLabel();
         double regimeCompatibility = regimeCompatibilityScorer.score(regime);
 
         // L4 — usable-for-restoration score
-        double equilibriumQuality = equilibriumQualityScorer.process(marketData, notes);
+        ScoreResult equilibriumQualityResult = equilibriumQualityScorer.process(marketData);
+        notes.addAll(equilibriumQualityResult.notes());
+        double equilibriumQuality = equilibriumQualityResult.score();
 
         // L3 — asymmetry consumes equilibrium quality as a fourth dimension
-        double asymmetry = asymmetryScorer.process(candidate, marketData, equilibriumQuality, notes);
+        ScoreResult asymmetryResult = asymmetryScorer.process(candidate, marketData, equilibriumQuality);
+        notes.addAll(asymmetryResult.notes());
+        double asymmetry = asymmetryResult.score();
 
         // L6 — reflexivity (propagation potential)
-        double reflexivity = reflexivityScorer.process(candidate, notes);
+        ScoreResult reflexivityResult = reflexivityScorer.process(candidate);
+        notes.addAll(reflexivityResult.notes());
+        double reflexivity = reflexivityResult.score();
 
         // L5 — confidence input (lib-validation owns the final tier decision)
-        double deploymentConfidence = deploymentConfidenceScorer.process(
+        ScoreResult deploymentConfidenceResult = deploymentConfidenceScorer.process(
                 candidate,
                 asymmetry,
                 equilibriumQuality,
                 regimeCompatibility,
-                reflexivity,
-                notes
+                reflexivity
         );
+        notes.addAll(deploymentConfidenceResult.notes());
+        double deploymentConfidence = deploymentConfidenceResult.score();
 
         // L6 — propagation phase from earlyness → reflexivity slope
         PhaseLabel phase = propagationPhase(candidate, reflexivity);

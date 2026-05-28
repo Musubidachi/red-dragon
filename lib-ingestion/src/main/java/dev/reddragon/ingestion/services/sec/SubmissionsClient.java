@@ -24,13 +24,9 @@ public class SubmissionsClient {
     private final ObjectMapper objectMapper;
 
     public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient, ObjectMapper objectMapper) {
-        this.properties = properties;
-        this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
-    }
-
-    public SubmissionsClient(SecApiProperties properties, SecHttpClient httpClient) {
-        this(properties, httpClient, new ObjectMapper());
+        this.properties = Objects.requireNonNull(properties, "properties is required");
+        this.httpClient = Objects.requireNonNull(httpClient, "httpClient is required");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper is required");
     }
 
     /**

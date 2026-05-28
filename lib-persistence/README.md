@@ -14,6 +14,8 @@ and Flyway migrations.
 * Store candidates, market bars, market snapshots, analytics snapshots,
   validation verdicts and reasons, overrides, trader notes, backtest results,
   calibration outcomes, trade-history imports, and Schwab OAuth tokens.
+* Encrypt new Schwab OAuth token writes with AES-GCM when the token encryption
+  key is configured.
 * Preserve source provenance and reasoning chains.
 * Keep schema changes versioned and reviewable.
 
@@ -73,9 +75,18 @@ lib-persistence/src/main/resources/db/migration   (runtime source of truth)
     V12__validation_verdict_reason.sql             normalizes reason_codes blob into a child table
     V13__version_and_audit_columns.sql             optimistic locking and audit columns
     V14__idempotency_keys.sql                      deterministic validation idempotency and backtest uniqueness
+    V15__protect_schwab_tokens.sql                 widens Schwab token columns for encrypted values
+    V16__freeform_text_columns.sql                 moves narrative/import text fields to TEXT
 
 lib-persistence/src/main/resources/db/drafts      pre-migration design notes; NOT applied at runtime
 ```
+
+Schwab token encryption uses `SchwabTokenEncryptingConverter`. New writes
+require the JVM system property
+`red-dragon.persistence.schwab-token-encryption-key` or the environment
+variable `RED_DRAGON_PERSISTENCE_SCHWAB_TOKEN_ENCRYPTION_KEY` set to
+`base64:<32-byte AES key>`. Legacy plaintext rows remain readable; re-save or
+purge old audit rows when retroactive cleanup is required.
 
 ## Still Planned
 
@@ -88,3 +99,8 @@ exist yet.
 Tests should cover entity mapping, repository behavior, migration validity,
 required fields and constraints, relationship integrity, and storage of reason
 codes and source metadata.
+
+`PersistenceRepositoryIntegrationTest` boots lib-persistence with H2 in
+PostgreSQL mode, applies Flyway migrations, validates the schema with
+Hibernate, and checks repository behavior for long text, relationship cascade,
+uniqueness constraints, and Schwab token encryption.

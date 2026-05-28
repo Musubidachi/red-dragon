@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
+import dev.reddragon.analytics.config.CalibrationDriftThresholds;
 import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
 import dev.reddragon.domain.models.CalibrationDriftLevel;
 import dev.reddragon.domain.models.CalibrationReport;
@@ -104,6 +105,36 @@ class LongHorizonCalibrationAnalyzerTest {
                 report.driftLevel().requiresAction(),
                 "MAJOR_DRIFT must require trader action"
         );
+    }
+
+    @Test
+    void customThresholdsRetuneDriftBands() {
+        LongHorizonCalibrationAnalyzer tuned = new LongHorizonCalibrationAnalyzer(
+                new CalibrationDriftThresholds(
+                        0.80,
+                        0.0,
+                        0.10,
+                        0.70,
+                        0.0,
+                        0.61
+                )
+        );
+
+        CalibrationReport report = tuned.process(batch(6, 4, 0.03, 0.10));
+
+        assertEquals(CalibrationDriftLevel.MAJOR_DRIFT, report.driftLevel());
+    }
+
+    @Test
+    void invalidThresholdOrderingIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new CalibrationDriftThresholds(
+                0.55,
+                0.0,
+                0.15,
+                0.65,
+                0.0,
+                0.45
+        ));
     }
 
     /**

@@ -19,8 +19,8 @@ analytics and validation.
 * `NoopMarketDataProvider` for disabled or unconfigured market data.
 * `SchwabMarketDataProvider` for historical daily bars from Schwab
   `/pricehistory`, intraday bars from Schwab `/pricehistory`, and latest quotes
-  from Schwab `/quotes`, with short-lived in-memory daily-bar caching and simple
-  retry/backoff.
+  from Schwab `/quotes`, with short-lived in-memory daily-bar caching and
+  status-aware jittered exponential retry/backoff.
 * `YahooMarketDataProvider` as an optional secondary chart provider for daily
   bars, intraday bars, and latest-price fallback.
 * `CompositeMarketDataProvider` for ordered provider fallback.
@@ -29,10 +29,17 @@ analytics and validation.
 
 ## Current Feature Support
 
-The implemented services cover ATR, VWAP, relative volume, realized volatility,
-spread quality, liquidity consistency, directional persistence, rolling windows,
-multi-timeframe aggregation, intraday structure, liquidity texture, volatility
-expansion, and replay helpers.
+The implemented services cover ATR, cumulative and session-bound VWAP, relative
+volume, realized volatility, spread quality, liquidity consistency, directional
+persistence, rolling windows, multi-timeframe aggregation, intraday structure,
+liquidity texture, volatility expansion, and replay helpers.
+
+## Calculator Style
+
+Stateless calculators and snapshot builders remain service-style classes. They
+are cheap to construct today, but keeping them as top-level services preserves a
+single style for app/backtest wiring and leaves room for future injected
+configuration without converting call sites again.
 
 ## Non-Responsibilities
 

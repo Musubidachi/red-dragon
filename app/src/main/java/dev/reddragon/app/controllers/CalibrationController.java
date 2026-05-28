@@ -1,8 +1,18 @@
 package dev.reddragon.app.controllers;
 
-import java.time.Instant;
-import java.util.List;
-
+import dev.reddragon.app.models.CalibrationBooleanView;
+import dev.reddragon.app.models.CalibrationCountView;
+import dev.reddragon.app.models.CalibrationMetricView;
+import dev.reddragon.app.models.CalibrationOutcomeSampleRequest;
+import dev.reddragon.app.models.CalibrationOutcomeView;
+import dev.reddragon.app.models.CalibrationSummaryView;
+import dev.reddragon.app.models.CalibrationTimestampView;
+import dev.reddragon.app.services.pipeline.CalibrationOutcomeService;
+import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
+import dev.reddragon.domain.models.CalibrationReport;
+import dev.reddragon.domain.models.OutcomeSample;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,14 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
-import dev.reddragon.domain.models.CalibrationReport;
-import dev.reddragon.domain.models.OutcomeSample;
-import dev.reddragon.app.models.CalibrationOutcomeSampleRequest;
-import dev.reddragon.app.models.CalibrationOutcomeView;
-import dev.reddragon.app.models.CalibrationSummaryView;
-import dev.reddragon.app.services.pipeline.CalibrationOutcomeService;
-import lombok.RequiredArgsConstructor;
+import java.time.Instant;
+import java.util.List;
 
 /**
  * Evaluates long-horizon framework drift and calibration quality from trader-supplied outcomes.
@@ -51,32 +55,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CalibrationController {
 
+    private final CalibrationOutcomeService calibrationOutcomeService;
+
     @GetMapping
     public CalibrationReport current() {
         return calibrationOutcomeService.currentReport();
     }
 
-
-    private final CalibrationOutcomeService calibrationOutcomeService;
-
-
     @GetMapping("/outcomes")
     public List<CalibrationOutcomeView> recentOutcomes(@RequestParam(defaultValue = "25") int limit) {
         return calibrationOutcomeService.recentOutcomes(limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
-
-
-
 
     @GetMapping("/summary")
     public CalibrationSummaryView summary(@RequestParam(defaultValue = "100") int limit) {
@@ -89,154 +80,139 @@ public class CalibrationController {
         );
     }
 
-
-
-
-
-
-
-
-
     @GetMapping("/summary/win-rate")
-    public CalibrationSummaryView winRateSummary(@RequestParam(defaultValue = "100") int limit) {
-        double winRate = calibrationOutcomeService.winRate(limit);
-        return new CalibrationSummaryView(0, winRate, 0.0, 0.0);
+    public CalibrationMetricView winRateSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("winRate", calibrationOutcomeService.winRate(limit));
     }
 
     @GetMapping("/summary/min-drawdown")
-    public CalibrationSummaryView minDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
-        double minDrawdown = calibrationOutcomeService.minDrawdownValue(limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, minDrawdown);
+    public CalibrationMetricView minDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("minDrawdown", calibrationOutcomeService.minDrawdownValue(limit));
     }
 
     @GetMapping("/summary/max-drawdown")
-    public CalibrationSummaryView maxDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
-        double maxDrawdown = calibrationOutcomeService.maxDrawdownValue(limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, maxDrawdown);
+    public CalibrationMetricView maxDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("maxDrawdown", calibrationOutcomeService.maxDrawdownValue(limit));
     }
 
     @GetMapping("/summary/min-return")
-    public CalibrationSummaryView minReturnSummary(@RequestParam(defaultValue = "100") int limit) {
-        double min = calibrationOutcomeService.minReturn(limit);
-        return new CalibrationSummaryView(0, 0.0, min, 0.0);
+    public CalibrationMetricView minReturnSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("minReturn", calibrationOutcomeService.minReturn(limit));
     }
 
     @GetMapping("/summary/max-return")
-    public CalibrationSummaryView maxReturnSummary(@RequestParam(defaultValue = "100") int limit) {
-        double max = calibrationOutcomeService.maxReturn(limit);
-        return new CalibrationSummaryView(0, 0.0, max, 0.0);
+    public CalibrationMetricView maxReturnSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("maxReturn", calibrationOutcomeService.maxReturn(limit));
     }
 
     @GetMapping("/summary/holding-days")
-    public CalibrationSummaryView averageHoldingDays(@RequestParam(defaultValue = "100") int limit) {
-        double average = calibrationOutcomeService.averageDaysHeld(limit);
-        return new CalibrationSummaryView(0, 0.0, average, 0.0);
+    public CalibrationMetricView averageHoldingDays(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("averageHoldingDays", calibrationOutcomeService.averageDaysHeld(limit));
     }
 
     @GetMapping("/summary/median")
-    public CalibrationSummaryView medianSummary(@RequestParam(defaultValue = "100") int limit) {
-        double median = calibrationOutcomeService.medianReturn(limit);
-        return new CalibrationSummaryView(0, 0.0, median, 0.0);
+    public CalibrationMetricView medianSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("medianReturn", calibrationOutcomeService.medianReturn(limit));
     }
 
     @GetMapping("/summary/median-drawdown")
-    public CalibrationSummaryView medianDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
-        double medianDrawdown = calibrationOutcomeService.medianDrawdown(limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, medianDrawdown);
+    public CalibrationMetricView medianDrawdownSummary(@RequestParam(defaultValue = "100") int limit) {
+        return new CalibrationMetricView("medianDrawdown", calibrationOutcomeService.medianDrawdown(limit));
     }
-
-
 
     @GetMapping("/summary/{symbol}/win-rate")
-    public CalibrationSummaryView winRateBySymbol(
+    public CalibrationMetricView winRateBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double winRate = calibrationOutcomeService.winRateForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, winRate, 0.0, 0.0);
+        return new CalibrationMetricView("winRate", calibrationOutcomeService.winRateForSymbol(symbol, limit));
     }
 
-
-
     @GetMapping("/summary/{symbol}/max-drawdown")
-    public CalibrationSummaryView maxDrawdownBySymbol(
+    public CalibrationMetricView maxDrawdownBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double max = calibrationOutcomeService.maxDrawdownForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, max);
+        return new CalibrationMetricView("maxDrawdown", calibrationOutcomeService.maxDrawdownForSymbol(symbol, limit));
     }
 
     @GetMapping("/summary/{symbol}/min-drawdown")
-    public CalibrationSummaryView minDrawdownBySymbol(
+    public CalibrationMetricView minDrawdownBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double min = calibrationOutcomeService.minDrawdownForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, min);
+        return new CalibrationMetricView("minDrawdown", calibrationOutcomeService.minDrawdownForSymbol(symbol, limit));
     }
 
     @GetMapping("/summary/{symbol}/average-drawdown")
-    public CalibrationSummaryView averageDrawdownBySymbol(
+    public CalibrationMetricView averageDrawdownBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double avg = calibrationOutcomeService.averageDrawdownForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, avg);
+        return new CalibrationMetricView(
+                "averageDrawdown",
+                calibrationOutcomeService.averageDrawdownForSymbol(symbol, limit)
+        );
     }
 
     @GetMapping("/summary/{symbol}/average-return")
-    public CalibrationSummaryView averageReturnBySymbol(
+    public CalibrationMetricView averageReturnBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double avg = calibrationOutcomeService.averageReturnForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, avg, 0.0);
+        return new CalibrationMetricView(
+                "averageReturn",
+                calibrationOutcomeService.averageReturnForSymbol(symbol, limit)
+        );
     }
 
     @GetMapping("/summary/{symbol}/min-return")
-    public CalibrationSummaryView minReturnBySymbol(
+    public CalibrationMetricView minReturnBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double min = calibrationOutcomeService.minReturnForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, min, 0.0);
+        return new CalibrationMetricView("minReturn", calibrationOutcomeService.minReturnForSymbol(symbol, limit));
     }
 
     @GetMapping("/summary/{symbol}/max-return")
-    public CalibrationSummaryView maxReturnBySymbol(
+    public CalibrationMetricView maxReturnBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double max = calibrationOutcomeService.maxReturnForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, max, 0.0);
+        return new CalibrationMetricView("maxReturn", calibrationOutcomeService.maxReturnForSymbol(symbol, limit));
     }
 
     @GetMapping("/summary/{symbol}/median-return")
-    public CalibrationSummaryView medianReturnBySymbol(
+    public CalibrationMetricView medianReturnBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double median = calibrationOutcomeService.medianReturnForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, median, 0.0);
+        return new CalibrationMetricView(
+                "medianReturn",
+                calibrationOutcomeService.medianReturnForSymbol(symbol, limit)
+        );
     }
 
     @GetMapping("/summary/{symbol}/holding-days")
-    public CalibrationSummaryView averageHoldingDaysBySymbol(
+    public CalibrationMetricView averageHoldingDaysBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double averageDaysHeld = calibrationOutcomeService.averageDaysHeldForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, averageDaysHeld, 0.0);
+        return new CalibrationMetricView(
+                "averageHoldingDays",
+                calibrationOutcomeService.averageDaysHeldForSymbol(symbol, limit)
+        );
     }
 
     @GetMapping("/summary/{symbol}/median-drawdown")
-    public CalibrationSummaryView medianDrawdownBySymbol(
+    public CalibrationMetricView medianDrawdownBySymbol(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        double medianDrawdown = calibrationOutcomeService.medianDrawdownForSymbol(symbol, limit);
-        return new CalibrationSummaryView(0, 0.0, 0.0, medianDrawdown);
+        return new CalibrationMetricView(
+                "medianDrawdown",
+                calibrationOutcomeService.medianDrawdownForSymbol(symbol, limit)
+        );
     }
 
     @GetMapping("/summary/{symbol}")
@@ -260,19 +236,10 @@ public class CalibrationController {
                 .body(calibrationOutcomeService.exportRecentOutcomesCsv(limit));
     }
 
-
-
-
-
-
-
     @GetMapping("/outcomes/symbols")
     public List<String> outcomeSymbols() {
         return calibrationOutcomeService.symbols();
     }
-
-
-
 
     @GetMapping("/outcomes/high-drawdown")
     public List<CalibrationOutcomeView> highDrawdownOutcomes(
@@ -280,45 +247,21 @@ public class CalibrationController {
             @RequestParam(defaultValue = "25") int limit
     ) {
         return calibrationOutcomeService.highDrawdownOutcomes(minDrawdown, limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
 
     @GetMapping("/outcomes/worst")
     public List<CalibrationOutcomeView> worstOutcomes(@RequestParam(defaultValue = "25") int limit) {
         return calibrationOutcomeService.worstOutcomesByReturn(limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
 
     @GetMapping("/outcomes/top")
     public List<CalibrationOutcomeView> topOutcomes(@RequestParam(defaultValue = "25") int limit) {
         return calibrationOutcomeService.topOutcomesByReturn(limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
 
@@ -328,43 +271,33 @@ public class CalibrationController {
             @RequestParam(defaultValue = "25") int limit
     ) {
         return calibrationOutcomeService.recentOutcomesPage(offset, limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
 
     @GetMapping("/outcomes/last-updated")
-    public CalibrationOutcomeView latestObservedAt() {
+    public CalibrationTimestampView latestObservedAt() {
         String observedAt = calibrationOutcomeService.latestObservedAt();
-        return new CalibrationOutcomeView("", "", observedAt.isBlank() ? null : java.time.Instant.parse(observedAt), 0.0, 0.0, 0, false);
+        return new CalibrationTimestampView(
+                "latestObservedAt",
+                observedAt.isBlank() ? null : Instant.parse(observedAt)
+        );
     }
 
     @GetMapping("/outcomes/count")
-    public CalibrationSummaryView countOutcomes() {
-        long count = calibrationOutcomeService.countOutcomes();
-        return new CalibrationSummaryView((int) count, 0.0, 0.0, 0.0);
+    public CalibrationCountView countOutcomes() {
+        return new CalibrationCountView("outcomeCount", calibrationOutcomeService.countOutcomes());
     }
 
-
     @GetMapping("/outcomes/exists/{symbol}")
-    public CalibrationSummaryView outcomeExistsBySymbol(@PathVariable String symbol) {
-        boolean exists = calibrationOutcomeService.hasOutcomesForSymbol(symbol);
-        return new CalibrationSummaryView(exists ? 1 : 0, 0.0, 0.0, 0.0);
+    public CalibrationBooleanView outcomeExistsBySymbol(@PathVariable String symbol) {
+        return new CalibrationBooleanView("hasOutcomes", calibrationOutcomeService.hasOutcomesForSymbol(symbol));
     }
 
     @GetMapping("/outcomes/count/{symbol}")
-    public CalibrationSummaryView countOutcomesBySymbol(@PathVariable String symbol) {
-        long count = calibrationOutcomeService.countOutcomesForSymbol(symbol);
-        return new CalibrationSummaryView((int) count, 0.0, 0.0, 0.0);
+    public CalibrationCountView countOutcomesBySymbol(@PathVariable String symbol) {
+        return new CalibrationCountView("outcomeCount", calibrationOutcomeService.countOutcomesForSymbol(symbol));
     }
-
 
     @GetMapping(value = "/outcomes/{symbol}/export", produces = "text/csv")
     public ResponseEntity<String> exportOutcomesCsvBySymbol(
@@ -377,15 +310,13 @@ public class CalibrationController {
     }
 
     @DeleteMapping("/outcomes")
-    public CalibrationSummaryView deleteAllOutcomes() {
-        long deleted = calibrationOutcomeService.clearAllOutcomes();
-        return new CalibrationSummaryView((int) deleted, 0.0, 0.0, 0.0);
+    public CalibrationCountView deleteAllOutcomes() {
+        return new CalibrationCountView("deletedCount", calibrationOutcomeService.clearAllOutcomes());
     }
 
     @DeleteMapping("/outcomes/{symbol}")
-    public CalibrationSummaryView deleteBySymbol(@PathVariable String symbol) {
-        long deleted = calibrationOutcomeService.deleteOutcomesForSymbol(symbol);
-        return new CalibrationSummaryView((int) deleted, 0.0, 0.0, 0.0);
+    public CalibrationCountView deleteBySymbol(@PathVariable String symbol) {
+        return new CalibrationCountView("deletedCount", calibrationOutcomeService.deleteOutcomesForSymbol(symbol));
     }
 
     @GetMapping("/outcomes/{symbol}")
@@ -394,20 +325,12 @@ public class CalibrationController {
             @RequestParam(defaultValue = "25") int limit
     ) {
         return calibrationOutcomeService.recentOutcomesForSymbol(symbol, limit).stream()
-                .map(s -> new CalibrationOutcomeView(
-                        s.candidateId(),
-                        s.symbol(),
-                        s.observedAt(),
-                        s.realizedReturn(),
-                        s.maxDrawdown(),
-                        s.daysHeld(),
-                        s.thesisWorked()
-                ))
+                .map(this::toView)
                 .toList();
     }
 
     @PostMapping
-    public CalibrationReport analyze(@RequestBody List<CalibrationOutcomeSampleRequest> samples) {
+    public CalibrationReport analyze(@Valid @RequestBody List<@Valid CalibrationOutcomeSampleRequest> samples) {
         List<OutcomeSample> outcomeSamples = (samples == null ? List.<CalibrationOutcomeSampleRequest>of() : samples)
                 .stream()
                 .map(this::toOutcomeSample)
@@ -416,13 +339,23 @@ public class CalibrationController {
         return calibrationOutcomeService.analyzeAndAppend(outcomeSamples);
     }
 
+    private CalibrationOutcomeView toView(OutcomeSample sample) {
+        return new CalibrationOutcomeView(
+                sample.candidateId(),
+                sample.symbol(),
+                sample.observedAt(),
+                sample.realizedReturn(),
+                sample.maxDrawdown(),
+                sample.daysHeld(),
+                sample.thesisWorked()
+        );
+    }
+
     private OutcomeSample toOutcomeSample(CalibrationOutcomeSampleRequest req) {
         String candidateId = req.getCandidateId() == null || req.getCandidateId().isBlank()
                 ? "unknown"
                 : req.getCandidateId();
-        String symbol = req.getSymbol() == null || req.getSymbol().isBlank()
-                ? "UNKNOWN"
-                : req.getSymbol().toUpperCase();
+        String symbol = req.getSymbol().toUpperCase();
 
         AnalyticsScoreBreakdown breakdown = new AnalyticsScoreBreakdown(
                 req.getStructuralRealityScore(),

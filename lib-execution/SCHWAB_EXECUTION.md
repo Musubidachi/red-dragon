@@ -1,14 +1,14 @@
 # lib-execution — Schwab Broker Integration
 
-Architecture doc for the broker integration. The module does not yet exist as a
-built Maven module; this directory currently holds the design only. When we
-promote `lib-execution` to a real module, add it to the parent pom.
+Architecture doc and current implementation notes for broker integration.
+`lib-execution` is now a built Maven reactor module with provider-neutral
+contracts and a deterministic dry-run implementation. The current code does not
+call Schwab trader endpoints or place live broker orders.
 
-> **Status**: design only for broker execution. There is still no `lib-execution`
-> module, no pom, and no order-placement code in the parent reactor. However,
-> Schwab OAuth and Schwab market-data support have been partially implemented
-> elsewhere: OAuth services/controllers live in `app`, the token entity and
-> repository live in `lib-persistence`, and price-history retrieval lives in
+> **Status**: dry-run module implemented; live Schwab execution remains
+> deferred and fail-closed. Schwab OAuth and Schwab market-data support live
+> elsewhere today: OAuth services/controllers live in `app`, the token entity
+> and repository live in `lib-persistence`, and price-history retrieval lives in
 > `lib-marketdata`.
 
 Implemented outside this module:
@@ -22,19 +22,69 @@ Implemented outside this module:
 
 Still not implemented:
 
-- account reads
-- position reads
-- order construction
-- order placement
-- order cancellation
-- fill reconciliation
-- dry-run/live execution mode
+- live Schwab account reads
+- live Schwab position reads
+- live Schwab order placement
+- live Schwab order cancellation
+- broker-side fill reconciliation
+- persistent broker audit rows
+- app-level human confirmation gates
+
+---
+
+## RD-M17 status and promotion checklist
+
+RD-M17 module promotion is complete for the dry-run scope. `lib-execution` is
+in the parent Maven reactor and has provider-neutral account, position, order,
+cancellation, and fill lifecycle models backed by `DryRunBrokerClient`.
+
+The remaining checklist is for future live Schwab execution. Do not describe
+live trading as implemented until a Schwab HTTP adapter, broker audit
+persistence, app confirmation surface, and fail-closed live-mode controls are
+all verified.
+
+Use this checklist to promote the dry-run module into live Schwab execution:
+
+- Confirm Schwab developer approval, a linked brokerage account, and the exact
+  Accounts & Trading API scopes available to the app.
+- Decide the module boundary: `lib-execution` owns broker account reads,
+  position reads, order construction, order placement, order cancellation, fill
+  reconciliation, execution audit logging, and dry-run/live mode enforcement.
+- Provider-neutral contracts are implemented: `BrokerClient`,
+  `AccountSummary`, `Position`, `OrderQuery`, `Order`, `OrderRequest`,
+  `OrderResponse`, and `OrderStatus`.
+- Dry-run lifecycle is implemented for account reads, positions, order
+  placement, idempotency, cancellation, manual fill recording, and order
+  queries. Keep this behavior provider-neutral.
+- Implement read-only Schwab support first: account summary, positions, orders,
+  and a harmless user/account metadata call. Verify with mock HTTP tests before
+  any live Schwab request is allowed.
+- Define persistent state before write operations: encrypted broker token
+  storage, broker call audit rows, local order state, idempotency key storage,
+  and fill reconciliation records.
+- Keep `executionMode=dry-run|live` semantics fail-closed before any live order
+  placement code. Dry-run must remain the default and must return synthetic
+  responses without calling Schwab order-placement endpoints.
+- Implement order placement in narrow increments: equity market/limit orders,
+  equity cancellation, single-leg option orders, then any multi-leg option
+  support only after covered-call flows are proven.
+- Add human confirmation gates in the application layer before live placement.
+  The library should expose explicit intent and response objects, not decide
+  whether a trade should be placed.
+- Verify live additions with the narrowest meaningful checks: `mvn -pl
+  lib-execution test` for the module, then a reactor compile/test command after
+  cross-module wiring changes.
+
+Documentation should describe `lib-execution` as a delivered dry-run module and
+live Schwab execution as future work.
 
 ---
 
 ## 1. Purpose
 
-`lib-execution` is the layer that talks to a broker. Its responsibilities:
+`lib-execution` is the layer that owns broker execution contracts. The current
+module models this lifecycle in dry-run mode; future provider adapters will talk
+to brokers. Its responsibilities:
 
 - Authenticate to the broker (OAuth flow + token refresh).
 - Read account state: cash, buying power, positions, recent orders.
@@ -439,15 +489,16 @@ reconciliation pass can verify on-broker presence.
 6. **What does `lib-validation` need to know about portfolio state for sizing
    checks?** This is the moment we have to decide whether validation gets
    read access to broker positions. The earlier decision was "no portfolio
-   awareness until execution exists." Execution now exists. Revisit.
+   awareness until execution exists." Dry-run execution now exists; revisit only
+   when live position reads are implemented and audited.
 
 ---
 
-## 13. Suggested implementation order
+## 13. Implementation order and remaining live work
 
 1. **Provider-agnostic interface** in `dev.reddragon.execution`: `BrokerClient`,
-   `AccountSummary`, `Position`, the sealed `OrderRequest` hierarchy,
-   `OrderResponse`, `OrderStatus`. No implementation yet.
+   `AccountSummary`, `Position`, the `OrderRequest` hierarchy, `Order`,
+   `OrderResponse`, and `OrderStatus`. Implemented for dry-run behavior.
 2. **`SchwabHttpClient`** wrapper around Spring's `RestClient` with: bearer
    token injection, gzip, rate limiter, backoff. Test against a harmless
    endpoint like `/trader/v1/userPreference`.
@@ -457,8 +508,9 @@ reconciliation pass can verify on-broker presence.
 5. **Refresh-token aging warning** (T-24h alert when refresh expires soon).
 6. **Read-only `SchwabBrokerClient`**: implement `getAccountSummary`,
    `getPositions`, `getOrders`, `getOrder` only. No `placeOrder` yet.
-7. **Add `executionMode` config** (`dry-run` | `live`); add the dry-run
-   decorator.
+7. **Add `executionMode` config** (`dry-run` | `live`) to app wiring before
+   any live broker client is selectable. Dry-run module behavior already
+   exists and must stay the default.
 8. **`placeOrder` for `EquityOrder`** — market and limit. Idempotency key
    wired in. Confirm reconciliation logic on simulated network failures.
 9. **`cancelOrder`.**
@@ -467,8 +519,8 @@ reconciliation pass can verify on-broker presence.
 11. **Audit log table + lifecycle**: every call logged.
 12. **`MultiLegOptionOrder`** (deferred; only if needed).
 
-Each step is independently testable. Steps 1–6 are pure infrastructure; the
-risk profile only goes up at step 8.
+Each remaining step is independently testable. The risk profile rises only when
+live write endpoints are added.
 
 ---
 
@@ -480,7 +532,7 @@ Adopting this changes assumptions elsewhere:
   The provider-agnostic interface stays, but the Schwab impl can share auth
   with `lib-execution`. No code changes required today.
 - **`lib-validation`**: an earlier note said the validator does not know about
-  current portfolio. Now that execution exists, sizing rules that require
+  current portfolio. When the execution module exists, sizing rules that require
   portfolio context (e.g. "you already hold UUUU at 95% of book — reject
   additional long exposure") become possible. Decide whether to use that
   capability or keep validation portfolio-blind.
