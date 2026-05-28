@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -23,10 +23,10 @@ public class PropagationSnapshot {
             double sectorSympathyScore,
             double narrativeCoherenceScore
     ) {
-        this.mentionVelocityScore = AnalyticsScoreUtils.clamp(mentionVelocityScore);
-        this.propagationAccelerationScore = AnalyticsScoreUtils.clamp(propagationAccelerationScore);
-        this.crossPlatformExpansionScore = AnalyticsScoreUtils.clamp(crossPlatformExpansionScore);
-        this.sectorSympathyScore = AnalyticsScoreUtils.clamp(sectorSympathyScore);
-        this.narrativeCoherenceScore = AnalyticsScoreUtils.clamp(narrativeCoherenceScore);
+        this.mentionVelocityScore = DomainScorePolicy.clampDerivedScore(mentionVelocityScore);
+        this.propagationAccelerationScore = DomainScorePolicy.clampDerivedScore(propagationAccelerationScore);
+        this.crossPlatformExpansionScore = DomainScorePolicy.clampDerivedScore(crossPlatformExpansionScore);
+        this.sectorSympathyScore = DomainScorePolicy.clampDerivedScore(sectorSympathyScore);
+        this.narrativeCoherenceScore = DomainScorePolicy.clampDerivedScore(narrativeCoherenceScore);
     }
 }

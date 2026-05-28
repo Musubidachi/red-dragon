@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HardGateEvaluatorTest {
@@ -41,5 +42,31 @@ class HardGateEvaluatorTest {
         assertTrue(failures.contains(ReasonCode.REQUIRED_DATA_MISSING));
         assertTrue(failures.contains(ReasonCode.CATALYST_NOT_CREDIBLE));
         assertTrue(failures.contains(ReasonCode.HARD_GATE_FAILED));
+    }
+
+    @Test
+    void omitsHardGateMarkerWhenNoGateFails() {
+        CandidateValidationInput input = new CandidateValidationInput(
+                "candidate",
+                "PASS",
+                0.80,
+                0.70,
+                0.70,
+                0.70,
+                0.50,
+                0.70,
+                0.70,
+                0.70,
+                true,
+                true,
+                false,
+                false,
+                false,
+                "clean"
+        );
+
+        List<ReasonCode> failures = evaluator.process(input);
+
+        assertFalse(failures.contains(ReasonCode.HARD_GATE_FAILED));
     }
 }

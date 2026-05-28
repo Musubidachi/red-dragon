@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for OutcomeSample's returnCategory bucketing.
@@ -39,6 +40,12 @@ class OutcomeSampleTest {
     @Test
     void largeLossBelowMinusTwentyPercent() {
         assertEquals("LARGE_LOSS", sample(-0.25).returnCategory());
+    }
+
+    @Test
+    void observedAtIsRequired() {
+        assertThrows(NullPointerException.class, () -> new OutcomeSample(
+                "id", "ABC", null, SCORES, 0.1, 0.1, 5, true));
     }
 
     private OutcomeSample sample(double realizedReturn) {

@@ -21,11 +21,16 @@ public class ValidationThresholds {
     /**
      * Lower edge of the OBSERVE deployment band. Scores in
      * {@code [observeDeploymentThreshold, probeDeploymentThreshold)} produce
-     * the OBSERVE tier. Defaults are set equal to {@code probeDeploymentThreshold}
-     * so OBSERVE is unreachable by default (matching legacy behavior); operators
-     * can set this lower to activate the OBSERVE band per validation profile.
+     * the OBSERVE tier. When score clears the PROBE aggregate threshold but
+     * deployment confidence does not clear the PROBE confidence floor, the
+     * candidate also downgrades to OBSERVE rather than becoming actionable.
      */
     double observeDeploymentThreshold;
+    double concentrationDeploymentConfidenceThreshold;
+    double concentrationAsymmetryThreshold;
+    double concentrationEarlynessThreshold;
+    double standardDeploymentConfidenceThreshold;
+    double probeDeploymentConfidenceThreshold;
 
     double minStructuralReality;
     double minMaterialSignificance;
@@ -50,7 +55,12 @@ public class ValidationThresholds {
                 0.87,
                 0.78,
                 0.58,
-                0.58,  // observeDeploymentThreshold (= probe, so OBSERVE unreachable by default)
+                0.58,  // observeDeploymentThreshold
+                0.80,  // concentrationDeploymentConfidenceThreshold
+                0.78,  // concentrationAsymmetryThreshold
+                0.78,  // concentrationEarlynessThreshold
+                0.65,  // standardDeploymentConfidenceThreshold
+                0.45,  // probeDeploymentConfidenceThreshold
 
                 0.65,
                 0.55,
@@ -92,12 +102,77 @@ public class ValidationThresholds {
             double regimeCompatibilityWeight,
             double deploymentConfidenceWeight
     ) {
+        this(
+                passThreshold,
+                watchThreshold,
+                concentrationThreshold,
+                standardDeploymentThreshold,
+                probeDeploymentThreshold,
+                observeDeploymentThreshold,
+                standardDeploymentThreshold,
+                passThreshold,
+                passThreshold,
+                Math.min(0.65, standardDeploymentThreshold),
+                Math.min(0.45, standardDeploymentThreshold),
+                minStructuralReality,
+                minMaterialSignificance,
+                minEarlyness,
+                minEquilibriumQuality,
+                minAsymmetry,
+                minRegimeCompatibility,
+                structuralRealityWeight,
+                materialSignificanceWeight,
+                earlynessWeight,
+                equilibriumQualityWeight,
+                reflexivityPotentialWeight,
+                asymmetryWeight,
+                regimeCompatibilityWeight,
+                deploymentConfidenceWeight
+        );
+    }
+
+    public ValidationThresholds(
+            double passThreshold,
+            double watchThreshold,
+            double concentrationThreshold,
+            double standardDeploymentThreshold,
+            double probeDeploymentThreshold,
+            double observeDeploymentThreshold,
+            double concentrationDeploymentConfidenceThreshold,
+            double concentrationAsymmetryThreshold,
+            double concentrationEarlynessThreshold,
+            double standardDeploymentConfidenceThreshold,
+            double probeDeploymentConfidenceThreshold,
+            double minStructuralReality,
+            double minMaterialSignificance,
+            double minEarlyness,
+            double minEquilibriumQuality,
+            double minAsymmetry,
+            double minRegimeCompatibility,
+            double structuralRealityWeight,
+            double materialSignificanceWeight,
+            double earlynessWeight,
+            double equilibriumQualityWeight,
+            double reflexivityPotentialWeight,
+            double asymmetryWeight,
+            double regimeCompatibilityWeight,
+            double deploymentConfidenceWeight
+    ) {
         ValidationScoreUtils.requireNormalized("passThreshold", passThreshold);
         ValidationScoreUtils.requireNormalized("watchThreshold", watchThreshold);
         ValidationScoreUtils.requireNormalized("concentrationThreshold", concentrationThreshold);
         ValidationScoreUtils.requireNormalized("standardDeploymentThreshold", standardDeploymentThreshold);
         ValidationScoreUtils.requireNormalized("probeDeploymentThreshold", probeDeploymentThreshold);
         ValidationScoreUtils.requireNormalized("observeDeploymentThreshold", observeDeploymentThreshold);
+        ValidationScoreUtils.requireNormalized(
+                "concentrationDeploymentConfidenceThreshold",
+                concentrationDeploymentConfidenceThreshold);
+        ValidationScoreUtils.requireNormalized("concentrationAsymmetryThreshold", concentrationAsymmetryThreshold);
+        ValidationScoreUtils.requireNormalized("concentrationEarlynessThreshold", concentrationEarlynessThreshold);
+        ValidationScoreUtils.requireNormalized(
+                "standardDeploymentConfidenceThreshold",
+                standardDeploymentConfidenceThreshold);
+        ValidationScoreUtils.requireNormalized("probeDeploymentConfidenceThreshold", probeDeploymentConfidenceThreshold);
         ValidationScoreUtils.requireNormalized("minStructuralReality", minStructuralReality);
         ValidationScoreUtils.requireNormalized("minMaterialSignificance", minMaterialSignificance);
         ValidationScoreUtils.requireNormalized("minEarlyness", minEarlyness);
@@ -143,6 +218,16 @@ public class ValidationThresholds {
             throw new IllegalArgumentException(
                     "passThreshold cannot be greater than concentrationThreshold");
         }
+        if (standardDeploymentConfidenceThreshold > concentrationDeploymentConfidenceThreshold) {
+            throw new IllegalArgumentException(
+                    "standardDeploymentConfidenceThreshold cannot be greater than "
+                            + "concentrationDeploymentConfidenceThreshold");
+        }
+        if (probeDeploymentConfidenceThreshold > standardDeploymentConfidenceThreshold) {
+            throw new IllegalArgumentException(
+                    "probeDeploymentConfidenceThreshold cannot be greater than "
+                            + "standardDeploymentConfidenceThreshold");
+        }
 
         this.passThreshold = passThreshold;
         this.watchThreshold = watchThreshold;
@@ -150,6 +235,11 @@ public class ValidationThresholds {
         this.standardDeploymentThreshold = standardDeploymentThreshold;
         this.probeDeploymentThreshold = probeDeploymentThreshold;
         this.observeDeploymentThreshold = observeDeploymentThreshold;
+        this.concentrationDeploymentConfidenceThreshold = concentrationDeploymentConfidenceThreshold;
+        this.concentrationAsymmetryThreshold = concentrationAsymmetryThreshold;
+        this.concentrationEarlynessThreshold = concentrationEarlynessThreshold;
+        this.standardDeploymentConfidenceThreshold = standardDeploymentConfidenceThreshold;
+        this.probeDeploymentConfidenceThreshold = probeDeploymentConfidenceThreshold;
         this.minStructuralReality = minStructuralReality;
         this.minMaterialSignificance = minMaterialSignificance;
         this.minEarlyness = minEarlyness;

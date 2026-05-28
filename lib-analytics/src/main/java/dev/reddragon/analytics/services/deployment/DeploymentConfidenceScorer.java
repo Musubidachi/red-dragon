@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.deployment;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.math.AnalyticsScoreUtils;
 import dev.reddragon.domain.models.TradeCandidate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,16 +16,14 @@ public class DeploymentConfidenceScorer {
     /**
      * Main processing flow.
      */
-    public double process(
+    public ScoreResult process(
             TradeCandidate candidate,
             double asymmetryScore,
             double equilibriumQualityScore,
             double regimeCompatibilityScore,
-            double reflexivityScore,
-            List<String> notes
+            double reflexivityScore
     ) {
         Objects.requireNonNull(candidate, "candidate is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
                 candidate.structuralRealityScore() * 0.20
@@ -35,9 +35,10 @@ public class DeploymentConfidenceScorer {
                         + reflexivityScore * 0.10
         );
 
+        List<String> notes = new ArrayList<>();
         addNotes(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNotes(double score, List<String> notes) {

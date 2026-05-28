@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.ValidationScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -83,14 +83,14 @@ public class CandidateValidationInput {
         this.candidateId = Objects.requireNonNull(normalize(candidateId), "candidateId is required");
         this.symbol = Objects.requireNonNull(normalize(symbol), "symbol is required");
         this.notes = notes == null ? "" : notes.trim();
-        this.structuralRealityScore = ValidationScoreUtils.requireNormalized("structuralRealityScore", structuralRealityScore);
-        this.materialSignificanceScore = ValidationScoreUtils.requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        this.earlynessScore = ValidationScoreUtils.requireNormalized("earlynessScore", earlynessScore);
-        this.equilibriumQualityScore = ValidationScoreUtils.requireNormalized("equilibriumQualityScore", equilibriumQualityScore);
-        this.reflexivityPotentialScore = ValidationScoreUtils.requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
-        this.asymmetryScore = ValidationScoreUtils.requireNormalized("asymmetryScore", asymmetryScore);
-        this.regimeCompatibilityScore = ValidationScoreUtils.requireNormalized("regimeCompatibilityScore", regimeCompatibilityScore);
-        this.deploymentConfidenceScore = ValidationScoreUtils.requireNormalized("deploymentConfidenceScore", deploymentConfidenceScore);
+        this.structuralRealityScore = DomainScorePolicy.requireInputScore("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = DomainScorePolicy.requireInputScore("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = DomainScorePolicy.requireInputScore("earlynessScore", earlynessScore);
+        this.equilibriumQualityScore = DomainScorePolicy.requireInputScore("equilibriumQualityScore", equilibriumQualityScore);
+        this.reflexivityPotentialScore = DomainScorePolicy.requireInputScore("reflexivityPotentialScore", reflexivityPotentialScore);
+        this.asymmetryScore = DomainScorePolicy.requireInputScore("asymmetryScore", asymmetryScore);
+        this.regimeCompatibilityScore = DomainScorePolicy.requireInputScore("regimeCompatibilityScore", regimeCompatibilityScore);
+        this.deploymentConfidenceScore = DomainScorePolicy.requireInputScore("deploymentConfidenceScore", deploymentConfidenceScore);
         this.credibleCatalyst = credibleCatalyst;
         this.requiredDataPresent = requiredDataPresent;
         this.euphoricOrSaturated = euphoricOrSaturated;

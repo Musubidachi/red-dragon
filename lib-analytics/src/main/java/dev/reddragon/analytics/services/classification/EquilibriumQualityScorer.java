@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.classification;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.math.AnalyticsScoreUtils;
 import dev.reddragon.domain.models.MarketDataSnapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,24 +16,22 @@ public class EquilibriumQualityScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            MarketDataSnapshot marketData,
-            List<String> notes
-    ) {
+    public ScoreResult process(MarketDataSnapshot marketData) {
         Objects.requireNonNull(marketData, "marketData is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double liquidity = marketData.liquidityScore();
         double volatility = marketData.volatilityStabilityScore();
         double rangeBalance = rangeBalanceScore(marketData);
+        List<String> notes = new ArrayList<>();
 
         addNotes(liquidity, volatility, rangeBalance, notes);
 
-        return AnalyticsScoreUtils.clamp(
+        double score = AnalyticsScoreUtils.clamp(
                 liquidity * 0.35
                         + volatility * 0.40
                         + rangeBalance * 0.25
         );
+        return new ScoreResult(score, notes);
     }
 
     private double rangeBalanceScore(MarketDataSnapshot marketData) {

@@ -1,8 +1,10 @@
 package dev.reddragon.analytics.services.classification;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.OptionsFlowSnapshot;
 import dev.reddragon.math.AnalyticsScoreUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,12 +16,8 @@ public class OptionsFlowScorer {
     /**
      * Main processing flow.
      */
-    public double process(
-            OptionsFlowSnapshot flow,
-            List<String> notes
-    ) {
+    public ScoreResult process(OptionsFlowSnapshot flow) {
         Objects.requireNonNull(flow, "flow is required");
-        Objects.requireNonNull(notes, "notes is required");
 
         double score = AnalyticsScoreUtils.clamp(
                 flow.callPutImbalanceScore() * 0.20
@@ -29,9 +27,10 @@ public class OptionsFlowScorer {
                         + flow.dealerPressureScore() * 0.15
         );
 
+        List<String> notes = new ArrayList<>();
         addNote(score, notes);
 
-        return score;
+        return new ScoreResult(score, notes);
     }
 
     private void addNote(double score, List<String> notes) {

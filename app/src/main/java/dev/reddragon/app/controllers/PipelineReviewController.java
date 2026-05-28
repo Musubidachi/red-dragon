@@ -3,6 +3,7 @@ package dev.reddragon.app.controllers;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,7 +39,7 @@ public class PipelineReviewController {
      * in the request body to override the default STANDARD thresholds.
      */
     @PostMapping("/manual")
-    public PipelineRunResult reviewManual(@RequestBody PipelineReviewRequest request) {
+    public PipelineRunResult reviewManual(@Valid @RequestBody PipelineReviewRequest request) {
         TradeCandidate candidate = manualIngestionService.process(
                 request.getSymbol(),
                 request.getCompanyName(),
@@ -54,6 +55,26 @@ public class PipelineReviewController {
                 ? request.getProfile()
                 : ValidationProfile.STANDARD;
         return orchestrator.process(candidate, marketBars(candidate.symbol(), request), profile);
+    }
+
+    /**
+     * Resolve a ticker to SEC CIK, fetch filings, and run each through the pipeline.
+     * Use {@code ?profile=CONSERVATIVE} to apply stricter thresholds.
+     */
+    @GetMapping("/sec/ticker/{ticker}")
+    public List<PipelineRunResult> reviewSecCandidatesByTicker(
+            @PathVariable String ticker,
+            @RequestParam(defaultValue = "30") int lookbackDays,
+            @RequestParam(defaultValue = "STANDARD") ValidationProfile profile
+    ) {
+        List<TradeCandidate> candidates = secIngestionService.processByTicker(ticker);
+        return candidates.stream()
+                .map(candidate -> orchestrator.process(
+                        candidate,
+                        providerBars(candidate.symbol(), lookbackDays),
+                        profile
+                ))
+                .toList();
     }
 
     /**

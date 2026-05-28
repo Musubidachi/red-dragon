@@ -141,13 +141,12 @@ public class PersistenceMapper {
         for (int i = 0; i < rows; i++) {
             String code = i < codes.size() ? codes.get(i).name() : "UNSPECIFIED";
             String explanation = i < explanations.size() ? explanations.get(i) : null;
-            ValidationVerdictReasonEntity child = new ValidationVerdictReasonEntity(
-                    null,            // id — generated
-                    parent,          // back-reference; Hibernate fills verdict_id from parent.id on cascade-save
-                    code,
-                    explanation,
-                    (short) i
-            );
+            ValidationVerdictReasonEntity child = ValidationVerdictReasonEntity.builder()
+                    .verdict(parent)
+                    .reasonCode(code)
+                    .explanation(explanation)
+                    .sortOrder((short) i)
+                    .build();
             children.add(child);
         }
         return children;
@@ -156,17 +155,15 @@ public class PersistenceMapper {
     public MarketBarEntity toMarketBarEntity(MarketBar bar) {
         Objects.requireNonNull(bar, "bar is required");
 
-        return new MarketBarEntity(
-                null,
-                bar.symbol(),
-                bar.date(),
-                bar.open(),
-                bar.high(),
-                bar.low(),
-                bar.close(),
-                bar.volume(),
-                null   // createdAt — populated by DB default (V11)
-        );
+        return MarketBarEntity.builder()
+                .symbol(bar.symbol())
+                .barDate(bar.date())
+                .openPrice(bar.open())
+                .highPrice(bar.high())
+                .lowPrice(bar.low())
+                .closePrice(bar.close())
+                .volume(bar.volume())
+                .build();
     }
 
     public List<MarketBarEntity> toMarketBarEntities(List<MarketBar> bars) {
@@ -181,18 +178,17 @@ public class PersistenceMapper {
     public IntradayBarEntity toIntradayBarEntity(IntradayBar bar) {
         Objects.requireNonNull(bar, "intraday bar is required");
 
-        return new IntradayBarEntity(
-                null,
-                bar.symbol(),
-                bar.startTime(),
-                bar.open(),
-                bar.high(),
-                bar.low(),
-                bar.close(),
-                bar.volume(),
-                bar.vwap(),
-                Instant.now()
-        );
+        return IntradayBarEntity.builder()
+                .symbol(bar.symbol())
+                .startTime(bar.startTime())
+                .openPrice(bar.open())
+                .highPrice(bar.high())
+                .lowPrice(bar.low())
+                .closePrice(bar.close())
+                .volume(bar.volume())
+                .vwap(bar.vwap())
+                .createdAt(Instant.now())
+                .build();
     }
 
     public List<IntradayBarEntity> toIntradayBarEntities(List<IntradayBar> bars) {
@@ -207,59 +203,56 @@ public class PersistenceMapper {
     public MarketQuoteObservationEntity toMarketQuoteObservationEntity(MarketQuote quote) {
         Objects.requireNonNull(quote, "market quote is required");
 
-        return new MarketQuoteObservationEntity(
-                null,
-                quote.symbol(),
-                quote.observedAt(),
-                quote.lastPrice(),
-                quote.bidPrice(),
-                quote.askPrice(),
-                quote.volume(),
-                quote.quality().name(),
-                PersistenceStringUtils.joinText(quote.notes())
-        );
+        return MarketQuoteObservationEntity.builder()
+                .symbol(quote.symbol())
+                .observedAt(quote.observedAt())
+                .lastPrice(quote.lastPrice())
+                .bidPrice(quote.bidPrice())
+                .askPrice(quote.askPrice())
+                .volume(quote.volume())
+                .quality(quote.quality().name())
+                .notes(PersistenceStringUtils.joinText(quote.notes()))
+                .build();
     }
 
     public MarketSnapshotEntity toMarketSnapshotEntity(String candidateId, MarketDataSnapshot snapshot) {
         Objects.requireNonNull(candidateId, "candidateId is required");
         Objects.requireNonNull(snapshot, "snapshot is required");
 
-        return new MarketSnapshotEntity(
-                null,
-                candidateId,
-                snapshot.symbol(),
-                snapshot.observedAt(),
-                snapshot.latestClose(),
-                snapshot.previousClose(),
-                snapshot.gapPercent(),
-                snapshot.averageTrueRange(),
-                snapshot.rangePosition(),
-                snapshot.averageVolume(),
-                snapshot.liquidityScore(),
-                snapshot.volatilityStabilityScore(),
-                snapshot.quality().name(),
-                PersistenceStringUtils.joinText(snapshot.notes()),
-                snapshot.relativeVolume(),
-                snapshot.vwapDeviation(),
-                snapshot.directionalPersistence()
-        );
+        return MarketSnapshotEntity.builder()
+                .candidateId(candidateId)
+                .symbol(snapshot.symbol())
+                .observedAt(snapshot.observedAt())
+                .latestClose(snapshot.latestClose())
+                .previousClose(snapshot.previousClose())
+                .gapPercent(snapshot.gapPercent())
+                .averageTrueRange(snapshot.averageTrueRange())
+                .rangePosition(snapshot.rangePosition())
+                .averageVolume(snapshot.averageVolume())
+                .liquidityScore(snapshot.liquidityScore())
+                .volatilityStabilityScore(snapshot.volatilityStabilityScore())
+                .quality(snapshot.quality().name())
+                .notes(PersistenceStringUtils.joinText(snapshot.notes()))
+                .relativeVolume(snapshot.relativeVolume())
+                .vwapDeviation(snapshot.vwapDeviation())
+                .directionalPersistence(snapshot.directionalPersistence())
+                .build();
     }
 
     public AnalyticsSnapshotEntity toAnalyticsSnapshotEntity(AnalyticsSnapshot snapshot) {
         Objects.requireNonNull(snapshot, "analytics snapshot is required");
 
-        return new AnalyticsSnapshotEntity(
-                null,
-                snapshot.candidateId(),
-                snapshot.symbol(),
-                snapshot.observedAt(),
-                snapshot.regimeLabel().name(),
-                snapshot.regimeCompatibilityScore(),
-                snapshot.asymmetryScore(),
-                snapshot.equilibriumQualityScore(),
-                snapshot.reflexivityPotentialScore(),
-                snapshot.deploymentConfidenceScore(),
-                PersistenceStringUtils.joinText(snapshot.reasonNotes())
-        );
+        return AnalyticsSnapshotEntity.builder()
+                .candidateId(snapshot.candidateId())
+                .symbol(snapshot.symbol())
+                .observedAt(snapshot.observedAt())
+                .regimeLabel(snapshot.regimeLabel().name())
+                .regimeCompatibilityScore(snapshot.regimeCompatibilityScore())
+                .asymmetryScore(snapshot.asymmetryScore())
+                .equilibriumQualityScore(snapshot.equilibriumQualityScore())
+                .reflexivityPotentialScore(snapshot.reflexivityPotentialScore())
+                .deploymentConfidenceScore(snapshot.deploymentConfidenceScore())
+                .reasonNotes(PersistenceStringUtils.joinText(snapshot.reasonNotes()))
+                .build();
     }
 }

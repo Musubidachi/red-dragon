@@ -24,8 +24,7 @@ import java.time.Instant;
 @Table(name = "trader_note")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TraderNoteEntity {
 
     @Id
@@ -39,7 +38,7 @@ public class TraderNoteEntity {
     @Column(name = "symbol", nullable = false, length = 16)
     private String symbol;
 
-    @Column(name = "note_text", nullable = false, length = 4000)
+    @Column(name = "note_text", nullable = false, columnDefinition = "text")
     private String noteText;
 
     @Column(name = "created_at", nullable = false)
@@ -57,8 +56,20 @@ public class TraderNoteEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    /** Backwards-compatible pre-V13 6-arg constructor. */
+    /** Builder constructor for new rows; generated IDs and audit metadata are persistence-managed. */
+    @Builder
     public TraderNoteEntity(
+            String candidateId,
+            String symbol,
+            String noteText,
+            Instant createdAt,
+            String author
+    ) {
+        this(null, candidateId, symbol, noteText, createdAt, author, null, 0L);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    TraderNoteEntity(
             Long id,
             String candidateId,
             String symbol,

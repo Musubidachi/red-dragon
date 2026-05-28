@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.MarketMathUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -46,10 +46,10 @@ public class MarketIntradayStructureSnapshot {
         this.sessionVwap = sessionVwap;
         this.latestClose = latestClose;
         this.vwapDistancePercent = vwapDistancePercent;
-        this.vwapReclaimStrength = MarketMathUtils.clamp(vwapReclaimStrength);
-        this.directionalPersistenceScore = MarketMathUtils.clamp(directionalPersistenceScore);
-        this.rotationalQualityScore = MarketMathUtils.clamp(rotationalQualityScore);
-        this.intradayTrendStrength = MarketMathUtils.clamp(intradayTrendStrength);
+        this.vwapReclaimStrength = DomainScorePolicy.clampDerivedScore(vwapReclaimStrength);
+        this.directionalPersistenceScore = DomainScorePolicy.clampDerivedScore(directionalPersistenceScore);
+        this.rotationalQualityScore = DomainScorePolicy.clampDerivedScore(rotationalQualityScore);
+        this.intradayTrendStrength = DomainScorePolicy.clampDerivedScore(intradayTrendStrength);
         this.aboveVwap = aboveVwap;
     }
 }

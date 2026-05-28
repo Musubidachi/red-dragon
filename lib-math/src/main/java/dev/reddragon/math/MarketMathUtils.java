@@ -17,16 +17,7 @@ public class MarketMathUtils {
      * @throws IllegalArgumentException if {@code value} is {@code NaN}
      */
     public double clamp(double value) {
-        if (Double.isNaN(value)) {
-            throw new IllegalArgumentException("clamp: value must not be NaN");
-        }
-        if (value < 0.0) {
-            return 0.0;
-        }
-        if (value > 1.0) {
-            return 1.0;
-        }
-        return value;
+        return CoreMathUtils.clamp(value);
     }
 
     /**
@@ -53,7 +44,7 @@ public class MarketMathUtils {
     }
 
     public double average(double left, double right) {
-        return (left + right) / 2.0;
+        return CoreMathUtils.average(left, right);
     }
 
     /**

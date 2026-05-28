@@ -28,8 +28,7 @@ import java.time.Instant;
 @Table(name = "verdict_override")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class VerdictOverrideEntity {
 
     @Id
@@ -52,7 +51,7 @@ public class VerdictOverrideEntity {
     @Column(name = "override_verdict", nullable = false, length = 32)
     private String overrideVerdict;
 
-    @Column(name = "reason", length = 1024)
+    @Column(name = "reason", columnDefinition = "text")
     private String reason;
 
     @Column(name = "overridden_at", nullable = false)
@@ -74,8 +73,24 @@ public class VerdictOverrideEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    /** Backwards-compatible pre-V13 9-arg constructor. */
+    /** Builder constructor for new rows; generated IDs and audit metadata are persistence-managed. */
+    @Builder
     public VerdictOverrideEntity(
+            Long verdictId,
+            String candidateId,
+            String symbol,
+            String originalVerdict,
+            String overrideVerdict,
+            String reason,
+            Instant overriddenAt,
+            String author
+    ) {
+        this(null, verdictId, candidateId, symbol, originalVerdict, overrideVerdict,
+                reason, overriddenAt, author, null, null, 0L);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    VerdictOverrideEntity(
             Long id,
             Long verdictId,
             String candidateId,

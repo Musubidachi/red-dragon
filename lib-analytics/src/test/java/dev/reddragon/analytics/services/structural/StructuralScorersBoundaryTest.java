@@ -1,5 +1,6 @@
 package dev.reddragon.analytics.services.structural;
 
+import dev.reddragon.analytics.services.ScoreResult;
 import dev.reddragon.domain.models.CandidateCatalystType;
 import dev.reddragon.domain.models.SourceType;
 import dev.reddragon.domain.models.TradeCandidate;
@@ -8,7 +9,6 @@ import dev.reddragon.domain.models.MarketDataSnapshot;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,9 +30,8 @@ class StructuralScorersBoundaryTest {
         double score = scorer.process(
                 candidate(1.0, 1.0, 1.0),
                 snapshot(0.50, 0.04, 1.0, 1.0),
-                /* equilibriumQuality = */ 1.0,
-                new ArrayList<>()
-        );
+                /* equilibriumQuality = */ 1.0
+        ).score();
         assertEquals(1.0, score, 1e-9);
     }
 
@@ -42,51 +41,44 @@ class StructuralScorersBoundaryTest {
         double score = scorer.process(
                 candidate(0.0, 0.0, 0.0),
                 snapshot(0.50, 0.04, 0.0, 0.0),
-                /* equilibriumQuality = */ 0.0,
-                new ArrayList<>()
-        );
+                /* equilibriumQuality = */ 0.0
+        ).score();
         assertEquals(0.0, score, 1e-9);
     }
 
     @Test
     void asymmetryScorerAppliesRangePenaltyWhenExtended() {
         AsymmetryScorer scorer = new AsymmetryScorer();
-        List<String> notes = new ArrayList<>();
         double balanced = scorer.process(
                 candidate(0.8, 0.8, 0.8),
                 snapshot(0.50, 0.04, 1.0, 1.0),
-                0.8,
-                new ArrayList<>()
-        );
-        double extended = scorer.process(
+                0.8
+        ).score();
+        ScoreResult extended = scorer.process(
                 candidate(0.8, 0.8, 0.8),
                 snapshot(0.92, 0.04, 1.0, 1.0),
-                0.8,
-                notes
+                0.8
         );
-        assertTrue(balanced > extended, "extended range must compress asymmetry");
-        assertTrue(notes.stream().anyMatch(n -> n.contains("Range position is extended")),
+        assertTrue(balanced > extended.score(), "extended range must compress asymmetry");
+        assertTrue(extended.notes().stream().anyMatch(n -> n.contains("Range position is extended")),
                 "range penalty must produce a note");
     }
 
     @Test
     void asymmetryScorerAppliesGapPenaltyWhenLargeGap() {
         AsymmetryScorer scorer = new AsymmetryScorer();
-        List<String> notes = new ArrayList<>();
         double clean = scorer.process(
                 candidate(0.8, 0.8, 0.8),
                 snapshot(0.50, 0.04, 1.0, 1.0),
-                0.8,
-                new ArrayList<>()
-        );
-        double gappedUp = scorer.process(
+                0.8
+        ).score();
+        ScoreResult gappedUp = scorer.process(
                 candidate(0.8, 0.8, 0.8),
                 snapshot(0.50, 0.20, 1.0, 1.0),
-                0.8,
-                notes
+                0.8
         );
-        assertTrue(clean > gappedUp, "large gap must compress asymmetry");
-        assertTrue(notes.stream().anyMatch(n -> n.contains("Large gap detected")),
+        assertTrue(clean > gappedUp.score(), "large gap must compress asymmetry");
+        assertTrue(gappedUp.notes().stream().anyMatch(n -> n.contains("Large gap detected")),
                 "gap penalty must produce a note");
     }
 

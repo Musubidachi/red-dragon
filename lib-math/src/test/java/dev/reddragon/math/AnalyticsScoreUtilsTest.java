@@ -54,7 +54,7 @@ class AnalyticsScoreUtilsTest {
     }
 
     @Test
-    void weightedAverageReturnsZeroForZeroWeight() {
+    void weightedAverageReturnsNoSignalSentinelForZeroWeight() {
         assertEquals(0.0, AnalyticsScoreUtils.weightedAverage(1.0, 0.0), EPS);
     }
 

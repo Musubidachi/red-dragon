@@ -1,21 +1,9 @@
 package dev.reddragon.app.controllers;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import dev.reddragon.persistence.domains.ValidationVerdictReasonEntity;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import dev.reddragon.app.models.CandidateReviewItem;
 import dev.reddragon.persistence.domains.CandidateEntity;
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
+import dev.reddragon.persistence.domains.ValidationVerdictReasonEntity;
 import dev.reddragon.persistence.services.repositories.AnalyticsSnapshotRepository;
 import dev.reddragon.persistence.services.repositories.CandidateRepository;
 import dev.reddragon.persistence.services.repositories.MarketSnapshotRepository;
@@ -23,6 +11,17 @@ import dev.reddragon.persistence.services.repositories.TraderNoteRepository;
 import dev.reddragon.persistence.services.repositories.ValidationVerdictRepository;
 import dev.reddragon.persistence.services.repositories.VerdictOverrideRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Read-only history endpoints for candidates and their validation records.
@@ -37,6 +36,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CandidateHistoryController {
 
+    private static final int DEFAULT_HISTORY_LIMIT = 25;
+    private static final int MAX_HISTORY_LIMIT = 100;
+
     private final CandidateRepository candidateRepository;
     private final ValidationVerdictRepository verdictRepository;
     private final MarketSnapshotRepository marketSnapshotRepository;
@@ -46,18 +48,18 @@ public class CandidateHistoryController {
 
     /**
      * All validation verdicts for a symbol, newest-first.
-     * The optional {@code limit} param caps the result. Repository method is
-     * currently limited to 25 rows, so requests above 25 still return 25.
+     * The optional {@code limit} param is honored up to {@value #MAX_HISTORY_LIMIT}.
      */
     @GetMapping("/{symbol}/history")
     public List<CandidateReviewItem> symbolHistory(
             @PathVariable String symbol,
-            @RequestParam(defaultValue = "25") int limit
+            @RequestParam(defaultValue = "" + DEFAULT_HISTORY_LIMIT) int limit
     ) {
-        int safeLimit = Math.min(Math.max(1, limit), 25);
-        return verdictRepository.findTop25BySymbolOrderByCreatedAtDesc(symbol.trim().toUpperCase())
+        int safeLimit = normalizeLimit(limit);
+        return verdictRepository.findBySymbolOrderByCreatedAtDesc(
+                        symbol.trim().toUpperCase(),
+                        PageRequest.of(0, safeLimit))
                 .stream()
-                .limit(safeLimit)
                 .map(this::toReviewItem)
                 .toList();
     }
@@ -77,7 +79,9 @@ public class CandidateHistoryController {
 
     private Map<String, Object> toCandidateDetail(CandidateEntity candidate) {
         List<CandidateReviewItem> verdicts = verdictRepository
-                .findTop25ByCandidateIdOrderByCreatedAtDesc(candidate.getCandidateId())
+                .findByCandidateIdOrderByCreatedAtDesc(
+                        candidate.getCandidateId(),
+                        PageRequest.of(0, DEFAULT_HISTORY_LIMIT))
                 .stream()
                 .map(this::toReviewItem)
                 .toList();
@@ -147,5 +151,9 @@ public class CandidateHistoryController {
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private int normalizeLimit(int requestedLimit) {
+        return Math.min(Math.max(1, requestedLimit), MAX_HISTORY_LIMIT);
     }
 }

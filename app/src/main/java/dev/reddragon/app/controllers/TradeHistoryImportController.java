@@ -31,6 +31,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TradeHistoryImportController {
 
+    private static final String HEURISTIC_DEPRECATION_WARNING =
+            "Strategy and market-state heuristic fields are deprecated and are no longer inferred during import.";
+
     private final TradeHistoryImportBatchRepository batchRepository;
     private final TradeHistoryRecordRepository recordRepository;
 
@@ -49,6 +52,7 @@ public class TradeHistoryImportController {
         }
 
         int totalRows = 0;
+        boolean heuristicWarningAdded = false;
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.isBlank()) {
@@ -74,8 +78,10 @@ public class TradeHistoryImportController {
                 Double realizedPnl = parseOptionalDouble(cols[5], "realizedPnL", i, warnings);
                 String account = cols[6].trim();
 
-                String strategyType = inferStrategyType(side, quantity, realizedPnl);
-                String marketState = inferMarketState(side, realizedPnl);
+                if (!heuristicWarningAdded) {
+                    warnings.add(HEURISTIC_DEPRECATION_WARNING);
+                    heuristicWarningAdded = true;
+                }
 
                 trades.add(new NormalizedTradeRecord(
                         timestamp,
@@ -85,8 +91,8 @@ public class TradeHistoryImportController {
                         price,
                         realizedPnl,
                         account,
-                        strategyType,
-                        marketState
+                        null,
+                        null
                 ));
             } catch (RuntimeException ex) {
                 warnings.add("Row " + (i + 1) + " skipped: " + ex.getMessage());
@@ -141,33 +147,30 @@ public class TradeHistoryImportController {
             List<String> warnings,
             List<NormalizedTradeRecord> trades
     ) {
-        TradeHistoryImportBatchEntity batch = batchRepository.save(new TradeHistoryImportBatchEntity(
-                null,
-                Instant.now(),
-                totalRows,
-                trades.size(),
-                String.join("\n", warnings)
-        ));
+        TradeHistoryImportBatchEntity batch = batchRepository.save(TradeHistoryImportBatchEntity.builder()
+                .importedAt(Instant.now())
+                .totalRows(totalRows)
+                .importedRows(trades.size())
+                .warnings(String.join("\n", warnings))
+                .build());
         recordRepository.saveAll(trades.stream()
                 .map(trade -> toEntity(batch.getId(), trade))
                 .toList());
     }
 
     private TradeHistoryRecordEntity toEntity(Long batchId, NormalizedTradeRecord trade) {
-        return new TradeHistoryRecordEntity(
-                null,
-                batchId,
-                null,
-                trade.timestamp(),
-                trade.ticker(),
-                trade.side(),
-                trade.quantity(),
-                trade.price(),
-                trade.realizedPnl(),
-                trade.account(),
-                trade.strategyType(),
-                trade.marketState()
-        );
+        return TradeHistoryRecordEntity.builder()
+                .importBatchId(batchId)
+                .tradeTimestamp(trade.timestamp())
+                .ticker(trade.ticker())
+                .side(trade.side())
+                .quantity(trade.quantity())
+                .price(trade.price())
+                .realizedPnl(trade.realizedPnl())
+                .account(trade.account())
+                .strategyType(null)
+                .marketState(null)
+                .build();
     }
 
     private Instant parseTimestamp(String value, int row, List<String> warnings) {
@@ -199,28 +202,5 @@ public class TradeHistoryImportController {
             warnings.add("Row " + (row + 1) + ": invalid " + name + " '" + raw + "', set to null.");
             return null;
         }
-    }
-
-    private String inferStrategyType(String side, double quantity, Double realizedPnl) {
-        if ("SELL".equals(side) && realizedPnl != null && realizedPnl > 0) {
-            return "equilibrium_recycle";
-        }
-        if (quantity >= 1_000) {
-            return "selective_aggression";
-        }
-        return "equilibrium";
-    }
-
-    private String inferMarketState(String side, Double realizedPnl) {
-        if (realizedPnl == null) {
-            return "unknown";
-        }
-        if (realizedPnl > 0 && "SELL".equals(side)) {
-            return "rotational";
-        }
-        if (realizedPnl < 0 && "BUY".equals(side)) {
-            return "directional_expansion";
-        }
-        return "mixed";
     }
 }

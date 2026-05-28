@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -29,14 +29,14 @@ public class AnalyticsScoreBreakdown {
             double regimeCompatibilityScore,
             double deploymentConfidenceScore
     ) {
-        this.structuralRealityScore = AnalyticsScoreUtils.clamp(structuralRealityScore);
-        this.materialSignificanceScore = AnalyticsScoreUtils.clamp(materialSignificanceScore);
-        this.earlynessScore = AnalyticsScoreUtils.clamp(earlynessScore);
-        this.equilibriumQualityScore = AnalyticsScoreUtils.clamp(equilibriumQualityScore);
-        this.reflexivityPotentialScore = AnalyticsScoreUtils.clamp(reflexivityPotentialScore);
-        this.asymmetryScore = AnalyticsScoreUtils.clamp(asymmetryScore);
-        this.regimeCompatibilityScore = AnalyticsScoreUtils.clamp(regimeCompatibilityScore);
-        this.deploymentConfidenceScore = AnalyticsScoreUtils.clamp(deploymentConfidenceScore);
+        this.structuralRealityScore = DomainScorePolicy.clampDerivedScore(structuralRealityScore);
+        this.materialSignificanceScore = DomainScorePolicy.clampDerivedScore(materialSignificanceScore);
+        this.earlynessScore = DomainScorePolicy.clampDerivedScore(earlynessScore);
+        this.equilibriumQualityScore = DomainScorePolicy.clampDerivedScore(equilibriumQualityScore);
+        this.reflexivityPotentialScore = DomainScorePolicy.clampDerivedScore(reflexivityPotentialScore);
+        this.asymmetryScore = DomainScorePolicy.clampDerivedScore(asymmetryScore);
+        this.regimeCompatibilityScore = DomainScorePolicy.clampDerivedScore(regimeCompatibilityScore);
+        this.deploymentConfidenceScore = DomainScorePolicy.clampDerivedScore(deploymentConfidenceScore);
     }
 
     /** Average of all 8 dimension scores. */
@@ -47,41 +47,41 @@ public class AnalyticsScoreBreakdown {
     }
 
     /**
-     * Name of the dimension with the lowest score — the weakest signal.
+     * Dimension with the lowest score - the weakest signal.
      *
      * <p>Every comparison updates both {@code min} and {@code name} for
      * symmetry; adding a new dimension at the end of the chain does not
      * require remembering to special-case the previous last line.
      */
-    public String weakestDimension() {
+    public ScoreDimension weakestDimension() {
         double min = structuralRealityScore;
-        String name = "structuralReality";
-        if (materialSignificanceScore < min)  { min = materialSignificanceScore;  name = "materialSignificance"; }
-        if (earlynessScore < min)             { min = earlynessScore;             name = "earlyness"; }
-        if (equilibriumQualityScore < min)    { min = equilibriumQualityScore;    name = "equilibriumQuality"; }
-        if (reflexivityPotentialScore < min)  { min = reflexivityPotentialScore;  name = "reflexivityPotential"; }
-        if (asymmetryScore < min)             { min = asymmetryScore;             name = "asymmetry"; }
-        if (regimeCompatibilityScore < min)   { min = regimeCompatibilityScore;   name = "regimeCompatibility"; }
-        if (deploymentConfidenceScore < min)  { min = deploymentConfidenceScore;  name = "deploymentConfidence"; }
+        ScoreDimension name = ScoreDimension.STRUCTURAL_REALITY;
+        if (materialSignificanceScore < min)  { min = materialSignificanceScore;  name = ScoreDimension.MATERIAL_SIGNIFICANCE; }
+        if (earlynessScore < min)             { min = earlynessScore;             name = ScoreDimension.EARLYNESS; }
+        if (equilibriumQualityScore < min)    { min = equilibriumQualityScore;    name = ScoreDimension.EQUILIBRIUM_QUALITY; }
+        if (reflexivityPotentialScore < min)  { min = reflexivityPotentialScore;  name = ScoreDimension.REFLEXIVITY_POTENTIAL; }
+        if (asymmetryScore < min)             { min = asymmetryScore;             name = ScoreDimension.ASYMMETRY; }
+        if (regimeCompatibilityScore < min)   { min = regimeCompatibilityScore;   name = ScoreDimension.REGIME_COMPATIBILITY; }
+        if (deploymentConfidenceScore < min)  { min = deploymentConfidenceScore;  name = ScoreDimension.DEPLOYMENT_CONFIDENCE; }
         return name;
     }
 
     /**
-     * Name of the dimension with the highest score — the strongest signal.
+     * Dimension with the highest score - the strongest signal.
      *
      * <p>Every comparison updates both {@code max} and {@code name} for
      * symmetry; see {@link #weakestDimension()} for the rationale.
      */
-    public String strongestDimension() {
+    public ScoreDimension strongestDimension() {
         double max = structuralRealityScore;
-        String name = "structuralReality";
-        if (materialSignificanceScore > max)  { max = materialSignificanceScore;  name = "materialSignificance"; }
-        if (earlynessScore > max)             { max = earlynessScore;             name = "earlyness"; }
-        if (equilibriumQualityScore > max)    { max = equilibriumQualityScore;    name = "equilibriumQuality"; }
-        if (reflexivityPotentialScore > max)  { max = reflexivityPotentialScore;  name = "reflexivityPotential"; }
-        if (asymmetryScore > max)             { max = asymmetryScore;             name = "asymmetry"; }
-        if (regimeCompatibilityScore > max)   { max = regimeCompatibilityScore;   name = "regimeCompatibility"; }
-        if (deploymentConfidenceScore > max)  { max = deploymentConfidenceScore;  name = "deploymentConfidence"; }
+        ScoreDimension name = ScoreDimension.STRUCTURAL_REALITY;
+        if (materialSignificanceScore > max)  { max = materialSignificanceScore;  name = ScoreDimension.MATERIAL_SIGNIFICANCE; }
+        if (earlynessScore > max)             { max = earlynessScore;             name = ScoreDimension.EARLYNESS; }
+        if (equilibriumQualityScore > max)    { max = equilibriumQualityScore;    name = ScoreDimension.EQUILIBRIUM_QUALITY; }
+        if (reflexivityPotentialScore > max)  { max = reflexivityPotentialScore;  name = ScoreDimension.REFLEXIVITY_POTENTIAL; }
+        if (asymmetryScore > max)             { max = asymmetryScore;             name = ScoreDimension.ASYMMETRY; }
+        if (regimeCompatibilityScore > max)   { max = regimeCompatibilityScore;   name = ScoreDimension.REGIME_COMPATIBILITY; }
+        if (deploymentConfidenceScore > max)  { max = deploymentConfidenceScore;  name = ScoreDimension.DEPLOYMENT_CONFIDENCE; }
         return name;
     }
 }

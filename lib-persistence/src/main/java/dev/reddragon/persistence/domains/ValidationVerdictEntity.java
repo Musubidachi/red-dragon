@@ -1,5 +1,6 @@
 package dev.reddragon.persistence.domains;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,8 +29,7 @@ import java.util.stream.Collectors;
 @Table(name = "validation_verdict")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ValidationVerdictEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,7 +66,8 @@ public class ValidationVerdictEntity {
      * on writes. Use {@link #getReasons()} or {@link #legacyReasonCodes()}.
      */
     @Deprecated(forRemoval = true)
-    @Column(name = "reason_codes", length = 4000)
+    @JsonIgnore
+    @Column(name = "reason_codes", columnDefinition = "text")
     private String reasonCodes;
 
     /**
@@ -75,7 +76,8 @@ public class ValidationVerdictEntity {
      * {@link #getReasons()} or {@link #legacyExplanations()}.
      */
     @Deprecated(forRemoval = true)
-    @Column(name = "explanations", length = 8000)
+    @JsonIgnore
+    @Column(name = "explanations", columnDefinition = "text")
     private String explanations;
 
     @Column(name = "created_at", nullable = false)
@@ -98,13 +100,13 @@ public class ValidationVerdictEntity {
             mappedBy = "verdict",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.EAGER
+            fetch = FetchType.LAZY
     )
     @OrderBy("sortOrder ASC")
     private List<ValidationVerdictReasonEntity> reasons = new ArrayList<>();
 
     /**
-     * Wall-clock instant of the most recent UPDATE — refreshed by
+     * Wall-clock instant of the most recent UPDATE refreshed by
      * {@link #touchUpdatedAt()}. Verdicts are typically immutable after
      * write, but the column exists for the rare re-scoring path and so
      * the audit pattern is uniform across mutable entities.
@@ -117,10 +119,30 @@ public class ValidationVerdictEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
+    /** Builder constructor for new rows; generated IDs and audit metadata are persistence-managed. */
+    @Builder
+    public ValidationVerdictEntity(
+            String candidateId,
+            String symbol,
+            String verdict,
+            String deploymentTier,
+            double score,
+            String idempotencyKey,
+            String reasonCodes,
+            String explanations,
+            Instant createdAt,
+            List<ValidationVerdictReasonEntity> reasons
+    ) {
+        this(null, candidateId, symbol, verdict, deploymentTier, score,
+                idempotencyKey, reasonCodes, explanations, createdAt,
+                reasons == null ? new ArrayList<>() : reasons,
+                null, 0L);
+    }
+
     /**
      * Backwards-compatible factory constructor (pre-V13 shape).
      */
-    public ValidationVerdictEntity(
+    ValidationVerdictEntity(
             Long id,
             String candidateId,
             String symbol,

@@ -15,6 +15,8 @@ public interface AnalyticsSnapshotRepository extends JpaRepository<AnalyticsSnap
 
     List<AnalyticsSnapshotEntity> findTop25ByCandidateIdOrderByObservedAtDesc(String candidateId);
 
+    List<AnalyticsSnapshotEntity> findTop50ByObservedAtAfterOrderByObservedAtDesc(Instant since);
+
     /** All snapshots for a specific regime label observed after the given timestamp. */
     List<AnalyticsSnapshotEntity> findByRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
             String regimeLabel,

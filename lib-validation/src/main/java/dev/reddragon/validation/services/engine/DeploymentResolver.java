@@ -39,11 +39,11 @@ public class DeploymentResolver {
             return DeploymentTier.CONCENTRATED;
         }
 
-        if (standard(verdict, score)) {
+        if (standard(verdict, score, input)) {
             return DeploymentTier.STANDARD;
         }
 
-        if (probe(score)) {
+        if (probe(score, input)) {
             return DeploymentTier.PROBE;
         }
 
@@ -60,18 +60,21 @@ public class DeploymentResolver {
             CandidateValidationInput input
     ) {
         return score >= thresholds.concentrationThreshold()
-                && input.deploymentConfidenceScore() >= thresholds.standardDeploymentThreshold()
-                && input.asymmetryScore() >= thresholds.passThreshold()
-                && input.earlynessScore() >= thresholds.passThreshold();
+                && input.deploymentConfidenceScore()
+                        >= thresholds.concentrationDeploymentConfidenceThreshold()
+                && input.asymmetryScore() >= thresholds.concentrationAsymmetryThreshold()
+                && input.earlynessScore() >= thresholds.concentrationEarlynessThreshold();
     }
 
-    private boolean standard(Verdict verdict, double score) {
+    private boolean standard(Verdict verdict, double score, CandidateValidationInput input) {
         return verdict == Verdict.PASS
-                && score >= thresholds.standardDeploymentThreshold();
+                && score >= thresholds.standardDeploymentThreshold()
+                && input.deploymentConfidenceScore() >= thresholds.standardDeploymentConfidenceThreshold();
     }
 
-    private boolean probe(double score) {
-        return score >= thresholds.probeDeploymentThreshold();
+    private boolean probe(double score, CandidateValidationInput input) {
+        return score >= thresholds.probeDeploymentThreshold()
+                && input.deploymentConfidenceScore() >= thresholds.probeDeploymentConfidenceThreshold();
     }
 
     private boolean observe(double score) {

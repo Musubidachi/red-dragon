@@ -4,6 +4,7 @@ import dev.reddragon.domain.models.IntradayBar;
 import dev.reddragon.domain.models.MarketIntradayStructureSnapshot;
 import dev.reddragon.math.MarketMathUtils;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,7 +27,14 @@ public class IntradayStructureSnapshotBuilder {
         }
 
         IntradayBar latest = latestBar(bars);
-        double sessionVwap = vwapCalculator.process(bars);
+        LocalDate latestSession = latest.startTime()
+                .atZone(VwapCalculator.DEFAULT_SESSION_ZONE)
+                .toLocalDate();
+        double sessionVwap = vwapCalculator.processSession(
+                bars,
+                latestSession,
+                VwapCalculator.DEFAULT_SESSION_ZONE
+        );
         double vwapDistancePercent = vwapDistancePercent(latest.close(), sessionVwap);
         double directionalPersistence = persistenceCalculator.process(bars);
         double rotationalQuality = 1.0 - directionalPersistence;

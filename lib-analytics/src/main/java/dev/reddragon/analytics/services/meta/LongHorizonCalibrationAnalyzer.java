@@ -1,5 +1,6 @@
 package dev.reddragon.analytics.services.meta;
 
+import dev.reddragon.analytics.config.CalibrationDriftThresholds;
 import dev.reddragon.domain.models.CalibrationDriftLevel;
 import dev.reddragon.domain.models.CalibrationReport;
 import dev.reddragon.domain.models.OutcomeSample;
@@ -14,16 +15,18 @@ import java.util.Objects;
 public class LongHorizonCalibrationAnalyzer {
 
     // ---- Drift-level thresholds --------------------------------------------
-    // Win-rate floors for each drift level. Lifted out of inline literals so
-    // the calibration mapping is reviewable without parsing conditionals.
-    // Note: these are not yet wired through ValidationThresholds — moving them
-    // there is tracked separately in lib-analytics/REVIEW.md (Finding #10).
-    private static final double STABLE_WIN_RATE_MIN          = 0.65;
-    private static final double STABLE_AVG_RETURN_MIN        = 0.0;   // exclusive
-    private static final double STABLE_AVG_DRAWDOWN_MAX      = 0.15;  // exclusive
-    private static final double MINOR_DRIFT_WIN_RATE_MIN     = 0.55;
-    private static final double MINOR_DRIFT_AVG_RETURN_MIN   = 0.0;
-    private static final double MODERATE_DRIFT_WIN_RATE_MIN  = 0.45;
+    // Configurable drift thresholds; defaults preserve the historical mapping.
+    // These stay analytics-owned because they evaluate realized outcomes,
+    // not validation admission or deployment-tier decisions.
+    private final CalibrationDriftThresholds thresholds;
+
+    public LongHorizonCalibrationAnalyzer() {
+        this(CalibrationDriftThresholds.defaults());
+    }
+
+    public LongHorizonCalibrationAnalyzer(CalibrationDriftThresholds thresholds) {
+        this.thresholds = Objects.requireNonNull(thresholds, "thresholds are required");
+    }
 
     /**
      * Main processing flow.
@@ -100,21 +103,21 @@ public class LongHorizonCalibrationAnalyzer {
             List<String> findings,
             List<String> recommendations
     ) {
-        if (winRate >= STABLE_WIN_RATE_MIN
-                && averageReturn > STABLE_AVG_RETURN_MIN
-                && averageDrawdown < STABLE_AVG_DRAWDOWN_MAX) {
+        if (winRate >= thresholds.getStableWinRateMin()
+                && averageReturn > thresholds.getStableAverageReturnMin()
+                && averageDrawdown < thresholds.getStableAverageDrawdownMax()) {
             findings.add("Framework performance remains historically stable.");
             return CalibrationDriftLevel.STABLE;
         }
 
-        if (winRate >= MINOR_DRIFT_WIN_RATE_MIN
-                && averageReturn >= MINOR_DRIFT_AVG_RETURN_MIN) {
+        if (winRate >= thresholds.getMinorDriftWinRateMin()
+                && averageReturn >= thresholds.getMinorDriftAverageReturnMin()) {
             findings.add("Minor degradation detected in framework performance.");
             recommendations.add("Review adversarial thresholds for saturation conditions.");
             return CalibrationDriftLevel.MINOR_DRIFT;
         }
 
-        if (winRate >= MODERATE_DRIFT_WIN_RATE_MIN) {
+        if (winRate >= thresholds.getModerateDriftWinRateMin()) {
             findings.add("Moderate framework drift detected.");
             recommendations.add("Reevaluate propagation and asymmetry assumptions.");
             recommendations.add("Tighten deployment concentration thresholds.");

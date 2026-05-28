@@ -3,7 +3,11 @@ package dev.reddragon.domain.utilities;
 import lombok.experimental.UtilityClass;
 
 /**
- * Shared text normalization helpers for ingestion adapters.
+ * Shared domain text normalization helpers.
+ *
+ * <p>The historical name comes from the first ingestion use case, but the class
+ * is intentionally placed in {@code lib-domain} so model constructors can share
+ * the same cleanup and symbol normalization rules across modules.
  */
 @UtilityClass
 public class IngestionTextUtils {

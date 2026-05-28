@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models;
 
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -21,7 +22,7 @@ public class AdversarialFinding {
             String explanation
     ) {
         this.type = Objects.requireNonNull(type, "type is required");
-        this.severity = Math.max(0.0, Math.min(1.0, severity));
+        this.severity = DomainScorePolicy.clampDerivedScore(severity);
         this.explanation = explanation == null ? "" : explanation;
     }
 }

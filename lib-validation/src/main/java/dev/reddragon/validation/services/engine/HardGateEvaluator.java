@@ -27,105 +27,136 @@ public class HardGateEvaluator {
 
         List<ReasonCode> failures = new ArrayList<>();
 
-        addRequiredDataFailure(input, failures);
-        addCatalystFailure(input, failures);
-        addStructuralRealityFailure(input, failures);
-        addMaterialityFailure(input, failures);
-        addEarlynessFailure(input, failures);
-        addEquilibriumFailure(input, failures);
-        addAsymmetryFailure(input, failures);
-        addRegimeFailure(input, failures);
-        addHardGateMarker(failures);
+        boolean hardGateFailed = false;
+        hardGateFailed |= addRequiredDataFailure(input, failures);
+        hardGateFailed |= addCatalystFailure(input, failures);
+        hardGateFailed |= addStructuralRealityFailure(input, failures);
+        hardGateFailed |= addMaterialityFailure(input, failures);
+        hardGateFailed |= addEarlynessFailure(input, failures);
+        hardGateFailed |= addEquilibriumFailure(input, failures);
+        hardGateFailed |= addAsymmetryFailure(input, failures);
+        hardGateFailed |= addRegimeFailure(input, failures);
+        addHardGateMarker(hardGateFailed, failures);
 
         return List.copyOf(failures);
     }
 
-    private void addRequiredDataFailure(
+    private boolean addRequiredDataFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
         if (!input.requiredDataPresent()) {
             failures.add(ReasonCode.REQUIRED_DATA_MISSING);
+            return true;
         }
+
+        return false;
     }
 
-    private void addCatalystFailure(
+    private boolean addCatalystFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
         if (!input.credibleCatalyst()) {
             failures.add(ReasonCode.CATALYST_NOT_CREDIBLE);
+            return true;
         }
+
+        return false;
     }
 
-    private void addStructuralRealityFailure(
+    private boolean addStructuralRealityFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
         if (input.structuralRealityScore() < thresholds.minStructuralReality()) {
             failures.add(ReasonCode.STRUCTURAL_CATALYST_WEAK);
+            return true;
         }
+
+        return false;
     }
 
-    private void addMaterialityFailure(
+    private boolean addMaterialityFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
         if (input.materialSignificanceScore() < thresholds.minMaterialSignificance()) {
             failures.add(ReasonCode.MATERIAL_IMPACT_INSUFFICIENT);
+            return true;
         }
+
+        return false;
     }
 
-    private void addEarlynessFailure(
+    private boolean addEarlynessFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
+        boolean failed = false;
         if (input.earlynessScore() < thresholds.minEarlyness()) {
             failures.add(ReasonCode.MAINSTREAM_SATURATION);
+            failed = true;
         }
 
         if (input.euphoricOrSaturated()) {
             failures.add(ReasonCode.EUPHORIC_REFLEXIVITY);
+            failed = true;
         }
+
+        return failed;
     }
 
-    private void addEquilibriumFailure(
+    private boolean addEquilibriumFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
+        boolean failed = false;
         if (input.equilibriumQualityScore() < thresholds.minEquilibriumQuality()) {
             failures.add(ReasonCode.EQUILIBRIUM_DIRECTIONAL_HOSTILE);
+            failed = true;
         }
 
         if (input.hostileMarketStructure()) {
             failures.add(ReasonCode.EQUILIBRIUM_LIQUIDITY_DEGRADED);
+            failed = true;
         }
+
+        return failed;
     }
 
-    private void addAsymmetryFailure(
+    private boolean addAsymmetryFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
+        boolean failed = false;
         if (input.asymmetryScore() < thresholds.minAsymmetry()) {
             failures.add(ReasonCode.ASYMMETRY_UNFAVORABLE);
+            failed = true;
         }
 
         if (input.equilibriumAlreadyRepriced()) {
             failures.add(ReasonCode.ASYMMETRY_COMPRESSED);
+            failed = true;
         }
+
+        return failed;
     }
 
-    private void addRegimeFailure(
+    private boolean addRegimeFailure(
             CandidateValidationInput input,
             List<ReasonCode> failures
     ) {
         if (input.regimeCompatibilityScore() < thresholds.minRegimeCompatibility()) {
             failures.add(ReasonCode.REGIME_HOSTILE);
+            return true;
         }
+
+        return false;
     }
 
-    private void addHardGateMarker(List<ReasonCode> failures) {
-        if (!failures.isEmpty()) {
+    private void addHardGateMarker(boolean hardGateFailed, List<ReasonCode> failures) {
+        if (hardGateFailed) {
             failures.add(ReasonCode.HARD_GATE_FAILED);
         }
     }

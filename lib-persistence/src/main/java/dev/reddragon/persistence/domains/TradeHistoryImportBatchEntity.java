@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "trade_history_import_batch")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TradeHistoryImportBatchEntity {
 
     @Id
@@ -34,15 +35,26 @@ public class TradeHistoryImportBatchEntity {
     @Column(name = "imported_rows", nullable = false)
     private int importedRows;
 
-    @Column(name = "warnings", length = 8000)
+    @Column(name = "warnings", columnDefinition = "text")
     private String warnings;
 
     /** DB-populated insertion timestamp (V13); distinct from {@link #importedAt}. */
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public TradeHistoryImportBatchEntity(
+            Instant importedAt,
+            int totalRows,
+            int importedRows,
+            String warnings
+    ) {
+        this(null, importedAt, totalRows, importedRows, warnings, null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    TradeHistoryImportBatchEntity(
             Long id,
             Instant importedAt,
             int totalRows,

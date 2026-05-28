@@ -335,15 +335,15 @@ public class ValidationFactorFactory {
     }
 
     private ReasonCode deploymentReason(double score) {
-        if (score >= 0.80) {
+        if (score >= thresholds.concentrationDeploymentConfidenceThreshold()) {
             return ReasonCode.DEPLOYMENT_CONCENTRATION_CANDIDATE;
         }
 
-        if (score >= 0.65) {
+        if (score >= thresholds.standardDeploymentConfidenceThreshold()) {
             return ReasonCode.DEPLOYMENT_STANDARD_REVIEW;
         }
 
-        if (score >= 0.45) {
+        if (score >= thresholds.probeDeploymentConfidenceThreshold()) {
             return ReasonCode.DEPLOYMENT_PROBE_ONLY;
         }
 
@@ -351,15 +351,15 @@ public class ValidationFactorFactory {
     }
 
     private String deploymentExplanation(double score) {
-        if (score >= 0.80) {
+        if (score >= thresholds.concentrationDeploymentConfidenceThreshold()) {
             return "Deployment: setup may deserve concentrated review if all other gates pass.";
         }
 
-        if (score >= 0.65) {
+        if (score >= thresholds.standardDeploymentConfidenceThreshold()) {
             return "Deployment: setup may deserve standard capital review.";
         }
 
-        if (score >= 0.45) {
+        if (score >= thresholds.probeDeploymentConfidenceThreshold()) {
             return "Deployment: setup is probe-only until confirmation improves.";
         }
 

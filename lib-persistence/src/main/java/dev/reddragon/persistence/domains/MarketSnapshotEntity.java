@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import java.time.Instant;
 @Table(name = "market_snapshot")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MarketSnapshotEntity {
 
     @Id
@@ -61,7 +62,7 @@ public class MarketSnapshotEntity {
     @Column(name = "quality", nullable = false, length = 64)
     private String quality;
 
-    @Column(name = "notes", length = 4000)
+    @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
     /** Ratio of latest bar volume to period average volume (nullable for old rows). */
@@ -80,8 +81,34 @@ public class MarketSnapshotEntity {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    /** Backwards-compatible pre-V13 constructor. */
+    /** Builder constructor for new rows; generated IDs and audit columns are database-managed. */
+    @Builder
     public MarketSnapshotEntity(
+            String candidateId,
+            String symbol,
+            Instant observedAt,
+            double latestClose,
+            double previousClose,
+            double gapPercent,
+            double averageTrueRange,
+            double rangePosition,
+            double averageVolume,
+            double liquidityScore,
+            double volatilityStabilityScore,
+            String quality,
+            String notes,
+            Double relativeVolume,
+            Double vwapDeviation,
+            Double directionalPersistence
+    ) {
+        this(null, candidateId, symbol, observedAt, latestClose, previousClose,
+                gapPercent, averageTrueRange, rangePosition, averageVolume,
+                liquidityScore, volatilityStabilityScore, quality, notes,
+                relativeVolume, vwapDeviation, directionalPersistence, null);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    MarketSnapshotEntity(
             Long id,
             String candidateId,
             String symbol,

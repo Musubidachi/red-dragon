@@ -1,7 +1,7 @@
 package dev.reddragon.domain.models;
 
 import dev.reddragon.domain.utilities.IngestionTextUtils;
-import dev.reddragon.math.ValidationScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -38,6 +38,7 @@ import java.util.Objects;
 @Value
 @Accessors(fluent = true)
 public class TradeCandidate {
+    public static final double CREDIBLE_STRUCTURAL_CATALYST_MIN = 0.65;
 
     String candidateId;
     String symbol;
@@ -83,17 +84,17 @@ public class TradeCandidate {
         this.sourceType = sourceType == null ? SourceType.MANUAL : sourceType;
         this.sourceId = IngestionTextUtils.clean(sourceId);
         this.sourceUrl = IngestionTextUtils.clean(sourceUrl);
-        this.observedAt = observedAt == null ? Instant.now() : observedAt;
+        this.observedAt = Objects.requireNonNull(observedAt, "observedAt is required");
         this.headline = IngestionTextUtils.clean(headline);
         this.summary = IngestionTextUtils.clean(summary);
-        this.structuralRealityScore = ValidationScoreUtils.requireNormalized("structuralRealityScore", structuralRealityScore);
-        this.materialSignificanceScore = ValidationScoreUtils.requireNormalized("materialSignificanceScore", materialSignificanceScore);
-        this.earlynessScore = ValidationScoreUtils.requireNormalized("earlynessScore", earlynessScore);
-        this.reflexivityPotentialScore = ValidationScoreUtils.requireNormalized("reflexivityPotentialScore", reflexivityPotentialScore);
+        this.structuralRealityScore = DomainScorePolicy.requireInputScore("structuralRealityScore", structuralRealityScore);
+        this.materialSignificanceScore = DomainScorePolicy.requireInputScore("materialSignificanceScore", materialSignificanceScore);
+        this.earlynessScore = DomainScorePolicy.requireInputScore("earlynessScore", earlynessScore);
+        this.reflexivityPotentialScore = DomainScorePolicy.requireInputScore("reflexivityPotentialScore", reflexivityPotentialScore);
     }
 
-    /** True if structural-reality is high enough that we trust the catalyst is real (>= 0.65). */
+    /** True if structural-reality is high enough that we trust the catalyst is real. */
     public boolean hasCredibleStructuralCatalyst() {
-        return structuralRealityScore >= 0.65;
+        return structuralRealityScore >= CREDIBLE_STRUCTURAL_CATALYST_MIN;
     }
 }

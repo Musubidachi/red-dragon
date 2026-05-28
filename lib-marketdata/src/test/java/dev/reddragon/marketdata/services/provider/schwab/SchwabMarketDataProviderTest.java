@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withRawStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -124,14 +126,9 @@ class SchwabMarketDataProviderTest {
     @Test
     void malformedJsonWrapsAsIllegalStateException() {
         // Garbage body. The fetchPriceHistory branch wraps it; the
-        // retry loop exhausts; the outer wrapper raises the final error.
+        // retry policy should classify it as non-retryable.
         server.expect(method(GET))
                 .andRespond(withSuccess("not-json", MediaType.APPLICATION_JSON));
-        // The provider retries; with maxRetries=0 (set below) the single
-        // failure raises immediately. Override the test-local config to
-        // make this deterministic.
-        provider = new SchwabMarketDataProvider(
-                singleAttemptProperties(), restClient, new ObjectMapper());
 
         assertThrows(IllegalStateException.class, () -> provider.historicalDailyBars(
                 "AAPL", LocalDate.parse("2026-05-01"), LocalDate.parse("2026-05-02")));
@@ -139,10 +136,37 @@ class SchwabMarketDataProviderTest {
     }
 
     @Test
-    void serverErrorExhaustsRetriesAndThrows() {
-        provider = new SchwabMarketDataProvider(
-                singleAttemptProperties(), restClient, new ObjectMapper());
+    void serverErrorRetriesAndReturnsSuccessfulSecondAttempt() {
+        server.expect(method(GET))
+                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+        server.expect(method(GET))
+                .andRespond(withSuccess(singleCandleJson(), MediaType.APPLICATION_JSON));
 
+        List<MarketBar> bars = provider.historicalDailyBars(
+                "AAPL", LocalDate.parse("2026-05-01"), LocalDate.parse("2026-05-02"));
+
+        assertEquals(1, bars.size());
+        server.verify();
+    }
+
+    @Test
+    void networkErrorRetriesAndReturnsSuccessfulSecondAttempt() {
+        server.expect(method(GET))
+                .andRespond(withException(new IOException("connection reset")));
+        server.expect(method(GET))
+                .andRespond(withSuccess(singleCandleJson(), MediaType.APPLICATION_JSON));
+
+        List<MarketBar> bars = provider.historicalDailyBars(
+                "AAPL", LocalDate.parse("2026-05-01"), LocalDate.parse("2026-05-02"));
+
+        assertEquals(1, bars.size());
+        server.verify();
+    }
+
+    @Test
+    void serverErrorExhaustsRetriesAndThrows() {
+        server.expect(method(GET))
+                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
         server.expect(method(GET))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
@@ -152,15 +176,23 @@ class SchwabMarketDataProviderTest {
     }
 
     @Test
-    void rateLimitedResponseAlsoExhaustsAndThrows() {
-        // 429 — same retry semantics as any other RuntimeException today
-        // (the retry policy is generic; lib-marketdata Finding #11 tracks
-        // making it HTTP-status-aware). The test pins current behaviour.
-        provider = new SchwabMarketDataProvider(
-                singleAttemptProperties(), restClient, new ObjectMapper());
-
+    void rateLimitedResponseRetriesAndReturnsSuccessfulSecondAttempt() {
         server.expect(method(GET))
                 .andRespond(withRawStatus(429));
+        server.expect(method(GET))
+                .andRespond(withSuccess(singleCandleJson(), MediaType.APPLICATION_JSON));
+
+        List<MarketBar> bars = provider.historicalDailyBars(
+                "AAPL", LocalDate.parse("2026-05-01"), LocalDate.parse("2026-05-02"));
+
+        assertEquals(1, bars.size());
+        server.verify();
+    }
+
+    @Test
+    void nonRateLimitedClientErrorIsNotRetried() {
+        server.expect(method(GET))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST));
 
         assertThrows(IllegalStateException.class, () -> provider.historicalDailyBars(
                 "AAPL", LocalDate.parse("2026-05-01"), LocalDate.parse("2026-05-02")));
@@ -257,13 +289,14 @@ class SchwabMarketDataProviderTest {
                 /* retryBackoffMillis */ 0L); // no sleeping in tests
     }
 
-    /** Single-attempt config — one HTTP call, no retries, no sleep. */
-    private static SchwabMarketDataProperties singleAttemptProperties() {
-        return new SchwabMarketDataProperties(
-                BASE_URL, STATIC_TOKEN, true, 0L, /* maxRetries */ 0, 0L);
-    }
-
     private static SchwabMarketDataProperties disabledProperties() {
         return new SchwabMarketDataProperties(BASE_URL, STATIC_TOKEN, false, 0L, 0, 0L);
+    }
+
+    private static String singleCandleJson() {
+        return "{\"candles\":["
+                + "{\"datetime\":1746057600000,\"open\":150.0,\"high\":152.0,"
+                + "\"low\":149.5,\"close\":151.0,\"volume\":1000000}"
+                + "],\"symbol\":\"AAPL\",\"empty\":false}";
     }
 }

@@ -5,7 +5,7 @@ package dev.reddragon.validation.config;
  *
  * <p>Each profile maps to a preset {@link ValidationThresholds} instance
  * via {@link ValidationThresholdProfileFactory}. The {@code STANDARD} profile
- * is the default and is driven by {@code application.yml} overrides.
+ * is the default and can be tuned with {@link ValidationThresholdProperties}.
  */
 public enum ValidationProfile {
     CONSERVATIVE,

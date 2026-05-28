@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models;
 
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -30,9 +31,9 @@ public class TradeModificationRequest {
     ) {
         this.candidateId = Objects.requireNonNull(candidateId, "candidateId is required");
         this.symbol = Objects.requireNonNull(symbol, "symbol is required");
-        this.createdAt = createdAt == null ? Instant.now() : createdAt;
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt is required");
         this.action = Objects.requireNonNull(action, "action is required");
-        this.severity = Math.max(0.0, Math.min(1.0, severity));
+        this.severity = DomainScorePolicy.clampDerivedScore(severity);
         this.reasons = List.copyOf(reasons == null ? List.of() : reasons);
     }
 }

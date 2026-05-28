@@ -1,5 +1,6 @@
 package dev.reddragon.app.controllers;
 
+import dev.reddragon.app.models.CandidateListItemView;
 import dev.reddragon.persistence.domains.CandidateEntity;
 import dev.reddragon.persistence.services.repositories.CandidateRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,23 +31,38 @@ public class CandidateController {
     private final CandidateRepository candidateRepository;
 
     @GetMapping
-    public Page<CandidateEntity> listCandidates(
+    public Page<CandidateListItemView> listCandidates(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false)    String catalystType,
             @RequestParam(required = false)    String sourceType
     ) {
-        int safeSize = Math.min(size, MAX_PAGE_SIZE);
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         Pageable pageable = PageRequest.of(Math.max(page, 0), safeSize);
 
         if (catalystType != null && !catalystType.isBlank()) {
             return candidateRepository.findByCatalystTypeOrderByObservedAtDesc(
-                    catalystType.trim().toUpperCase(), pageable);
+                    catalystType.trim().toUpperCase(), pageable).map(this::toView);
         }
         if (sourceType != null && !sourceType.isBlank()) {
             return candidateRepository.findBySourceTypeOrderByObservedAtDesc(
-                    sourceType.trim().toUpperCase(), pageable);
+                    sourceType.trim().toUpperCase(), pageable).map(this::toView);
         }
-        return candidateRepository.findAllByOrderByObservedAtDesc(pageable);
+        return candidateRepository.findAllByOrderByObservedAtDesc(pageable).map(this::toView);
+    }
+
+    private CandidateListItemView toView(CandidateEntity candidate) {
+        return new CandidateListItemView(
+                candidate.getCandidateId(),
+                candidate.getSymbol(),
+                candidate.getCompanyName(),
+                candidate.getCatalystType(),
+                candidate.getSourceType(),
+                candidate.getSourceId(),
+                candidate.getSourceUrl(),
+                candidate.getObservedAt(),
+                candidate.getHeadline(),
+                candidate.getSummary()
+        );
     }
 }

@@ -1,6 +1,7 @@
 package dev.reddragon.app.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.reddragon.analytics.config.CalibrationDriftThresholds;
 import dev.reddragon.analytics.services.exit.EquilibriumCompressionScorer;
 import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.analytics.services.DeterministicAnalyticsService;
@@ -123,8 +124,29 @@ public class PipelineConfiguration {
     }
 
     @Bean
-    public LongHorizonCalibrationAnalyzer longHorizonCalibrationAnalyzer() {
-        return new LongHorizonCalibrationAnalyzer();
+    public CalibrationDriftThresholds calibrationDriftThresholds(
+            @Value("${red-dragon.analytics.calibration.stable-win-rate-min:0.65}") double stableWinRateMin,
+            @Value("${red-dragon.analytics.calibration.stable-average-return-min:0.0}") double stableAverageReturnMin,
+            @Value("${red-dragon.analytics.calibration.stable-average-drawdown-max:0.15}") double stableAverageDrawdownMax,
+            @Value("${red-dragon.analytics.calibration.minor-drift-win-rate-min:0.55}") double minorDriftWinRateMin,
+            @Value("${red-dragon.analytics.calibration.minor-drift-average-return-min:0.0}") double minorDriftAverageReturnMin,
+            @Value("${red-dragon.analytics.calibration.moderate-drift-win-rate-min:0.45}") double moderateDriftWinRateMin
+    ) {
+        return new CalibrationDriftThresholds(
+                stableWinRateMin,
+                stableAverageReturnMin,
+                stableAverageDrawdownMax,
+                minorDriftWinRateMin,
+                minorDriftAverageReturnMin,
+                moderateDriftWinRateMin
+        );
+    }
+
+    @Bean
+    public LongHorizonCalibrationAnalyzer longHorizonCalibrationAnalyzer(
+            CalibrationDriftThresholds calibrationDriftThresholds
+    ) {
+        return new LongHorizonCalibrationAnalyzer(calibrationDriftThresholds);
     }
 
     @Bean
@@ -160,12 +182,13 @@ public class PipelineConfiguration {
             @Value("${red-dragon.sec.read-timeout-millis:" + SecApiProperties.DEFAULT_READ_TIMEOUT_MILLIS + "}") int readTimeoutMillis,
             @Value("${red-dragon.sec.max-retries:" + SecApiProperties.DEFAULT_MAX_RETRIES + "}") int maxRetries,
             @Value("${red-dragon.sec.backoff-base-millis:" + SecApiProperties.DEFAULT_BACKOFF_BASE_MILLIS + "}") long backoffBaseMillis,
-            @Value("${red-dragon.sec.max-backoff-millis:" + SecApiProperties.DEFAULT_MAX_BACKOFF_MILLIS + "}") long maxBackoffMillis
+            @Value("${red-dragon.sec.max-backoff-millis:" + SecApiProperties.DEFAULT_MAX_BACKOFF_MILLIS + "}") long maxBackoffMillis,
+            @Value("${red-dragon.sec.company-tickers-ttl-millis:" + SecApiProperties.DEFAULT_COMPANY_TICKERS_TTL_MILLIS + "}") long companyTickersTtlMillis
     ) {
         return new SecApiProperties(
                 userAgent, submissionsBaseUrl, companyTickersUrl, requestsPerSecond,
                 connectTimeoutMillis, readTimeoutMillis,
-                maxRetries, backoffBaseMillis, maxBackoffMillis);
+                maxRetries, backoffBaseMillis, maxBackoffMillis, companyTickersTtlMillis);
     }
 
     @Bean(destroyMethod = "close")
@@ -184,26 +207,32 @@ public class PipelineConfiguration {
     @Bean
     public SubmissionsClient submissionsClient(
             SecApiProperties properties,
-            SecHttpClient secHttpClient
+            SecHttpClient secHttpClient,
+            ObjectMapper objectMapper
     ) {
-        return new SubmissionsClient(properties, secHttpClient);
+        return new SubmissionsClient(properties, secHttpClient, objectMapper);
     }
 
     @Bean
-    public SecIngestionService secIngestionService(SubmissionsClient submissions) {
+    public SecIngestionService secIngestionService(
+            SubmissionsClient submissions,
+            CikLookupService cikLookupService
+    ) {
         return new SecIngestionService(
                 submissions,
                 new SubmissionsFilingExtractor(),
-                new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics())
+                new SecCandidateBuilder(new EightKCategoryMapper(), new SecFilingScoringHeuristics()),
+                cikLookupService
         );
     }
 
     @Bean
     public CikLookupService cikLookupService(
             SecApiProperties properties,
-            SecHttpClient secHttpClient
+            SecHttpClient secHttpClient,
+            ObjectMapper objectMapper
     ) {
-        return new CikLookupService(properties, secHttpClient);
+        return new CikLookupService(properties, secHttpClient, objectMapper);
     }
 
     @Bean

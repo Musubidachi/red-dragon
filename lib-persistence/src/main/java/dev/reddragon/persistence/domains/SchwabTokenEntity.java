@@ -1,6 +1,7 @@
 package dev.reddragon.persistence.domains;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,7 +10,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,18 +30,20 @@ import java.time.Instant;
 @Table(name = "schwab_token")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SchwabTokenEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "access_token", nullable = false, length = 4000)
+    @Convert(converter = SchwabTokenEncryptingConverter.class)
+    @Column(name = "access_token", nullable = false, length = 8192)
     private String accessToken;
 
-    @Column(name = "refresh_token", nullable = false, length = 4000)
+    @Convert(converter = SchwabTokenEncryptingConverter.class)
+    @Column(name = "refresh_token", nullable = false, length = 8192)
     private String refreshToken;
 
     @Column(name = "issued_at", nullable = false)
@@ -63,8 +68,21 @@ public class SchwabTokenEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    /** Backwards-compatible pre-V13 6-arg constructor. */
+    /** Builder constructor for new rows; generated IDs and audit metadata are persistence-managed. */
+    @Builder
     public SchwabTokenEntity(
+            String accessToken,
+            String refreshToken,
+            Instant issuedAt,
+            Instant expiresAt,
+            String tokenType
+    ) {
+        this(null, accessToken, refreshToken, issuedAt, expiresAt, tokenType,
+                null, null, 0L);
+    }
+
+    /** Package-private legacy constructor for tests and migration fixtures. */
+    SchwabTokenEntity(
             Long id,
             String accessToken,
             String refreshToken,

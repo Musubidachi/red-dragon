@@ -1,6 +1,6 @@
 package dev.reddragon.domain.models;
 
-import dev.reddragon.math.AnalyticsScoreUtils;
+import dev.reddragon.domain.utilities.DomainScorePolicy;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -23,10 +23,10 @@ public class OptionsFlowSnapshot {
             double nearMoneyFlowScore,
             double dealerPressureScore
     ) {
-        this.callPutImbalanceScore = AnalyticsScoreUtils.clamp(callPutImbalanceScore);
-        this.unusualActivityScore = AnalyticsScoreUtils.clamp(unusualActivityScore);
-        this.openInterestExpansionScore = AnalyticsScoreUtils.clamp(openInterestExpansionScore);
-        this.nearMoneyFlowScore = AnalyticsScoreUtils.clamp(nearMoneyFlowScore);
-        this.dealerPressureScore = AnalyticsScoreUtils.clamp(dealerPressureScore);
+        this.callPutImbalanceScore = DomainScorePolicy.clampDerivedScore(callPutImbalanceScore);
+        this.unusualActivityScore = DomainScorePolicy.clampDerivedScore(unusualActivityScore);
+        this.openInterestExpansionScore = DomainScorePolicy.clampDerivedScore(openInterestExpansionScore);
+        this.nearMoneyFlowScore = DomainScorePolicy.clampDerivedScore(nearMoneyFlowScore);
+        this.dealerPressureScore = DomainScorePolicy.clampDerivedScore(dealerPressureScore);
     }
 }
