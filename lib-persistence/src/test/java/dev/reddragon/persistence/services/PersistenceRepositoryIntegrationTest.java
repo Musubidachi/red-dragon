@@ -2,6 +2,7 @@ package dev.reddragon.persistence.services;
 
 import dev.reddragon.persistence.PersistenceIntegrationTestApplication;
 import dev.reddragon.persistence.domains.AnalyticsSnapshotEntity;
+import dev.reddragon.persistence.domains.BrokerCallLogEntity;
 import dev.reddragon.persistence.domains.BacktestResultEntity;
 import dev.reddragon.persistence.domains.CandidateEntity;
 import dev.reddragon.persistence.domains.MarketQuoteObservationEntity;
@@ -13,6 +14,7 @@ import dev.reddragon.persistence.domains.ValidationVerdictEntity;
 import dev.reddragon.persistence.domains.ValidationVerdictReasonEntity;
 import dev.reddragon.persistence.domains.VerdictOverrideEntity;
 import dev.reddragon.persistence.services.repositories.AnalyticsSnapshotRepository;
+import dev.reddragon.persistence.services.repositories.BrokerCallLogRepository;
 import dev.reddragon.persistence.services.repositories.BacktestResultRepository;
 import dev.reddragon.persistence.services.repositories.CandidateRepository;
 import dev.reddragon.persistence.services.repositories.MarketQuoteObservationRepository;
@@ -107,15 +109,18 @@ class PersistenceRepositoryIntegrationTest {
     @Autowired
     private SchwabTokenRepository schwabTokenRepository;
 
+    @Autowired
+    private BrokerCallLogRepository brokerCallLogRepository;
+
     @AfterEach
     void clearSchwabKey() {
         System.clearProperty(SCHWAB_TOKEN_KEY_PROPERTY);
     }
 
     @Test
-    void flywayMigratesThroughFreeformTextVersionAndJpaValidatesSchema() {
+    void flywayMigratesThroughMarketStateSnapshotVersionAndJpaValidatesSchema() {
         assertNotNull(flyway.info().current());
-        assertEquals("16", flyway.info().current().getVersion().getVersion());
+        assertEquals("19", flyway.info().current().getVersion().getVersion());
     }
 
     @Test
@@ -253,6 +258,24 @@ class PersistenceRepositoryIntegrationTest {
         SchwabTokenEntity latest = schwabTokenRepository.findTopByOrderByIssuedAtDesc();
         assertEquals("access-token-value", latest.getAccessToken());
         assertEquals("refresh-token-value", latest.getRefreshToken());
+    }
+
+    @Test
+    void brokerCallLogRowsPersistAuditContext() {
+        BrokerCallLogEntity saved = brokerCallLogRepository.saveAndFlush(BrokerCallLogEntity.builder()
+                .recordedAt(OBSERVED_AT)
+                .endpoint("https://api.schwabapi.com/v1/oauth/token")
+                .requestBody("grant_type=refresh_token")
+                .responseStatus(200)
+                .responseBody("token_type=Bearer")
+                .correlationId("corr-1")
+                .clientOrderId("order-1")
+                .build());
+
+        BrokerCallLogEntity loaded = brokerCallLogRepository.findById(saved.getId()).orElseThrow();
+        assertEquals("https://api.schwabapi.com/v1/oauth/token", loaded.getEndpoint());
+        assertEquals(200, loaded.getResponseStatus());
+        assertEquals("order-1", loaded.getClientOrderId());
     }
 
     private static CandidateEntity candidate(String candidateId, String summary) {

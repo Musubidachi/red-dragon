@@ -49,6 +49,14 @@ info:
     version: "@project.version@"
 
 red-dragon:
+  execution:
+    mode: ${RED_DRAGON_EXECUTION_MODE:DRY_RUN}
+    live-enabled: ${RED_DRAGON_EXECUTION_LIVE_ENABLED:false}
+  security:
+    api-key: ${RED_DRAGON_API_KEY:dev-red-dragon-api-key}
+  review:
+    stream-refresh-ms: ${RED_DRAGON_REVIEW_STREAM_REFRESH_MS:15000}
+    stream-timeout-ms: ${RED_DRAGON_REVIEW_STREAM_TIMEOUT_MS:1800000}
   sample-data:
     enabled: ${RED_DRAGON_SAMPLE_DATA_ENABLED:true}
   cors:
@@ -72,6 +80,13 @@ red-dragon:
       ciks: ${RED_DRAGON_SEC_SCHEDULER_CIKS:}
       lookback-days: ${RED_DRAGON_SEC_SCHEDULER_LOOKBACK_DAYS:30}
       profile: ${RED_DRAGON_SEC_SCHEDULER_PROFILE:STANDARD}
+    market-state:
+      enabled: ${RED_DRAGON_MARKET_STATE_SCHEDULER_ENABLED:false}
+      cron: ${RED_DRAGON_MARKET_STATE_SCHEDULER_CRON:0 */30 9-16 * * MON-FRI}
+      zone: ${RED_DRAGON_MARKET_STATE_SCHEDULER_ZONE:America/New_York}
+      symbols: ${RED_DRAGON_MARKET_STATE_SCHEDULER_SYMBOLS:}
+      lookback-hours: ${RED_DRAGON_MARKET_STATE_SCHEDULER_LOOKBACK_HOURS:8}
+      interval-minutes: ${RED_DRAGON_MARKET_STATE_SCHEDULER_INTERVAL_MINUTES:5}
   schwab:
     base-url: ${SCHWAB_MARKETDATA_BASE_URL:https://api.schwabapi.com/marketdata/v1}
     access-token: ${SCHWAB_ACCESS_TOKEN:}

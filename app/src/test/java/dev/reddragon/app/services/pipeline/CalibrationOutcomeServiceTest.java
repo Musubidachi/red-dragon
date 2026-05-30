@@ -4,7 +4,9 @@ import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.domain.models.AnalyticsScoreBreakdown;
 import dev.reddragon.domain.models.OutcomeSample;
 import dev.reddragon.persistence.domains.CalibrationOutcomeEntity;
+import dev.reddragon.persistence.domains.CalibrationReportEntity;
 import dev.reddragon.persistence.services.repositories.CalibrationOutcomeRepository;
+import dev.reddragon.persistence.services.repositories.CalibrationReportRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
@@ -31,6 +33,44 @@ class CalibrationOutcomeServiceTest {
         ArgumentCaptor<List<CalibrationOutcomeEntity>> captor = ArgumentCaptor.forClass(List.class);
         verify(repository).saveAll(captor.capture());
         assertEquals(1, captor.getValue().size());
+    }
+
+    @Test
+    void analyzeAndAppendPersistsCalibrationReportHistory() {
+        CalibrationOutcomeRepository repository = mock(CalibrationOutcomeRepository.class);
+        CalibrationReportRepository reportRepository = mock(CalibrationReportRepository.class);
+        when(repository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.findAll()).thenReturn(List.of(outcomeEntity(
+                1L,
+                "c1",
+                "AAA",
+                Instant.parse("2026-05-28T12:00:00Z"),
+                0.8,
+                0.7,
+                0.6,
+                0.7,
+                0.6,
+                0.7,
+                0.6,
+                0.8,
+                0.12,
+                0.1,
+                5,
+                true
+        )));
+
+        CalibrationOutcomeService service = new CalibrationOutcomeService(
+                new LongHorizonCalibrationAnalyzer(),
+                repository,
+                reportRepository
+        );
+        service.analyzeAndAppend(List.of(sample("c1", "AAA", 0.12, true)));
+
+        ArgumentCaptor<CalibrationReportEntity> report = ArgumentCaptor.forClass(CalibrationReportEntity.class);
+        verify(reportRepository).save(report.capture());
+        assertEquals("API_POST", report.getValue().getSource());
+        assertEquals("STABLE", report.getValue().getDriftLevel());
+        assertEquals(1.0, report.getValue().getHistoricalWinRate());
     }
 
     private OutcomeSample sample(String id, String symbol, double realizedReturn, boolean worked) {

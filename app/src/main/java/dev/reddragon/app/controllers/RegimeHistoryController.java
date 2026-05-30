@@ -21,7 +21,8 @@ import java.util.List;
  * </pre>
  *
  * When no regime filter is supplied, snapshots for all regimes are returned
- * (across all symbols, newest-first, up to 50 entries).
+ * (across all symbols, newest-first, up to 50 entries). Use {@code symbol}
+ * to scope the history to a single ticker.
  */
 @RestController
 @RequestMapping("/api/regime/history")
@@ -34,17 +35,34 @@ public class RegimeHistoryController {
 
     @GetMapping
     public List<AnalyticsSnapshotEntity> history(
+            @RequestParam(required = false) String symbol,
             @RequestParam(required = false) String regime,
             @RequestParam(defaultValue = "" + DEFAULT_LOOKBACK_HOURS) int lookbackHours
     ) {
         Instant since = Instant.now().minus(lookbackHours, ChronoUnit.HOURS);
+        String normalizedSymbol = symbol == null || symbol.isBlank()
+                ? null
+                : symbol.trim().toUpperCase();
 
         if (regime != null && !regime.isBlank()) {
-            RegimeLabel.valueOf(regime.trim().toUpperCase());
-            return analyticsSnapshotRepository
-                    .findByRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
-                            regime.trim().toUpperCase(),
-                            since);
+            String normalizedRegime = regime.trim().toUpperCase();
+            RegimeLabel.valueOf(normalizedRegime);
+            if (normalizedSymbol != null) {
+                return analyticsSnapshotRepository
+                        .findBySymbolAndRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
+                                normalizedSymbol,
+                                normalizedRegime,
+                                since);
+            }
+            return analyticsSnapshotRepository.findByRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
+                    normalizedRegime,
+                    since);
+        }
+
+        if (normalizedSymbol != null) {
+            return analyticsSnapshotRepository.findBySymbolAndObservedAtAfterOrderByObservedAtDesc(
+                    normalizedSymbol,
+                    since);
         }
 
         return analyticsSnapshotRepository.findTop50ByObservedAtAfterOrderByObservedAtDesc(since);

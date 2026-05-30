@@ -16,6 +16,7 @@ import dev.reddragon.analytics.services.marketscoring.MarketDataSnapshotScorer;
 import dev.reddragon.app.models.BacktestBarRequest;
 import dev.reddragon.app.models.BacktestFrameRequest;
 import dev.reddragon.app.models.BacktestRequest;
+import dev.reddragon.app.models.BacktestRunResponse;
 import dev.reddragon.app.services.pipeline.CalibrationOutcomeService;
 import dev.reddragon.backtest.models.BacktestReport;
 import dev.reddragon.backtest.services.BacktestReplayEngine;
@@ -116,8 +117,10 @@ class BacktestControllerWiringTest {
                 persistenceMapper,
                 ReflectionTestUtils.getField(backtestController, "persistenceMapper"));
 
-        BacktestReport report = backtestController.runBacktest(backtestRequest());
+        BacktestRunResponse response = backtestController.runBacktest(backtestRequest());
+        BacktestReport report = response.report();
 
+        assertEquals(36, response.runId().length());
         assertEquals("wiring-smoke", report.strategyName());
         assertEquals(1, report.metrics().totalFrames());
         assertEquals(1, report.outcomes().size());

@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import dev.reddragon.app.models.SchwabTokenResponse;
+import dev.reddragon.app.services.schwab.BrokerCallAuditService;
 import dev.reddragon.marketdata.config.SchwabOAuthProperties;
 import dev.reddragon.marketdata.services.provider.schwab.SchwabAccessTokenSupplier;
 import dev.reddragon.persistence.domains.SchwabTokenEntity;
@@ -51,15 +52,26 @@ public class SchwabOAuthService implements SchwabAccessTokenSupplier {
     private final SchwabOAuthProperties oauthProperties;
     private final SchwabTokenRepository tokenRepository;
     private final RestClient restClient;
+    private final BrokerCallAuditService brokerCallAuditService;
 
     public SchwabOAuthService(
             SchwabOAuthProperties oauthProperties,
             SchwabTokenRepository tokenRepository,
             RestClient restClient
     ) {
+        this(oauthProperties, tokenRepository, restClient, null);
+    }
+
+    public SchwabOAuthService(
+            SchwabOAuthProperties oauthProperties,
+            SchwabTokenRepository tokenRepository,
+            RestClient restClient,
+            BrokerCallAuditService brokerCallAuditService
+    ) {
         this.oauthProperties = Objects.requireNonNull(oauthProperties, "oauthProperties is required");
         this.tokenRepository = Objects.requireNonNull(tokenRepository, "tokenRepository is required");
         this.restClient = Objects.requireNonNull(restClient, "restClient is required");
+        this.brokerCallAuditService = brokerCallAuditService;
     }
 
     /**
@@ -155,17 +167,32 @@ public class SchwabOAuthService implements SchwabAccessTokenSupplier {
     // ---- internals ---------------------------------------------------------
 
     private SchwabTokenResponse postToTokenEndpoint(MultiValueMap<String, String> form) {
-        SchwabTokenResponse response = restClient.post()
-                .uri(oauthProperties.getTokenUrl())
-                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form)
-                .retrieve()
-                .body(SchwabTokenResponse.class);
-        if (response == null || response.accessToken() == null) {
-            throw new IllegalStateException("Schwab token endpoint returned no access_token");
+        String requestText = form.toSingleValueMap().toString();
+        try {
+            SchwabTokenResponse response = restClient.post()
+                    .uri(oauthProperties.getTokenUrl())
+                    .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(SchwabTokenResponse.class);
+            if (response == null || response.accessToken() == null) {
+                recordAudit(requestText, 502, "token endpoint returned no access_token", null);
+                throw new IllegalStateException("Schwab token endpoint returned no access_token");
+            }
+            recordAudit(
+                    requestText,
+                    200,
+                    "token_type=" + response.tokenType()
+                            + ",expires_in=" + response.expiresInSeconds()
+                            + ",has_refresh_token=" + (response.refreshToken() != null),
+                    null
+            );
+            return response;
+        } catch (RuntimeException error) {
+            recordAudit(requestText, 500, error.getMessage(), null);
+            throw error;
         }
-        return response;
     }
 
     private SchwabTokenEntity persistFromResponse(SchwabTokenResponse response) {
@@ -189,5 +216,18 @@ public class SchwabOAuthService implements SchwabAccessTokenSupplier {
 
     private String encode(String value) {
         return java.net.URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
+    }
+
+    private void recordAudit(String requestBody, int responseStatus, String responseBody, String clientOrderId) {
+        if (brokerCallAuditService == null) {
+            return;
+        }
+        brokerCallAuditService.record(
+                oauthProperties.getTokenUrl(),
+                java.util.Map.of("body", requestBody),
+                responseStatus,
+                responseBody,
+                clientOrderId
+        );
     }
 }

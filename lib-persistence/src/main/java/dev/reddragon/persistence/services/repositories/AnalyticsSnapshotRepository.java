@@ -23,6 +23,19 @@ public interface AnalyticsSnapshotRepository extends JpaRepository<AnalyticsSnap
             Instant since
     );
 
+    /** All snapshots for a symbol observed after the given timestamp. */
+    List<AnalyticsSnapshotEntity> findBySymbolAndObservedAtAfterOrderByObservedAtDesc(
+            String symbol,
+            Instant since
+    );
+
+    /** All snapshots for a symbol/regime pair observed after the given timestamp. */
+    List<AnalyticsSnapshotEntity> findBySymbolAndRegimeLabelAndObservedAtAfterOrderByObservedAtDesc(
+            String symbol,
+            String regimeLabel,
+            Instant since
+    );
+
     /** Snapshots with deployment confidence above the given threshold, newest-first. */
     List<AnalyticsSnapshotEntity> findByDeploymentConfidenceScoreGreaterThanOrderByDeploymentConfidenceScoreDesc(
             double minScore

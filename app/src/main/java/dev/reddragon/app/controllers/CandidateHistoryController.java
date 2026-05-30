@@ -108,7 +108,12 @@ public class CandidateHistoryController {
     }
 
     private CandidateReviewItem toReviewItem(ValidationVerdictEntity entity) {
+        String overrideVerdict = overrideRepository
+                .findTopByCandidateIdOrderByOverriddenAtDesc(entity.getCandidateId())
+                .map(override -> override.getOverrideVerdict())
+                .orElse(null);
         return new CandidateReviewItem(
+                entity.getId(),
                 entity.getCandidateId(),
                 entity.getSymbol(),
                 entity.getVerdict(),
@@ -117,6 +122,8 @@ public class CandidateHistoryController {
                 reasonCodes(entity),
                 explanations(entity),
                 null,
+                traderNoteRepository.countByCandidateId(entity.getCandidateId()),
+                overrideVerdict,
                 entity.getCreatedAt()
         );
     }

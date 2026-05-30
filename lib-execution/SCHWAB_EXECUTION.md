@@ -3,7 +3,7 @@
 Architecture doc and current implementation notes for broker integration.
 `lib-execution` is now a built Maven reactor module with provider-neutral
 contracts and a deterministic dry-run implementation. The current code does not
-call Schwab trader endpoints or place live broker orders.
+call Schwab trader order endpoints or place live broker orders.
 
 > **Status**: dry-run module implemented; live Schwab execution remains
 > deferred and fail-closed. Schwab OAuth and Schwab market-data support live
@@ -17,6 +17,7 @@ Implemented outside this module:
 - `GET /api/schwab/oauth/callback`
 - `POST /api/schwab/oauth/refresh`
 - persisted `schwab_token` rows
+- persisted `broker_call_log` rows for Schwab OAuth token exchanges
 - on-demand/scheduled access-token refresh support
 - Schwab price-history provider for market data
 
@@ -27,7 +28,7 @@ Still not implemented:
 - live Schwab order placement
 - live Schwab order cancellation
 - broker-side fill reconciliation
-- persistent broker audit rows
+- persistent broker audit rows for order lifecycle calls
 - app-level human confirmation gates
 
 ---
@@ -39,7 +40,7 @@ in the parent Maven reactor and has provider-neutral account, position, order,
 cancellation, and fill lifecycle models backed by `DryRunBrokerClient`.
 
 The remaining checklist is for future live Schwab execution. Do not describe
-live trading as implemented until a Schwab HTTP adapter, broker audit
+live trading as implemented until a Schwab HTTP adapter, order-lifecycle audit
 persistence, app confirmation surface, and fail-closed live-mode controls are
 all verified.
 
@@ -61,7 +62,8 @@ Use this checklist to promote the dry-run module into live Schwab execution:
   any live Schwab request is allowed.
 - Define persistent state before write operations: encrypted broker token
   storage, broker call audit rows, local order state, idempotency key storage,
-  and fill reconciliation records.
+  and fill reconciliation records. The OAuth token path now writes broker call
+  audit rows; order lifecycle rows remain future work.
 - Keep `executionMode=dry-run|live` semantics fail-closed before any live order
   placement code. Dry-run must remain the default and must return synthetic
   responses without calling Schwab order-placement endpoints.

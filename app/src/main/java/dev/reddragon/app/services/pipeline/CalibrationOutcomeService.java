@@ -3,6 +3,7 @@ package dev.reddragon.app.services.pipeline;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -13,32 +14,59 @@ import dev.reddragon.domain.models.OutcomeSample;
 import dev.reddragon.analytics.services.meta.LongHorizonCalibrationAnalyzer;
 import dev.reddragon.backtest.models.BacktestOutcome;
 import dev.reddragon.persistence.domains.CalibrationOutcomeEntity;
+import dev.reddragon.persistence.domains.CalibrationReportEntity;
 import dev.reddragon.persistence.services.repositories.CalibrationOutcomeRepository;
+import dev.reddragon.persistence.services.repositories.CalibrationReportRepository;
 
 @Service
 public class CalibrationOutcomeService {
 
     private final LongHorizonCalibrationAnalyzer analyzer;
     private final CalibrationOutcomeRepository repository;
+    private final CalibrationReportRepository reportRepository;
 
     public CalibrationOutcomeService(LongHorizonCalibrationAnalyzer analyzer, CalibrationOutcomeRepository repository) {
+        this(analyzer, repository, null);
+    }
+
+    @Autowired
+    public CalibrationOutcomeService(
+            LongHorizonCalibrationAnalyzer analyzer,
+            CalibrationOutcomeRepository repository,
+            CalibrationReportRepository reportRepository
+    ) {
         this.analyzer = analyzer;
         this.repository = repository;
+        this.reportRepository = reportRepository;
     }
 
     public synchronized CalibrationReport appendBacktestOutcomes(List<BacktestOutcome> outcomes) {
         repository.saveAll(outcomes.stream().map(this::toEntity).toList());
-        return currentReport();
+        CalibrationReport report = currentReport();
+        persistReport(report, "BACKTEST");
+        return report;
     }
 
     public synchronized CalibrationReport analyzeAndAppend(List<OutcomeSample> newSamples) {
         repository.saveAll(newSamples.stream().map(this::toEntity).toList());
-        return currentReport();
+        CalibrationReport report = currentReport();
+        persistReport(report, "API_POST");
+        return report;
     }
 
     public synchronized CalibrationReport currentReport() {
         List<OutcomeSample> samples = repository.findAll().stream().map(this::toSample).toList();
         return analyzer.process(samples);
+    }
+
+    public synchronized List<CalibrationReportEntity> recentReports(int limit) {
+        int bounded = Math.max(1, Math.min(limit, 100));
+        if (reportRepository == null) {
+            return List.of();
+        }
+        return reportRepository.findTop100ByOrderByGeneratedAtDesc().stream()
+                .limit(bounded)
+                .toList();
     }
 
 
@@ -427,5 +455,21 @@ public class CalibrationOutcomeService {
                         e.getEquilibriumQualityScore(), e.getReflexivityPotentialScore(), e.getAsymmetryScore(),
                         e.getRegimeCompatibilityScore(), e.getDeploymentConfidenceScore()),
                 e.getRealizedReturn(), e.getMaxDrawdown(), e.getDaysHeld(), e.isThesisWorked());
+    }
+
+    private void persistReport(CalibrationReport report, String source) {
+        if (reportRepository == null || report == null) {
+            return;
+        }
+        reportRepository.save(CalibrationReportEntity.builder()
+                .generatedAt(Instant.now())
+                .source(source)
+                .driftLevel(report.driftLevel().name())
+                .historicalWinRate(report.historicalWinRate())
+                .averageReturn(report.averageReturn())
+                .averageDrawdown(report.averageDrawdown())
+                .findings(String.join("\n", report.findings()))
+                .recommendations(String.join("\n", report.recommendations()))
+                .build());
     }
 }

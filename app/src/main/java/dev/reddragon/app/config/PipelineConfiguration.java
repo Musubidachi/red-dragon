@@ -8,6 +8,7 @@ import dev.reddragon.analytics.services.DeterministicAnalyticsService;
 import dev.reddragon.app.services.analysis.NoopTickerResearchClient;
 import dev.reddragon.app.services.analysis.OpenAiTickerResearchClient;
 import dev.reddragon.app.services.analysis.TickerResearchClient;
+import dev.reddragon.app.services.schwab.BrokerCallAuditService;
 import dev.reddragon.app.services.schwab.SchwabOAuthService;
 import dev.reddragon.backtest.services.BacktestReplayEngine;
 import dev.reddragon.ingestion.services.sec.EightKCategoryMapper;
@@ -299,8 +300,13 @@ public class PipelineConfiguration {
     @Conditional(SchwabOAuthConfiguredCondition.class)
     public SchwabOAuthService schwabOAuthService(
             SchwabOAuthProperties oauthProperties,
-            SchwabTokenRepository tokenRepository
+            SchwabTokenRepository tokenRepository,
+            ObjectProvider<BrokerCallAuditService> brokerCallAuditService
     ) {
+        BrokerCallAuditService auditService = brokerCallAuditService.getIfAvailable();
+        if (auditService != null) {
+            return new SchwabOAuthService(oauthProperties, tokenRepository, RestClient.create(), auditService);
+        }
         return new SchwabOAuthService(oauthProperties, tokenRepository, RestClient.create());
     }
 

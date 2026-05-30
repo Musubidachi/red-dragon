@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.reddragon.app.models.BacktestBarRequest;
 import dev.reddragon.app.models.BacktestFrameRequest;
 import dev.reddragon.app.models.BacktestRequest;
+import dev.reddragon.app.models.BacktestRunResponse;
 import dev.reddragon.app.services.pipeline.CalibrationOutcomeService;
 import dev.reddragon.backtest.models.BacktestFrame;
 import dev.reddragon.backtest.models.BacktestOutcome;
@@ -78,7 +79,8 @@ public class BacktestController {
 
     @PostMapping
     @Transactional
-    public BacktestReport runBacktest(@RequestBody BacktestRequest request) {
+    public BacktestRunResponse runBacktest(@RequestBody BacktestRequest request) {
+        request.validate();
         String strategyName = request.getStrategyName() == null ? "unnamed" : request.getStrategyName().trim();
         String runId = UUID.randomUUID().toString();
 
@@ -97,7 +99,7 @@ public class BacktestController {
         backtestResultRepository.saveAll(entities);
         calibrationOutcomeService.appendBacktestOutcomes(report.outcomes());
 
-        return report;
+        return new BacktestRunResponse(runId, report);
     }
 
     /**
