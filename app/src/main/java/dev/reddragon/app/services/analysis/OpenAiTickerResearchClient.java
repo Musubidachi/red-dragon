@@ -65,8 +65,8 @@ public class OpenAiTickerResearchClient implements TickerResearchClient {
 
     private JsonNode postResponse(ObjectNode request) {
         String raw = restClient.post()
-                .uri(properties.getBaseUrl() + "/responses")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
+                .uri(properties.baseUrl() + "/responses")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.apiKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request.toString())
                 .retrieve()
@@ -85,9 +85,9 @@ public class OpenAiTickerResearchClient implements TickerResearchClient {
             List<TradeCandidate> secCandidates
     ) {
         ObjectNode request = objectMapper.createObjectNode();
-        request.put("model", properties.getModel());
+        request.put("model", properties.model());
         request.put("input", prompt(ticker, quote, dailyBars, secCandidates));
-        if (properties.isWebSearchEnabled()) {
+        if (properties.webSearchEnabled()) {
             ArrayNode tools = request.putArray("tools");
             tools.addObject().put("type", webSearchToolType());
             request.put("tool_choice", "auto");
@@ -97,10 +97,10 @@ public class OpenAiTickerResearchClient implements TickerResearchClient {
     }
 
     private String webSearchToolType() {
-        if (properties.getWebSearchToolType() == null || properties.getWebSearchToolType().isBlank()) {
+        if (properties.webSearchToolType() == null || properties.webSearchToolType().isBlank()) {
             return "web_search";
         }
-        return properties.getWebSearchToolType().trim();
+        return properties.webSearchToolType().trim();
     }
 
     private String prompt(

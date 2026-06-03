@@ -33,3 +33,6 @@ application-local.properties
 *.PDF
 *.pdf
 !**/src/test/resources/**/*.pdf
+
+# repowise API keys (local)
+.repowise/.env

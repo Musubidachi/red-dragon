@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models;
 
+import java.beans.ConstructorProperties;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -16,6 +17,7 @@ public class MarketBar implements OhlcBar {
     double close;
     long volume;
 
+    @ConstructorProperties({"symbol", "date", "open", "high", "low", "close", "volume"})
     public MarketBar(
             String symbol,
             LocalDate date,

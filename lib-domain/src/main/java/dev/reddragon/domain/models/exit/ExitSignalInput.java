@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models.exit;
 
+import java.beans.ConstructorProperties;
 import dev.reddragon.domain.utilities.DomainScorePolicy;
 import dev.reddragon.domain.models.PhaseLabel;
 import lombok.Value;
@@ -39,6 +40,14 @@ public class ExitSignalInput {
     /** Whether price is sitting at / near the recent high. */
     boolean nearRecentHigh;
 
+    @ConstructorProperties({
+            "equilibriumPhase",
+            "propagationPhase",
+            "currentAsymmetry",
+            "entryAsymmetry",
+            "rangePosition",
+            "nearRecentHigh"
+    })
     public ExitSignalInput(
             PhaseLabel equilibriumPhase,
             PhaseLabel propagationPhase,

@@ -5,9 +5,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import dev.reddragon.domain.models.IntradayBar;
 import dev.reddragon.analytics.services.MarketStateClassifier;
 import dev.reddragon.marketdata.services.IntradayStructureSnapshotBuilder;
 import dev.reddragon.persistence.domains.MarketStateSnapshotEntity;
@@ -17,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -57,5 +60,45 @@ class MarketStateControllerTest {
                 .andExpect(jsonPath("$[0].symbol").value("ASTS"))
                 .andExpect(jsonPath("$[0].source").value("SCHEDULED_INTRADAY"))
                 .andExpect(jsonPath("$[0].barCount").value(12));
+    }
+
+    @Test
+    void classifyAcceptsIntradayBarJson() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new MarketStateController(
+                        new IntradayStructureSnapshotBuilder(),
+                        new MarketStateClassifier(),
+                        mock(MarketStateSnapshotRepository.class)))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(new dev.reddragon.app.config.JacksonConfiguration().objectMapper()))
+                .build();
+
+        mockMvc.perform(post("/api/market-state/classify")
+                        .contentType("application/json")
+                        .content("""
+                                [
+                                  {
+                                    "symbol": "asts",
+                                    "startTime": "2026-05-28T13:30:00Z",
+                                    "open": 10.0,
+                                    "high": 10.4,
+                                    "low": 9.9,
+                                    "close": 10.2,
+                                    "volume": 1000,
+                                    "vwap": 10.1
+                                  },
+                                  {
+                                    "symbol": "asts",
+                                    "startTime": "2026-05-28T13:35:00Z",
+                                    "open": 10.2,
+                                    "high": 10.8,
+                                    "low": 10.1,
+                                    "close": 10.7,
+                                    "volume": 1400,
+                                    "vwap": 10.4
+                                  }
+                                ]
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.regimeLabel").exists())
+                .andExpect(jsonPath("$.confidence").exists());
     }
 }

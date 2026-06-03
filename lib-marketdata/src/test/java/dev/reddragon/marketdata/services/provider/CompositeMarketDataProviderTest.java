@@ -21,8 +21,8 @@ class CompositeMarketDataProviderTest {
     void dailyBarsFallBackToNextProvider() {
         MarketBar bar = new MarketBar("MSFT", LocalDate.of(2026, 5, 15), 10, 11, 9, 10.5, 100);
         CompositeMarketDataProvider provider = new CompositeMarketDataProvider(List.of(
-                new ThrowingProvider(),
-                new FixedProvider(List.of(bar), List.of(), unavailableQuote())
+                new ThrowingMarketDataProvider(),
+                new FixedMarketDataProvider(List.of(bar), List.of(), unavailableQuote())
         ));
 
         List<MarketBar> bars = provider.historicalDailyBars("MSFT", LocalDate.now().minusDays(1), LocalDate.now());
@@ -35,8 +35,8 @@ class CompositeMarketDataProviderTest {
     void intradayBarsFallBackToNextProvider() {
         IntradayBar bar = new IntradayBar("MSFT", Instant.parse("2026-05-15T14:30:00Z"), 10, 11, 9, 10.5, 100, 10.2);
         CompositeMarketDataProvider provider = new CompositeMarketDataProvider(List.of(
-                new FixedProvider(List.of(), List.of(), unavailableQuote()),
-                new FixedProvider(List.of(), List.of(bar), unavailableQuote())
+                new FixedMarketDataProvider(List.of(), List.of(), unavailableQuote()),
+                new FixedMarketDataProvider(List.of(), List.of(bar), unavailableQuote())
         ));
 
         List<IntradayBar> bars = provider.intradayBars("MSFT", Instant.now().minus(Duration.ofHours(1)), Instant.now(), Duration.ofMinutes(5));
@@ -49,8 +49,8 @@ class CompositeMarketDataProviderTest {
     void quoteFallsBackUntilAvailable() {
         MarketQuote quote = new MarketQuote("MSFT", Instant.now(), 420.0, 419.9, 420.1, 1_000_000, MarketDataQuality.COMPLETE, List.of());
         CompositeMarketDataProvider provider = new CompositeMarketDataProvider(List.of(
-                new FixedProvider(List.of(), List.of(), unavailableQuote()),
-                new FixedProvider(List.of(), List.of(), quote)
+                new FixedMarketDataProvider(List.of(), List.of(), unavailableQuote()),
+                new FixedMarketDataProvider(List.of(), List.of(), quote)
         ));
 
         MarketQuote result = provider.quote("MSFT");
@@ -61,39 +61,5 @@ class CompositeMarketDataProviderTest {
 
     private MarketQuote unavailableQuote() {
         return MarketQuote.unavailable("MSFT", "missing");
-    }
-
-    private static class FixedProvider implements MarketDataProvider {
-        private final List<MarketBar> dailyBars;
-        private final List<IntradayBar> intradayBars;
-        private final MarketQuote quote;
-
-        FixedProvider(List<MarketBar> dailyBars, List<IntradayBar> intradayBars, MarketQuote quote) {
-            this.dailyBars = dailyBars;
-            this.intradayBars = intradayBars;
-            this.quote = quote;
-        }
-
-        @Override
-        public List<MarketBar> historicalDailyBars(String symbol, LocalDate from, LocalDate to) {
-            return dailyBars;
-        }
-
-        @Override
-        public List<IntradayBar> intradayBars(String symbol, Instant from, Instant to, Duration interval) {
-            return intradayBars;
-        }
-
-        @Override
-        public MarketQuote quote(String symbol) {
-            return quote;
-        }
-    }
-
-    private static class ThrowingProvider implements MarketDataProvider {
-        @Override
-        public List<MarketBar> historicalDailyBars(String symbol, LocalDate from, LocalDate to) {
-            throw new IllegalStateException("boom");
-        }
     }
 }
