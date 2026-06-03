@@ -1,5 +1,6 @@
 package dev.reddragon.domain.models;
 
+import java.beans.ConstructorProperties;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -17,6 +18,7 @@ public class IntradayBar implements OhlcBar {
     long volume;
     double vwap;
 
+    @ConstructorProperties({"symbol", "startTime", "open", "high", "low", "close", "volume", "vwap"})
     public IntradayBar(
             String symbol,
             Instant startTime,

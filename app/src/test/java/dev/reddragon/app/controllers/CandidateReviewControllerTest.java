@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import dev.reddragon.app.config.ReviewStreamProperties;
 import dev.reddragon.app.services.review.CandidateReviewService;
 import dev.reddragon.app.services.review.CandidateReviewStreamService;
 import dev.reddragon.persistence.domains.ValidationVerdictEntity;
@@ -63,7 +64,9 @@ class CandidateReviewControllerTest {
                 analyticsSnapshotRepository,
                 traderNoteRepository,
                 overrideRepository);
-        CandidateReviewStreamService streamService = new CandidateReviewStreamService(reviewService);
+        CandidateReviewStreamService streamService = new CandidateReviewStreamService(
+                reviewService,
+                new ReviewStreamProperties(1_800_000L, 15_000L));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateReviewController(
                 reviewService,
                 streamService)).build();
@@ -80,7 +83,9 @@ class CandidateReviewControllerTest {
     void streamCandidatesStartsSseResponse() throws Exception {
         CandidateReviewService reviewService = mock(CandidateReviewService.class);
         when(reviewService.listCandidates("WATCH", 12)).thenReturn(List.of());
-        CandidateReviewStreamService streamService = new CandidateReviewStreamService(reviewService);
+        CandidateReviewStreamService streamService = new CandidateReviewStreamService(
+                reviewService,
+                new ReviewStreamProperties(1_800_000L, 15_000L));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateReviewController(
                 reviewService,
                 streamService)).build();

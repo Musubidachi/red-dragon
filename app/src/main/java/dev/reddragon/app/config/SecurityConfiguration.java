@@ -2,7 +2,6 @@ package dev.reddragon.app.config;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,10 +46,10 @@ public class SecurityConfiguration {
 
     @Bean
     public ApiKeyAuthenticationFilter apiKeyAuthenticationFilter(
-            @Value("${red-dragon.security.api-key:dev-red-dragon-api-key}") String apiKey,
+            SecurityProperties securityProperties,
             AuthenticationEntryPoint apiAuthenticationEntryPoint
     ) {
-        return new ApiKeyAuthenticationFilter(apiKey, apiAuthenticationEntryPoint);
+        return new ApiKeyAuthenticationFilter(securityProperties.apiKey(), apiAuthenticationEntryPoint);
     }
 
     @Bean

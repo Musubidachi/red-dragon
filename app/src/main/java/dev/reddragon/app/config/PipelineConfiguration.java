@@ -237,18 +237,6 @@ public class PipelineConfiguration {
     }
 
     @Bean
-    public LlmResearchProperties llmResearchProperties(
-            @Value("${red-dragon.llm.research.enabled:false}") boolean enabled,
-            @Value("${red-dragon.llm.research.api-key:}") String apiKey,
-            @Value("${red-dragon.llm.research.base-url:https://api.openai.com/v1}") String baseUrl,
-            @Value("${red-dragon.llm.research.model:gpt-4.1-mini}") String model,
-            @Value("${red-dragon.llm.research.web-search-enabled:true}") boolean webSearchEnabled,
-            @Value("${red-dragon.llm.research.web-search-tool-type:web_search}") String webSearchToolType
-    ) {
-        return new LlmResearchProperties(enabled, apiKey, baseUrl, model, webSearchEnabled, webSearchToolType);
-    }
-
-    @Bean
     public TickerResearchClient tickerResearchClient(LlmResearchProperties properties) {
         if (properties.configured()) {
             return new OpenAiTickerResearchClient(properties);

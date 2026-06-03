@@ -1,9 +1,13 @@
 package dev.reddragon.app.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import dev.reddragon.execution.AccountSummary;
 import dev.reddragon.execution.BrokerClient;
 import dev.reddragon.execution.DryRunBrokerClient;
 import dev.reddragon.execution.ExecutionMode;
@@ -13,34 +17,30 @@ import dev.reddragon.execution.LiveBrokerClient;
 public class ExecutionConfiguration {
 
     @Bean
-    public ExecutionMode executionMode(
-            @Value("${red-dragon.execution.mode:DRY_RUN}") ExecutionMode executionMode
-    ) {
-        return executionMode;
+    public ExecutionMode executionMode(ExecutionProperties executionProperties) {
+        return executionProperties.mode();
     }
 
     @Bean
-    public BrokerClient brokerClient(
-            ExecutionMode executionMode,
-            @Value("${red-dragon.execution.live-enabled:false}") boolean liveEnabled
-    ) {
+    public BrokerClient brokerClient(ExecutionProperties executionProperties, ExecutionMode executionMode) {
         if (executionMode == ExecutionMode.LIVE) {
-            if (!liveEnabled) {
+            if (!executionProperties.liveEnabled()) {
                 throw new IllegalStateException(
-                        "red-dragon.execution.mode=LIVE requires red-dragon.execution.live-enabled=true");
+                        "Live execution is disabled. Set red-dragon.execution.live-enabled=true "
+                                + "before enabling red-dragon.execution.mode=LIVE.");
             }
             return new LiveBrokerClient();
         }
-        return new DryRunBrokerClient(
-                new dev.reddragon.execution.AccountSummary(
-                        "dry-run",
-                        java.math.BigDecimal.ZERO,
-                        java.math.BigDecimal.ZERO,
-                        java.math.BigDecimal.ZERO,
-                        false
-                ),
-                java.util.List.of(),
-                java.time.Clock.systemUTC()
+        return new DryRunBrokerClient(defaultAccountSummary(), List.of(), Clock.systemUTC());
+    }
+
+    private AccountSummary defaultAccountSummary() {
+        return new AccountSummary(
+                "DRY-RUN",
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                false
         );
     }
 }
